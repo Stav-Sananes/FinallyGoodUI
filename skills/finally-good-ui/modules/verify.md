@@ -1,0 +1,94 @@
+# Module: verify
+
+Verify the **rendered** UI against the rubric, fix at most 2 rounds, report. Always on after build; also the whole of `/finally-good-ui review`.
+`SR` = this skill's folder. Scripts print JSON; read it, don't paraphrase it.
+
+Inputs: `.design/brief.md`, `.design/blueprint.md`, `.design/config.json`, `.design/tokens.json`, stack profile (`detect-stack.mjs`), `rubric/rubric.md`, `rubric/ai-default-fingerprints.md`.
+Outputs: `.design/flows.json`, `.design/reports/<run>.json` + `shots/<run>/`, `.design/reports/history.json`, `.design/reports/<yyyy-mm-dd>.md`.
+
+If `config.verify` is `"static"`, do Layer 1 + static review only (§7b) and say so.
+
+## 1. Layer 1 — static (hook)
+
+- The plugin's PostToolUse hook runs `check-static` on each edited UI file when `.design/` exists. Fix its high/medium findings as they appear.
+- Before Layer 2, run it once across the project: `node SR/scripts/check-static.mjs --root .` Keep the JSON for the scorecard (dimensions 3, 7, 9).
+
+## 2. Dev server
+
+1. Reuse a running server: try `http://localhost:<port>` for the port in the dev script / framework default (Next/Nuxt/Astro/SvelteKit 3000/3000/4321/5173, Vite 5173, Angular 4200). A 2xx/3xx/404 response means it is up.
+2. Otherwise start it **in the background**: `<packageManager> run <devScript>` (from the stack profile). Watch its output for the local URL; poll it up to 60 s.
+3. If `devScript` is missing, the server crashes, or the app needs secrets/services you do not have: go to §7b and tell the user what blocked it.
+4. Stop only servers you started, when verify ends.
+
+## 3. Author `.design/flows.json`
+
+Derive from the blueprint; update it when the blueprint changes. Format (validated by `check-flows.mjs --help`):
+```json
+{"flows":[{"name":"create-invoice","steps":[
+  {"goto":"/invoices"},{"screenshot":"list"},
+  {"click":"role=button[name=\"New invoice\"]"},{"fill":["label=Client","Northwind Traders"]},
+  {"click":"text=Save"},{"waitFor":"text=Invoice created"},{"screenshot":"saved"}],
+ "states":[{"name":"empty","route":"**/api/invoices*","mock":"empty"},
+           {"name":"error","route":"**/api/invoices*","mock":"error"},
+           {"name":"loading","route":"**/api/invoices*","mock":"slow","delayMs":4000},
+           {"name":"denied","route":"**/api/invoices*","mock":"forbidden"}]}]}
+```
+- **One flow per blueprint key flow** (F1…), in the same order; name it after the task. Add one flow per remaining screen in the inventory (`goto` + `screenshot`) so every screen is seen.
+- **Steps:** real user actions from the flow's happy path. `screenshot` after each screen change, named with the blueprint screen id. First step must be `goto`.
+- **Selectors:** prefer what the user sees: `role=button[name="…"]`, `label=…`, `text=…`, then `[data-testid]`. Never brittle CSS paths.
+- **States from the state matrix:** for each screen's data source, find the request (grep `fetch(`, `axios`, `useQuery`, route handlers, server actions) and add a state per matrix column: empty → `empty` (with a realistic empty `body` shape: `[]`, `{"items":[],"total":0}`), error → `error`, loading → `slow` plus a `waitFor` of ~500 ms before the screenshot, no-permission → `forbidden`, partial → `empty` with a partial `body`.
+- A state that cannot be forced by interception (server-rendered data, websockets) is listed in the report as **unverified**, not skipped silently.
+- Test data: realistic content from the brief. No "Acme", no lorem.
+
+## 4. Layer 2 — flow walk
+
+```
+node SR/scripts/check-flows.mjs --root . --url <devURL> --flows .design/flows.json --run r0
+```
+Matrix: every `config.viewports` entry × light/dark, plus one reduced-motion pass; state variants run every viewport in light. Each screenshot step runs `probe.js` (+ axe if `@axe-core/playwright` is installed) and records console errors.
+- Exit 2 `playwright-missing` / `browser-missing` → §7a. Exit 3 `url-unreachable` → §2. Exit 1 → fix `flows.json` (message says where).
+- `errors[]` (a step timed out) usually means a wrong selector or a real bug. Look at the last screenshot before deciding which.
+- Console errors are findings for dimension 8 (states and feedback).
+- Quick mode for small changes: `--pages /route1,/route2`.
+
+## 5. Layer 3 — independent review
+
+Spawn the `ui-reviewer` subagent (`agents/ui-reviewer.md`; may be listed as `finally-good-ui:ui-reviewer`). Give it **paths, not your opinions**:
+- screenshots: per screen, `375-light` and `1440-dark` of the base flow + every forced-state shot at 375. At most ~12 images per call; split by flow if more.
+- `.design/reports/<run>.json` (it reads findings, `animations`, `metrics`), the static-check JSON.
+- `brief.md`, `blueprint.md`, `decisions.md`, `rubric/rubric.md`, `rubric/ai-default-fingerprints.md`, and the canon files for cards it cites.
+- the **caps** for dimensions 6, 7, 9 that you computed from measured data (rubric).
+Do not tell it what you changed or what you think is wrong. It scores dimensions 4–10 only.
+
+## 6. Score, fix, compare (max 2 rounds)
+
+1. **Scorecard.** Score 1–3 from measured data per the rubric; take 4–10 from the reviewer (apply caps). Pass = gate passes and all ≥ 4.
+2. **History.** Append the round to `.design/reports/history.json`:
+   ```json
+   {"rounds":[{"round":0,"run":"r0","date":"2026-09-26","gate":false,
+     "scores":{"1":3,"2":4,"3":5,"4":4,"5":4,"6":4,"7":3,"8":3,"9":4,"10":4},
+     "regions":{"home/hero":{"4":5,"10":4},"invoices.empty/list":{"8":2}},
+     "findings":["r0-01","r0-02"],"fixed":[],"changed":["src/app/page.tsx"],"verdict":"baseline"}]}
+   ```
+   `regions` = `<flow[.state]>/<screen or region>` → dimension scores from findings/reviewer.
+3. **If pass → report (§8).** Else pick the **top 3–5 findings** (rubric ranking: gate → lowest dimension → severity → contexts). Fix each with the smallest diff; cite the finding id in your note. No redesigns inside the fix loop.
+4. **Re-run** Layer 2 with `--run r1` (same flows) and Layer 3 on the same screens.
+5. **Pairwise compare** each changed screen, previous vs current, same context: call `ui-reviewer` in pairwise mode **twice with the image order swapped** (fresh call each time; label images X/Y, never "before/after").
+   - Same winner in both orders → accept that verdict. Disagreement → tie (the judge is unsure).
+   - Judged preferences are only trusted when the gap is described as large; small-gap wins are ties.
+6. **Revert rule.** The round is **worse** if any of: a new high finding or the gate newly fails; a dimension or region that was ≥ 4 in any earlier round (history) drops below 4; the previous version wins pairwise in both orders. Measured evidence outranks pairwise. If worse: revert that round's diffs for the affected screen (keep unrelated improvements), record `"verdict":"reverted"` and why.
+7. **Stop** after round 2, or earlier on pass. Gains plateau after about two cycles, and more rounds tend to degrade code. Remaining issues go to the report.
+
+## 7. Fallbacks — always tell the user which one applied
+
+**a) Playwright missing.** Ask first: "Verification needs Playwright (dev dependency, ~10 MB + ~150 MB browser download). Install with `<pm> add -D playwright @axe-core/playwright && npx playwright install chromium`?" Do not install without a yes. If they decline, or while waiting, use any available browser tool (Claude Browser pane, Playwright MCP, Chrome extension):
+- For each screen × viewport (resize) × scheme (the tool's colour-scheme emulation, or toggle the app's theme class): navigate, then run via the JS-exec tool the full text of `SR/scripts/browser/probe.js` followed by `window.__fguProbe({touch: <width < 768>, focus: true})`. Take a screenshot.
+- Late injection misses animations that already finished: reload after injecting if the tool supports init scripts, or trigger the transition again (open the dialog, navigate) before probing.
+- States: force only what the tool can (Playwright MCP code execution can use `page.route`). List the rest as unverified.
+- Save results in the `check-flows` report shape to `.design/reports/<run>.json`, then continue at §5.
+
+**b) No browser or no dev server.** Run Layer 1, then a **static review**: `ui-reviewer` in static mode reads the components, tokens and styles and scores what code can show (3, 6, 7, 9 partially); dimensions needing pixels are `n/a`. Tell the user plainly, in the chat, not only in the report: *"I could not render the app (<reason>), so layout, hierarchy, states and motion were not verified in a browser."* Mark the report `mode: static`.
+
+## 8. Report
+
+Fill `SR/templates/report.md` → `.design/reports/<yyyy-mm-dd>.md` (add `-2`, `-3` if it exists). Include: mode, scorecard with the round-by-round history, gate result, top remaining findings with card ids and screenshot paths, reverted changes, unverified states/contexts, console errors. Lead the chat summary with what the user must decide or fix.

@@ -1,0 +1,8 @@
+.panel {
+  transition: height 300ms ease-out;
+  padding: 16px 13px;
+  gap: 8px;
+}
+.fade-exit-active {
+  transition: opacity 150ms ease-in;
+}

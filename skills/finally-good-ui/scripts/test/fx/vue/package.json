@@ -1,0 +1,7 @@
+{
+  "name": "fx-vue",
+  "private": true,
+  "scripts": { "serve": "vite" },
+  "dependencies": { "vue": "^3.4.21", "vue-router": "^4.3.0", "gsap": "^3.12.5", "@tabler/icons-vue": "^3.0.0" },
+  "devDependencies": { "vite": "^5.2.0" }
+}

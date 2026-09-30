@@ -1,0 +1,10 @@
+:root { --accent: #2563eb; }
+.grow { animation: grow 1s ease-out; }
+@keyframes grow {
+  from { width: 0; transform: scale(0); }
+  to { width: 100px; transform: scale(1); }
+}
+.pop { transition: 0.2s; }
+.spin { animation: spin 2s linear infinite; }
+.menu { transition: transform 400ms ease; }
+select, textarea { font-size: 0.8rem; }

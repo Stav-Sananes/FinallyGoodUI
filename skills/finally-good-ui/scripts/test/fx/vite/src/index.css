@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --surface: #ffffff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; }
+}

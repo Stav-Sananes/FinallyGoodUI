@@ -1,0 +1,265 @@
+<!doctype html>
+<!--
+  finally-good-ui — direction comparison template.
+  Copy to .design/directions/compare.html and replace EVERY placeholder. Escape < & " in text values.
+
+  Page-level:
+    {{PROJECT_NAME}}   product name from the brief
+    {{SCREEN_NAME}}    key screen name from the blueprint
+  Per direction (X = A, B, C):
+    {{X_NAME}}         direction name
+    {{X_ROLE}}         "Grounded standard" (A) or "Pushed" (B, C)
+    {{X_THESIS}}       one-sentence thesis
+    {{X_DENSITY}} {{X_CONTRAST}} {{X_TYPE}} {{X_LAYOUT}} {{X_MOTION}}
+                       final axis positions, e.g. "dense", "stark", "serif text", "split", "expressive"
+    {{X_DECISIONS}}    3–5 <li>…</li> items: palette, type, layout, the transition, signature detail
+    {{X_SRCDOC}}       leave EMPTY to load a.html/b.html/c.html from this folder (default).
+                       For single-file publishing (Artifact tool), put the direction's full HTML here,
+                       with & → &amp; and " → &quot; (it sits inside a double-quoted attribute).
+  Iframes receive {type:'fgu:theme', theme:'light'|'dark'} via postMessage.
+-->
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{PROJECT_NAME}} — directions</title>
+<style>
+  :root {
+    --color-background: oklch(0.985 0 0);
+    --color-surface: oklch(1 0 0);
+    --color-foreground: oklch(0.22 0 0);
+    --color-muted-foreground: oklch(0.48 0 0);
+    --color-border: oklch(0.9 0 0);
+    --color-chip: oklch(0.955 0 0);
+    --color-ring: oklch(0.55 0.12 250);
+    --color-stage: oklch(0.94 0 0);
+    --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Consolas, monospace;
+    --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px;
+    --radius-sm: 6px; --radius-md: 10px;
+    --duration-micro: 100ms; --duration-short: 150ms;
+    --ease-enter: cubic-bezier(0, 0, 0, 1);
+    color-scheme: light;
+  }
+  [data-theme="dark"] {
+    --color-background: oklch(0.17 0 0);
+    --color-surface: oklch(0.21 0 0);
+    --color-foreground: oklch(0.93 0 0);
+    --color-muted-foreground: oklch(0.7 0 0);
+    --color-border: oklch(0.3 0 0);
+    --color-chip: oklch(0.26 0 0);
+    --color-ring: oklch(0.72 0.12 250);
+    --color-stage: oklch(0.13 0 0);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--color-background); color: var(--color-foreground);
+    font: 14px/1.5 var(--font-ui); -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+
+  .bar {
+    position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center;
+    gap: var(--space-3) var(--space-6); padding: var(--space-3) var(--space-4);
+    background: var(--color-background); border-bottom: 1px solid var(--color-border);
+  }
+  .bar h1 { margin: 0; font-size: 14px; font-weight: 600; }
+  .bar h1 span { color: var(--color-muted-foreground); font-weight: 400; }
+  .controls { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-left: auto; }
+  .seg { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-sm); overflow: hidden; }
+  .seg button, .btn {
+    border: 0; background: transparent; padding: 6px var(--space-3); min-height: 32px; cursor: pointer;
+    transition: background-color var(--duration-short) var(--ease-enter), transform var(--duration-micro) var(--ease-enter);
+  }
+  .seg button + button { border-left: 1px solid var(--color-border); }
+  .seg button[aria-pressed="true"] { background: var(--color-chip); font-weight: 600; }
+  .btn { border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+  .btn:active, .seg button:active { transform: scale(0.97); }
+  @media (hover: hover) and (pointer: fine) {
+    .seg button:hover, .btn:hover, .tab:hover { background: var(--color-chip); }
+  }
+
+  .tabs { display: none; gap: var(--space-1); padding: var(--space-3) var(--space-4) 0; }
+  .tab {
+    flex: 1; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: transparent;
+    padding: var(--space-2); min-height: 40px; cursor: pointer; text-align: left;
+  }
+  .tab[aria-selected="true"] { background: var(--color-surface); border-color: var(--color-foreground); font-weight: 600; }
+  .tab small { display: block; color: var(--color-muted-foreground); font-weight: 400; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-6); padding: var(--space-6) var(--space-4) var(--space-8); }
+  .panel { min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+  .stage {
+    position: relative; overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-md);
+    background: var(--color-stage); display: flex; justify-content: center;
+  }
+  .stage iframe { border: 0; display: block; background: var(--color-surface); transform-origin: top center; flex: none; }
+  .meta header { display: flex; align-items: baseline; gap: var(--space-2); flex-wrap: wrap; }
+  .meta h2 { margin: 0; font-size: 16px; font-weight: 600; }
+  .letter { font-family: var(--font-mono); color: var(--color-muted-foreground); }
+  .role { font-size: 12px; color: var(--color-muted-foreground); }
+  .thesis { margin: var(--space-2) 0 var(--space-3); max-width: 60ch; }
+  .chips { display: flex; flex-wrap: wrap; gap: var(--space-1); margin: 0 0 var(--space-3); padding: 0; list-style: none; }
+  .chips li { background: var(--color-chip); border-radius: 999px; padding: 2px var(--space-2); font-size: 12px; }
+  .chips b { font-weight: 500; color: var(--color-muted-foreground); }
+  .decisions { margin: 0; padding-left: 1.1em; color: var(--color-muted-foreground); }
+  .decisions li + li { margin-top: var(--space-1); }
+
+  @media (max-width: 999px) {
+    .tabs { display: flex; }
+    .grid { grid-template-columns: minmax(0, 1fr); padding-top: var(--space-4); }
+    .panel:not(.is-active) { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .seg button, .btn { transition: background-color var(--duration-short) linear; }
+    .btn:active, .seg button:active { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="bar" role="toolbar" aria-label="Preview controls">
+  <h1>{{PROJECT_NAME}} <span>· {{SCREEN_NAME}} · 3 directions</span></h1>
+  <div class="controls">
+    <div class="seg" role="group" aria-label="Simulated width">
+      <button type="button" data-width="375" aria-pressed="false">375</button>
+      <button type="button" data-width="1440" aria-pressed="true">1440</button>
+    </div>
+    <div class="seg" role="group" aria-label="Theme">
+      <button type="button" data-theme-set="light" aria-pressed="true">Light</button>
+      <button type="button" data-theme-set="dark" aria-pressed="false">Dark</button>
+    </div>
+    <button type="button" class="btn" id="replay">Replay motion</button>
+  </div>
+</div>
+
+<div class="tabs" role="tablist" aria-label="Directions">
+  <button class="tab" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true">A · {{A_NAME}}<small>{{A_ROLE}}</small></button>
+  <button class="tab" role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false" tabindex="-1">B · {{B_NAME}}<small>{{B_ROLE}}</small></button>
+  <button class="tab" role="tab" id="tab-c" aria-controls="panel-c" aria-selected="false" tabindex="-1">C · {{C_NAME}}<small>{{C_ROLE}}</small></button>
+</div>
+
+<main class="grid">
+  <section class="panel is-active" id="panel-a" role="tabpanel" aria-labelledby="tab-a">
+    <div class="stage"><iframe title="Direction A: {{A_NAME}}" src="a.html" data-srcdoc="{{A_SRCDOC}}" loading="eager"></iframe></div>
+    <div class="meta">
+      <header><span class="letter">A</span><h2>{{A_NAME}}</h2><span class="role">{{A_ROLE}}</span></header>
+      <p class="thesis">{{A_THESIS}}</p>
+      <ul class="chips" aria-label="Axis positions">
+        <li><b>density</b> {{A_DENSITY}}</li><li><b>contrast</b> {{A_CONTRAST}}</li><li><b>type</b> {{A_TYPE}}</li><li><b>layout</b> {{A_LAYOUT}}</li><li><b>motion</b> {{A_MOTION}}</li>
+      </ul>
+      <ul class="decisions">{{A_DECISIONS}}</ul>
+    </div>
+  </section>
+  <section class="panel" id="panel-b" role="tabpanel" aria-labelledby="tab-b">
+    <div class="stage"><iframe title="Direction B: {{B_NAME}}" src="b.html" data-srcdoc="{{B_SRCDOC}}" loading="eager"></iframe></div>
+    <div class="meta">
+      <header><span class="letter">B</span><h2>{{B_NAME}}</h2><span class="role">{{B_ROLE}}</span></header>
+      <p class="thesis">{{B_THESIS}}</p>
+      <ul class="chips" aria-label="Axis positions">
+        <li><b>density</b> {{B_DENSITY}}</li><li><b>contrast</b> {{B_CONTRAST}}</li><li><b>type</b> {{B_TYPE}}</li><li><b>layout</b> {{B_LAYOUT}}</li><li><b>motion</b> {{B_MOTION}}</li>
+      </ul>
+      <ul class="decisions">{{B_DECISIONS}}</ul>
+    </div>
+  </section>
+  <section class="panel" id="panel-c" role="tabpanel" aria-labelledby="tab-c">
+    <div class="stage"><iframe title="Direction C: {{C_NAME}}" src="c.html" data-srcdoc="{{C_SRCDOC}}" loading="eager"></iframe></div>
+    <div class="meta">
+      <header><span class="letter">C</span><h2>{{C_NAME}}</h2><span class="role">{{C_ROLE}}</span></header>
+      <p class="thesis">{{C_THESIS}}</p>
+      <ul class="chips" aria-label="Axis positions">
+        <li><b>density</b> {{C_DENSITY}}</li><li><b>contrast</b> {{C_CONTRAST}}</li><li><b>type</b> {{C_TYPE}}</li><li><b>layout</b> {{C_LAYOUT}}</li><li><b>motion</b> {{C_MOTION}}</li>
+      </ul>
+      <ul class="decisions">{{C_DECISIONS}}</ul>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const frames = [...document.querySelectorAll('.stage iframe')];
+  const HEIGHT = { 375: 812, 1440: 900 };
+  const state = { width: matchMedia('(max-width: 999px)').matches ? 375 : 1440, theme: 'light' };
+  try { state.theme = localStorage.getItem('fgu-compare-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch {}
+
+  // Inline mode: use data-srcdoc when it was filled in.
+  frames.forEach(f => {
+    const doc = f.dataset.srcdoc;
+    if (doc && !doc.startsWith('{{')) { f.removeAttribute('src'); f.srcdoc = doc; }
+    f.addEventListener('load', () => sendTheme(f));
+  });
+
+  function sendTheme(f) {
+    try { f.contentWindow.postMessage({ type: 'fgu:theme', theme: state.theme }, '*'); } catch {}
+  }
+
+  function layout() {
+    const w = state.width, h = HEIGHT[w];
+    frames.forEach(f => {
+      const stage = f.parentElement;
+      const avail = stage.clientWidth;
+      if (!avail) return; // hidden tab; re-laid out on activation
+      const s = Math.min(1, avail / w);
+      f.style.width = w + 'px';
+      f.style.height = h + 'px';
+      f.style.transform = `scale(${s})`;
+      stage.style.height = Math.round(h * s) + 'px';
+    });
+  }
+
+  function press(selector, attr, value) {
+    document.querySelectorAll(selector).forEach(b => b.setAttribute('aria-pressed', String(b.getAttribute(attr) === String(value))));
+  }
+
+  function setTheme(t) {
+    state.theme = t;
+    root.dataset.theme = t;
+    press('[data-theme-set]', 'data-theme-set', t);
+    frames.forEach(sendTheme);
+    try { localStorage.setItem('fgu-compare-theme', t); } catch {}
+  }
+
+  function setWidth(w) { state.width = w; press('[data-width]', 'data-width', w); layout(); }
+
+  document.querySelectorAll('[data-width]').forEach(b => b.addEventListener('click', () => setWidth(+b.dataset.width)));
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.themeSet)));
+
+  // Replay: reload each frame; the direction auto-plays its transition again after 600ms.
+  document.getElementById('replay').addEventListener('click', () => {
+    frames.forEach(f => {
+      if (f.hasAttribute('srcdoc')) { const d = f.srcdoc; f.srcdoc = ''; f.srcdoc = d; }
+      else { try { f.contentWindow.location.reload(); } catch { f.src = f.getAttribute('src'); } }
+    });
+  });
+
+  // Tabs (mobile): roving tabindex + arrow keys.
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  function activate(tab, focus) {
+    tabs.forEach(t => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).classList.toggle('is-active', on);
+    });
+    if (focus) tab.focus();
+    layout();
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => activate(t));
+    t.addEventListener('keydown', e => {
+      const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (e.key === 'Home') { e.preventDefault(); activate(tabs[0], true); }
+      else if (e.key === 'End') { e.preventDefault(); activate(tabs[tabs.length - 1], true); }
+      else if (d) { e.preventDefault(); activate(tabs[(i + d + tabs.length) % tabs.length], true); }
+    });
+  });
+
+  new ResizeObserver(layout).observe(document.querySelector('.grid'));
+  setTheme(state.theme);
+  setWidth(state.width);
+})();
+</script>
+</body>
+</html>

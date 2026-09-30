@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui;
+  --radius-lg: 0.75rem;
+  --ease-snappy: cubic-bezier(0.23, 1, 0.32, 1);
+  --duration-standard: 250ms;
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --primary: oklch(0.55 0.2 260);
+  --primary-foreground: oklch(0.985 0 0);
+  --border: #e5e5e5;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --primary: oklch(0.7 0.15 260);
+}

@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/skills/finally-good-ui/scripts/hook-check.mjs\"",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  }
+}
