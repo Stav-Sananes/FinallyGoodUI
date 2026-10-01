@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "finally-good-ui-market",
+  "description": "Design and build complete apps like a senior product designer.",
+  "owner": {
+    "name": "stav",
+    "url": "https://github.com/Stav-Sananes"
+  },
+  "plugins": [
+    {
+      "name": "finally-good-ui",
+      "description": "Canon-grounded design interview, app blueprint, 3 animated directions, stack-adaptive tokens and motion, browser-verified build.",
+      "source": "./",
+      "category": "design"
+    }
+  ]
+}
