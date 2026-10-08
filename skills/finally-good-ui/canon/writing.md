@@ -73,3 +73,21 @@ checks:
   measured: "Script over headings, buttons and nav items: none begins with filler phrases (Welcome to, In order to, Click here, Please, Here you can); headings 8 words or fewer; buttons 4 words or fewer."
   judged: "Read only the first two words of every item in this list: can you still tell the items apart?"
 ```
+
+### writing.plain-claims
+
+```yaml
+id: writing.plain-claims
+domain: writing
+principle: "Say the literal thing the product does for this user, with a noun and a verb they would use. Cut empty intensifiers (seamless, unlock, elevate, empower, robust, next-level), significance inflation ('the future of'), negative parallelism ('not just X, it's Y'), staccato fragment runs, forced lists of three, and mind-verbs on software ('the dashboard understands'). Use periods, colons and commas instead of em dashes in interface copy. Judge clusters: one tell is noise, three on a screen is generated copy."
+why: "Generic copy is the fastest way a product sounds AI-made, and it hides what the product actually does. Concrete copy is shorter, testable and in the user's words. Over-sterilised copy with no voice fails too; plain is not the same as bland."
+sources: ["Mailchimp Content Style Guide, 'Voice and tone'", "Krug, Don't Make Me Think, 'Omit needless words'", "Strunk & White, The Elements of Style, 'Omit needless words'", "antislop (miqdadbadjuber/anti-slop), antislop-copywriting"]
+applies-when: "Headings, empty states, onboarding, marketing sections, changelogs, notifications."
+not-when: "Quoted user content and legal text."
+decides: [copy.headings, copy.labels]
+tensions: [writing.user-language, craft.tension-restraint-liveliness]
+asked-by: []
+checks:
+  measured: "Static rules buzzword, em-dash-copy, generic-cta."
+  judged: "Read each heading aloud to the user persona: would they say it that way, and does it name something real?"
+```

@@ -58,6 +58,8 @@ Spawn the `ui-reviewer` subagent (`agents/ui-reviewer.md`; may be listed as `fin
 - `.design/reports/<run>.json` (it reads findings, `animations`, `metrics`), the static-check JSON.
 - `brief.md`, `blueprint.md`, `decisions.md`, `rubric/rubric.md`, `rubric/ai-default-fingerprints.md`, and the canon files for cards it cites.
 - the **caps** for dimensions 6, 7, 9 that you computed from measured data (rubric).
+- the chosen direction spec (`.design/directions/<x>.spec.md`) and its prototype file, if directions ran, so it can judge **direction fidelity**: does the build still read as that direction, or did it regress to the mean? (dimension 10)
+- `canon/craft.md` (dimension 10 craft checks).
 Do not tell it what you changed or what you think is wrong. It scores dimensions 4–10 only.
 
 ## 6. Score, fix, compare (max 2 rounds)
@@ -88,6 +90,23 @@ Do not tell it what you changed or what you think is wrong. It scores dimensions
 - Save results in the `check-flows` report shape to `.design/reports/<run>.json`, then continue at §5.
 
 **b) No browser or no dev server.** Run Layer 1, then a **static review**: `ui-reviewer` in static mode reads the components, tokens and styles and scores what code can show (3, 6, 7, 9 partially); dimensions needing pixels are `n/a`. Tell the user plainly, in the chat, not only in the report: *"I could not render the app (<reason>), so layout, hierarchy, states and motion were not verified in a browser."* Mark the report `mode: static`.
+
+## 7c. Delivery gate (before any "done")
+
+Scores say how good it is; the gate says whether it can be handed over. Write one line per item into the report as `PASS|FAIL|N/A — evidence` (a file:line, a screenshot path, a count). Evidence is required for PASS. Any FAIL blocks calling the work done: fix it, or report it to the user as an open blocker in the first line of your summary.
+
+| # | Item | Evidence |
+|---|---|---|
+| G1 | Rubric gate (dimension 1) passes | scorecard |
+| G2 | Zero `dead-control`, `placeholder-code`, `placeholder-content` findings | check-static JSON |
+| G3 | Every `unsourced-claim` is removed or sourced in `decisions.md` | quote the entry |
+| G4 | Click ledger: every interactive element on the key screen clicked once; each did what its label says | list `element → result` |
+| G5 | Every `low` static finding fixed or justified in `decisions.md` | counts before/after |
+| G6 | No unjustified fingerprint; no material cluster (fingerprints rule 5); not the sterile default (rule 6) | reviewer JSON |
+| G7 | Each screen has one focal point and at least one deliberate accent moment | screenshot paths |
+| G8 | The identity motif appears in ≥ 3 places | decisions.md + shots |
+| G9 | Direction fidelity ≥ 4 (if directions ran) | reviewer JSON |
+| G10 | Light, dark and 375 px all render without overflow or broken surfaces | flow-walk run |
 
 ## 8. Report
 

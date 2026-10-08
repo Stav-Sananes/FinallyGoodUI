@@ -26,7 +26,7 @@ Options:
   --help
 `;
 
-export const DOMAINS = ["usability", "ia-nav", "flows-forms", "states", "layout", "typography", "color", "motion", "data", "a11y", "writing", "personality"];
+export const DOMAINS = ["usability", "ia-nav", "flows-forms", "states", "layout", "typography", "color", "motion", "data", "a11y", "writing", "personality", "craft"];
 const AREAS = ["purpose", "context", "jobs", "content", "personality", "constraints", "risks"];
 const DEPTHS = new Set(["full", "brand", "feature"]);
 const CARD_FIELDS = ["id", "domain", "principle", "why", "sources", "applies-when", "not-when", "decides", "tensions", "asked-by", "checks"];

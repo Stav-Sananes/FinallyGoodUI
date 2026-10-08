@@ -14,6 +14,26 @@ export const RULE_CARDS = {
   "div-onclick": "a11y.semantic-first",
   "user-scalable-no": "a11y.target-size",
   "small-input-font": "a11y.target-size",
+  // Slop detectors: the mechanical half of rubric/ai-default-fingerprints.md.
+  "dead-control": "craft.nothing-dead",
+  "placeholder-code": "craft.nothing-dead",
+  "placeholder-content": "craft.honest-content",
+  "unsourced-claim": "craft.honest-content",
+  "buzzword": "writing.plain-claims",
+  "em-dash-copy": "writing.plain-claims",
+  "generic-cta": "writing.action-labels",
+  "gradient-text": "layout.hierarchy-by-weight",
+  "purple-blue-gradient": "color.accent-restraint",
+  "glass-overuse": "craft.material-restraint",
+  "colored-glow": "craft.material-restraint",
+  "bg-pattern": "craft.material-restraint",
+  "blurred-orb": "craft.material-restraint",
+  "fake-terminal": "craft.real-imagery-and-icons",
+  "ai-icon": "craft.real-imagery-and-icons",
+  "emoji-ui": "craft.real-imagery-and-icons",
+  "decorative-pulse": "motion.purpose-only",
+  "eyebrow-overuse": "layout.tension-consistency-emphasis",
+  "viewport-100vh": "layout.intrinsic-responsive",
 };
 
 export const DEFAULT_SPACE_SCALE = [0, 1, 2, 4, 6, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64, 80, 96, 128];

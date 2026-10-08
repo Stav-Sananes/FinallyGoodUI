@@ -21,3 +21,4 @@ Thumbs.db
 
 # Claude Code local artifacts written into consuming projects
 .design/reports/
+.playwright-mcp/

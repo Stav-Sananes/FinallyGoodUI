@@ -1,0 +1,7 @@
+.nav { backdrop-filter: blur(12px); }
+.card { backdrop-filter: blur(16px); box-shadow: 0 0 40px rgba(139, 92, 246, 0.5); }
+.modal { -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+.bg { background-image: radial-gradient(circle, rgba(0,0,0,.1) 1px, transparent 1px); background-size: 24px 24px; }
+.term { --r: #ff5f56; --y: #ffbd2e; --g: #27c93f; }
+.focus { box-shadow: 0 0 0 3px var(--color-ring); }
+.hero { height: 100vh; }

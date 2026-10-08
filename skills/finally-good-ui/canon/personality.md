@@ -126,3 +126,78 @@ checks:
   measured: "Tokens: base text 13-14px; space scale on a 4px base; durations 150ms or less; probe: targets still 24x24 or more; numeric cells tabular-nums; shortcuts exposed via aria-keyshortcuts or visible hints."
   judged: "Can an expert complete the top task with the keyboard faster than before, and does the density ever hide which row is selected?"
 ```
+
+### personality.luxurious
+
+```yaml
+id: personality.luxurious
+domain: personality
+principle: "Luxury is produced by unhurried space, soft deep surfaces, a few large confident type gestures, nested shapes made with care, and slow settling motion. Nothing competes; every surface looks machined."
+why: "Expense is signalled by what was not crowded in: space that costs screen area, edges and light that took effort to get right, and motion that never rushes. Effects added on top (glow, gradients) cheapen it, because they are what cheap things use to look expensive."
+sources: ["Norman, Emotional Design, visceral level", "Wathan & Schoger, Refactoring UI, 'Depth' and 'Personality'", "Apple Human Interface Guidelines, Materials", "taste-skill (Leonxlnx), soft-skill parameter set"]
+produces:
+  contrast: "surfaces 1 step apart; near-black (L 0.12-0.16) or warm off-white (L 0.97-0.985) canvas; hairlines as 5-10% alpha of the foreground"
+  spacing: "8px base; section gaps 96-160px on desktop, about half on mobile; card padding 24-40px; content max-width 1100-1280px"
+  type-voice: "geometric or neo-grotesque display at weights 400-600 with tracking -0.02 to -0.04em (size, not weight, carries hierarchy); or a high-contrast serif display if the brief earns it; body 16-17px, line-height 1.6"
+  accent: "one hue, low-mid chroma (0.06-0.12), under 3% of surface, plus one deliberate accent moment per screen"
+  radius: "soft and nested: containers 20-32px, inner elements concentric (outer minus padding), buttons pill or 10-14px"
+  motion: "durations medium-long (300-500ms) on presentation surfaces, standard (200-250ms) on controls; easing cubic-bezier(0.32,0.72,0,1) or (0.16,1,0.3,1); bounce 0; press scale 0.98"
+applies-when: "Consumer premium, fashion, hospitality, private banking, high-end creative tools; brief words like premium, refined, expensive, crafted."
+not-when: "Dense daily tools where 96px+ gaps would waste the workspace; urgent or alert-driven contexts."
+decides: [tokens.color, tokens.space, tokens.font, tokens.radius, tokens.shadow, tokens.duration, tokens.easing]
+tensions: [personality.dense-expert, personality.energetic, motion.frequency-budget]
+asked-by: [interview.personality.references]
+checks:
+  measured: "Tokens: section gap >= 96px at 1440; display weight <= 600 with negative tracking; radius tokens nested (inner = outer - padding); no glow, gradient text or more than one translucent layer (static rules)."
+  judged: "Does it feel expensive because of what is left out, or because of what was added on?"
+```
+
+### personality.editorial
+
+```yaml
+id: personality.editorial
+domain: personality
+principle: "An editorial feel is produced by print discipline: a paper-like canvas, ink-dark text, a serif or refined grotesk display with tight tracking, a strong typographic hierarchy instead of boxes, washed accent pairs for tags, and hairline rules."
+why: "Readers trust what looks composed by an editor: hierarchy carried by type alone, generous measure and margins, and colour used like ink on paper. Cards and shadows read as software; rules and type read as publishing."
+sources: ["Bringhurst, The Elements of Typographic Style", "Müller-Brockmann, Grid Systems in Graphic Design", "Lupton, Thinking with Type", "taste-skill (Leonxlnx), minimalist-skill parameter set"]
+produces:
+  contrast: "canvas warm or neutral off-white (L 0.97-0.99), ink L 0.18-0.25 (never pure black), muted text L 0.50-0.55; hairlines 1px at 6% alpha"
+  spacing: "8px base; sections 96-128px; content measure 60-72ch; max-width 900-1050px for reading pages"
+  type-voice: "serif or sharp grotesk display, tracking -0.02 to -0.04em, line-height 1.1; body sans or serif 16-18px at 1.6-1.7; mono only for metadata"
+  accent: "tags and status as washed background/ink pairs (background chroma ~0.03, text chroma ~0.10); one ink accent for links"
+  radius: "cards 8-12px, buttons 4-6px, tags pill"
+  motion: "subtle: 8-12px rises over 400-600ms on first view only, stagger 60-80ms; controls 150-200ms; bounce 0"
+applies-when: "Content-led products: knowledge bases, journals, reading apps, portfolios, documentation, newsletters."
+not-when: "Dense operational dashboards; playful consumer apps."
+decides: [tokens.color, tokens.font, tokens.text, tokens.radius, layout.grid]
+tensions: [personality.energetic, personality.playful, craft.hairlines-before-boxes]
+asked-by: [interview.personality.references]
+checks:
+  measured: "Tokens: no pure black ink; paragraph measure 60-75ch; at most 2 families plus mono; shadows absent or alpha <= 0.05."
+  judged: "Would this look at home printed? Is the hierarchy readable with all colour removed?"
+```
+
+### personality.raw-industrial
+
+```yaml
+id: personality.raw-industrial
+domain: personality
+principle: "A raw, industrial feel is produced by exposed structure: zero radius, full-width rules and 1px grid gaps, one substrate (light paper or dark screen), heavy macro type against tiny mono labels, a single hazard accent, and no soft shadow or translucency."
+why: "Showing the grid instead of hiding it reads as honest and confident; bimodal type (huge and tiny) creates tension without decoration. It fails the moment it is mixed with soft styles, because the honesty is the point."
+sources: ["Müller-Brockmann, Grid Systems in Graphic Design", "Lupton, Graphic Design: The New Basics, 'Grid'", "taste-skill (Leonxlnx), brutalist-skill parameter set"]
+produces:
+  contrast: "one substrate: paper (L 0.94-0.96) with ink L 0.10-0.15, or dark (L 0.12-0.15) with ink L 0.90-0.93; stark steps"
+  spacing: "bimodal: packed clusters (4-8px) against large empty fields (128px+); grids with 1px gaps over a contrasting parent"
+  type-voice: "heavy grotesk macro type, clamp(3rem, 9vw, 12rem), tracking -0.03 to -0.06em, line-height 0.85-0.95, often uppercase; mono micro labels 10-13px, tracking +0.05 to +0.1em"
+  accent: "one hazard hue at high chroma (0.20-0.26), used for one or two things per screen"
+  radius: "0 everywhere"
+  motion: "instant or stepped: 0-150ms, linear or steps(); no springs, no blur, no stagger"
+applies-when: "Developer tools, creative studios, music, culture, brands whose brief asks for bold, honest, unpolished-on-purpose."
+not-when: "Finance, health or any trust-first or anxious audience; long reading."
+decides: [tokens.color, tokens.font, tokens.text, tokens.radius, tokens.shadow, tokens.duration]
+tensions: [personality.calm, personality.luxurious, personality.serious-trustworthy]
+asked-by: [interview.personality.references]
+checks:
+  measured: "Tokens: radius 0; shadow tokens none; one accent hue; display tracking <= -0.03em; macro/micro size ratio >= 6."
+  judged: "Is the structure the decoration, or did soft styles creep back in?"
+```

@@ -270,14 +270,16 @@ depth: [full]
 area: personality
 question: "Name 1–3 apps or sites whose feel you like (any category), and one you don't want to look like."
 options:
-  - "Skip — derive the feel from the answers so far (recommended when earlier answers are clear)"
-  - "I'll name some"
-why: "References are used to extract qualities (density, contrast, motion, type voice), never to copy a look. The anti-reference is often more useful: it names the generic look to steer away from."
-cards: [personality.calm, personality.energetic, layout.hierarchy-by-weight]
+  - "I'll name some (recommended: the single strongest guard against a generic look)"
+  - "Pick a finish instead: quiet-crafted, luxurious, editorial, energetic, raw-industrial, playful"
+  - "Skip — derive the feel from the answers so far (expect a safer, more generic result)"
+why: "References are used to extract qualities (density, contrast, motion, type voice, material), never to copy a look. The anti-reference is often more useful: it names the generic look to steer away from. In testing, skipping this question was the main cause of directions that 'looked too much like AI'."
+cards: [personality.calm, personality.energetic, personality.luxurious, personality.editorial, personality.raw-industrial, layout.hierarchy-by-weight]
 skip-if: "brand exists"
 depth: [full]
 follow-ups:
   - "What specifically do you like about it — the speed, the calm, the typography, how it moves?"
+  - "What does premium mean for this product: quiet and exact, soft and expensive, editorial, or loud and confident?"
 ```
 
 ## constraints

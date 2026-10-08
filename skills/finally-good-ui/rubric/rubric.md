@@ -53,7 +53,7 @@ Cards: layout.hierarchy-by-weight · flows-forms.primary-action-clarity · layou
 
 ### 5 · Spacing and grouping — J
 Cards: layout.proximity-grouping · layout.spacing-scale · layout.grid-alignment · data.tension-density-clarity
-- 5 — space inside groups is visibly smaller than between groups; edges align; rhythm is even; density matches the brief.
+- 5 — space inside groups is visibly smaller than between groups; edges align; rhythm is deliberate (even within a group, varied between sections and screen types per craft.composition-rhythm); density matches the brief.
 - 4 — grouping reads correctly; one uneven gap or misaligned edge.
 - 3 — some groups ambiguous (a label nearer the wrong field); ragged edges.
 - 2 — uniform spacing everywhere, so nothing groups; or cramped to the point of misreading.
@@ -96,12 +96,13 @@ Input: `animations[]` per context plus static findings. Measured caps: `anim-non
 - 1 — janky, disorienting or blocking.
 
 ### 10 · Craft and brand fit — J
-Cards: personality.* (the one(s) the brief chose) · motion.one-signature-moment · writing.user-language · writing.action-labels · layout.tension-consistency-emphasis
-Also run the thoughtlessness test in `ai-default-fingerprints.md`.
-- 5 — matches the chosen direction and brief personality; radii, shadows and icon style are consistent; copy is in the user's words; one specific detail shows it was made for this product; no unjustified fingerprints.
-- 4 — fits; one inconsistency or one unjustified fingerprint of low weight.
-- 3 — competent but interchangeable with any product; 2+ unjustified fingerprints.
-- 2 — generic template look; placeholder copy or fake data.
+Cards: personality.* (the one(s) the brief chose) · craft.* (`canon/craft.md`) · motion.one-signature-moment · writing.user-language · writing.action-labels · writing.plain-claims · layout.tension-consistency-emphasis
+Also run the thoughtlessness test in `ai-default-fingerprints.md` (both directions: template *and* sterile default), and, if directions ran, **direction fidelity**: put the build screenshot next to the chosen prototype; the build must keep the prototype's material, type voice, motif and composition. Regression to the mean caps this dimension at 3.
+Craft checklist the reviewer walks (each miss is a finding): tracking by size · headline ≤ 2 lines, balanced · numbers set (tabular, muted units) · one material by role · layered tinted shadows / lighter dark surfaces · hairlines before boxes, no box-in-box · concentric radii · one icon family, real imagery · motif in ≥ 3 places · one focal point and one accent moment per screen · optical alignment of card actions.
+- 5 — reads as a shipped premium product made for this brief: the craft checklist is clean, the motif repeats, one detail rewards a closer look, copy is in the user's words, no unjustified fingerprints, and the build matches its direction.
+- 4 — fits and is finished; one craft miss or one low-weight unjustified fingerprint.
+- 3 — competent but interchangeable with any product: 2+ unjustified fingerprints, the sterile default, a material cluster, 3+ craft misses, or the build drifted from its direction.
+- 2 — generic template look; placeholder copy, fake data or dead controls.
 - 1 — contradicts the brief.
 
 ## Finding format

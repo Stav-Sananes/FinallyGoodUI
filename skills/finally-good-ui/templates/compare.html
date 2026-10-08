@@ -10,9 +10,9 @@
     {{X_NAME}}         direction name
     {{X_ROLE}}         "Grounded standard" (A) or "Pushed" (B, C)
     {{X_THESIS}}       one-sentence thesis
-    {{X_DENSITY}} {{X_CONTRAST}} {{X_TYPE}} {{X_LAYOUT}} {{X_MOTION}}
+    {{X_DENSITY}} {{X_CONTRAST}} {{X_TYPE}} {{X_LAYOUT}} {{X_MATERIAL}} {{X_MOTION}}
                        final axis positions, e.g. "dense", "stark", "serif text", "split", "expressive"
-    {{X_DECISIONS}}    3–5 <li>…</li> items: palette, type, layout, the transition, signature detail
+    {{X_DECISIONS}}    3–5 <li>…</li> items: palette, type, layout, material, the transition, the motif and where it repeats
     {{X_SRCDOC}}       leave EMPTY to load a.html/b.html/c.html from this folder (default).
                        For single-file publishing (Artifact tool), put the direction's full HTML here,
                        with & → &amp; and " → &quot; (it sits inside a double-quoted attribute).
@@ -22,7 +22,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{PROJECT_NAME}} — directions</title>
+<title>{{PROJECT_NAME}} · directions</title>
 <style>
   :root {
     --color-background: oklch(0.985 0 0);
@@ -147,7 +147,7 @@
       <header><span class="letter">A</span><h2>{{A_NAME}}</h2><span class="role">{{A_ROLE}}</span></header>
       <p class="thesis">{{A_THESIS}}</p>
       <ul class="chips" aria-label="Axis positions">
-        <li><b>density</b> {{A_DENSITY}}</li><li><b>contrast</b> {{A_CONTRAST}}</li><li><b>type</b> {{A_TYPE}}</li><li><b>layout</b> {{A_LAYOUT}}</li><li><b>motion</b> {{A_MOTION}}</li>
+        <li><b>density</b> {{A_DENSITY}}</li><li><b>contrast</b> {{A_CONTRAST}}</li><li><b>type</b> {{A_TYPE}}</li><li><b>layout</b> {{A_LAYOUT}}</li><li><b>material</b> {{A_MATERIAL}}</li><li><b>motion</b> {{A_MOTION}}</li>
       </ul>
       <ul class="decisions">{{A_DECISIONS}}</ul>
     </div>
@@ -158,7 +158,7 @@
       <header><span class="letter">B</span><h2>{{B_NAME}}</h2><span class="role">{{B_ROLE}}</span></header>
       <p class="thesis">{{B_THESIS}}</p>
       <ul class="chips" aria-label="Axis positions">
-        <li><b>density</b> {{B_DENSITY}}</li><li><b>contrast</b> {{B_CONTRAST}}</li><li><b>type</b> {{B_TYPE}}</li><li><b>layout</b> {{B_LAYOUT}}</li><li><b>motion</b> {{B_MOTION}}</li>
+        <li><b>density</b> {{B_DENSITY}}</li><li><b>contrast</b> {{B_CONTRAST}}</li><li><b>type</b> {{B_TYPE}}</li><li><b>layout</b> {{B_LAYOUT}}</li><li><b>material</b> {{B_MATERIAL}}</li><li><b>motion</b> {{B_MOTION}}</li>
       </ul>
       <ul class="decisions">{{B_DECISIONS}}</ul>
     </div>
@@ -169,7 +169,7 @@
       <header><span class="letter">C</span><h2>{{C_NAME}}</h2><span class="role">{{C_ROLE}}</span></header>
       <p class="thesis">{{C_THESIS}}</p>
       <ul class="chips" aria-label="Axis positions">
-        <li><b>density</b> {{C_DENSITY}}</li><li><b>contrast</b> {{C_CONTRAST}}</li><li><b>type</b> {{C_TYPE}}</li><li><b>layout</b> {{C_LAYOUT}}</li><li><b>motion</b> {{C_MOTION}}</li>
+        <li><b>density</b> {{C_DENSITY}}</li><li><b>contrast</b> {{C_CONTRAST}}</li><li><b>type</b> {{C_TYPE}}</li><li><b>layout</b> {{C_LAYOUT}}</li><li><b>material</b> {{C_MATERIAL}}</li><li><b>motion</b> {{C_MOTION}}</li>
       </ul>
       <ul class="decisions">{{C_DECISIONS}}</ul>
     </div>

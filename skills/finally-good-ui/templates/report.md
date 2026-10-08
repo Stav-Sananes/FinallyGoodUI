@@ -30,6 +30,22 @@ axe: <yes | not installed>
 | 10 | Craft and brand fit | J | | | | | |
 <!-- n/a = not verifiable here; give the reason in the note column. Pass = gate passes and all ≥ 4. -->
 
+## Delivery gate
+
+<!-- modules/verify.md §7c. Evidence required for every PASS. Any FAIL = not done. -->
+| # | Item | Result | Evidence |
+|---|---|---|---|
+| G1 | Rubric gate | | |
+| G2 | No dead controls / placeholders | | |
+| G3 | Claims sourced | | |
+| G4 | Click ledger (key screen) | | |
+| G5 | Low static findings fixed or justified | | |
+| G6 | No unjustified fingerprint, cluster or sterile default | | |
+| G7 | Focal point + accent moment per screen | | |
+| G8 | Motif in ≥ 3 places | | |
+| G9 | Direction fidelity | | |
+| G10 | Light, dark, 375 px render | | |
+
 ## Fix rounds
 
 | Round | Fixed (finding ids) | Files changed | Pairwise (both orders) | Verdict |

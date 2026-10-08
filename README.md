@@ -24,6 +24,36 @@ Most AI design skills hand the model *answers*: presets, style catalogues and ba
 
 It also works on existing apps: `extract` turns your codebase into a design system, and `review` audits your current UI.
 
+### Premium craft, and the two ways generated UI fails
+
+Generated UI fails in two directions. One is the **noisy template**: glass, glow, gradient text, fake stats, buzzword copy. The other is the **sterile default**: clean and correct, but with nothing to remember. The plugin guards against both:
+
+- **`craft` canon (15 cards).** How premium is *made*, with ranges to choose from:
+  - letter-spacing and line-height by size;
+  - headline discipline and number setting;
+  - ink actions on a near-neutral canvas, with the accent kept for meaning;
+  - concentric radii, layered tinted shadows, hairlines before boxes;
+  - one surface material by role;
+  - real icons and imagery;
+  - an identity motif repeated across screens;
+  - composition rhythm, honest content, and nothing dead.
+- **Premium personality recipes.** `luxurious`, `editorial` and `raw-industrial` join calm, energetic, serious, playful and dense-expert. They are parameter ranges, not stock styles.
+- **Directions diverge in structure, not just skin.** A sixth axis, *material*, is added, and *layout* now means the composition of the content area. The three directions must take three different compositions.
+- **19 mechanical slop detectors** in `check-static`:
+  - dead links and handlers, TODO stubs;
+  - lorem ipsum, stock faces, invented trust claims;
+  - buzzwords, generic CTAs, em-dash cadence;
+  - gradient text, purple-blue gradients, glass and glow overuse, grid patterns, blurred orbs, fake terminals;
+  - AI-icon vocabulary, emoji icons, decorative pulse dots, eyebrow overuse, `100vh`.
+- **A delivery gate.** A PASS/FAIL ledger with evidence, which blocks "done" on dead controls, placeholders, unsourced claims, the sterile default and direction drift.
+
+### Sibling skills
+
+```
+/finally-good-ui:slop-check [path|url] [--fix]          pass/fail audit for AI-made tells, in both directions
+/finally-good-ui:polish [preserve|elevate|overhaul]      upgrade a working UI to premium, one verified rung at a time
+```
+
 ## Install
 
 See the [repository README](../README.md) and [INSTALL.md](../INSTALL.md) for all options.
@@ -68,9 +98,10 @@ The canon cites, among others:
 - **Psychology:** Yablonski, *Laws of UX*
 - **Standards:** WCAG 2.2, Nielsen Norman Group heuristics, Apple HIG, Material 3
 - **Practitioners:** Emil Kowalski, Rauno Freiberg, Josh Comeau, Vercel's Web Interface Guidelines
+- **Anti-slop and taste research:** [antislop](https://github.com/miqdadbadjuber/anti-slop) (MIT) and [taste-skill](https://github.com/Leonxlnx/taste-skill) (MIT). Their rules were re-expressed here as canon cards, fingerprints and detectors.
 
 Every principle is written in our own words, with citations. Informed by these works; not endorsed by their authors.
 
 ## Status
 
-v0.1: ~70 canon cards, 22 interview questions, 15 recipes, and all scripts with tests. Planned next: the full ~180-card canon, 25+ recipes, and an evaluation set with a before/after gallery.
+v0.2: 88 canon cards (new `craft` domain and premium personality recipes), 22 interview questions, 15 recipes, 19 slop detectors, a delivery gate, and the `slop-check` and `polish` skills. All scripts have tests. Planned next: the full ~180-card canon, 25+ recipes, and an evaluation set with a before/after gallery.

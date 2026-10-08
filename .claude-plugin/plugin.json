@@ -1,7 +1,21 @@
 {
   "name": "finally-good-ui",
-  "version": "0.1.0",
-  "description": "Design and build complete apps like a senior product designer: canon-grounded reasoning, design interview, app blueprint, 3 animated directions, stack-adaptive tokens and motion, and browser-verified results.",
-  "author": { "name": "stav" },
-  "keywords": ["ui", "ux", "design-system", "motion", "animation", "accessibility", "frontend"]
+  "version": "0.2.0",
+  "description": "Design and build complete apps like a senior product designer: canon-grounded reasoning, design interview, app blueprint, 3 animated directions, premium craft canon, slop detectors and delivery gate, stack-adaptive tokens and motion, browser-verified results. Includes slop-check and polish skills.",
+  "author": {
+    "name": "stav"
+  },
+  "keywords": [
+    "ui",
+    "ux",
+    "design-system",
+    "motion",
+    "animation",
+    "accessibility",
+    "frontend",
+    "premium",
+    "anti-slop",
+    "polish",
+    "design-review"
+  ]
 }

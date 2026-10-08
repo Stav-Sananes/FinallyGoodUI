@@ -43,13 +43,13 @@ checks:
 ```yaml
 id: color.accent-restraint
 domain: color
-principle: "Reserve the accent hue for what the user should act on or notice: the primary action, the current selection, focus, and links. Everything else is built from neutrals."
+principle: "Reserve the accent hue for what the user should act on or notice: the primary action, the current selection, focus, and links. Everything else is built from neutrals. Restraint has a floor as well as a ceiling: every screen keeps at least one deliberate accent moment, because zero accent reads as an unfinished template (craft.tension-restraint-liveliness)."
 why: "An isolated colour draws the eye only while it stays rare; once it decorates headers, icons and borders it stops signalling priority and the primary action disappears."
 sources: ["Lidwell et al., Universal Principles of Design, Von Restorff effect", "Yablonski, Laws of UX, Von Restorff effect", "Wathan & Schoger, Refactoring UI"]
 applies-when: "Every screen; strongest on dashboards and forms with one primary action."
 not-when: "Marketing or playful surfaces where the brief deliberately uses colour as atmosphere (see personality.playful); the primary action must still be distinguishable."
 decides: [tokens.color, component.button, component.link, component.nav]
-tensions: [color.role-scale, personality.energetic, personality.playful, layout.tension-consistency-emphasis]
+tensions: [color.role-scale, personality.energetic, personality.playful, layout.tension-consistency-emphasis, craft.tension-restraint-liveliness]
 asked-by: [interview.personality.calm-energetic]
 checks:
   measured: "Probe: at most one element per viewport with background equal to --color-primary (solid step); accent-coloured pixels under ~10% of a screenshot for calm/serious/dense personalities."

@@ -28,7 +28,8 @@ Arguments: `$ARGUMENTS`
 8. **Real content, never lorem.** Use the product's actual domain language, units and data shapes.
 9. **Never silently skip the interview or the directions for a new app.** "You decide" answers are allowed, but a user choosing is not the same as you guessing. If the user asks to go fast, say what quality you're giving up and ask. (Learned in testing: skipping these steps produced functional but bland apps.)
 10. **Mirror the user's mental model, not the data model.** Before laying out any screen, write one sentence describing how the user thinks about the task (e.g. "the recipe needs 6 eggs; eggs come 12 for $4.29"). If the layout mirrors the database columns instead, redesign it.
-11. **Human touch is a requirement, not decoration.** Every app needs at least one detail a thoughtful person would add: copy with a voice, a moment that responds to the user's progress, a material or convention from the subject's world. Generic but correct fails review.
+11. **Human touch is a requirement, not decoration.** Every app needs at least one detail a thoughtful person would add: copy with a voice, a moment that responds to the user's progress, a material or convention from the subject's world, repeated as a motif in at least 3 places (`craft.identity-motif`). Generic but correct fails review.
+12. **Premium is made, not added.** Polish comes from how type is set, how surfaces, edges and light are built, real icons and imagery, and honest content (`canon/craft.md`), never from stacking effects (glass, glow, gradient text, orbs). Fail in neither direction: not the noisy template, not the sterile default. Nothing ships dead: no `href="#"`, stub handlers or invented proof.
 
 ## Routing
 
@@ -45,6 +46,8 @@ Read `.design/` first if it exists: `brief.md`, `blueprint.md`, `brand.md`, `tok
 | `extract` | Step 1 and write `brand.md` + `tokens.json`, then ask the user to confirm the inferred roles |
 | `export` | `modules/export.md` |
 | a small component or a tweak inside an existing app | Short version: read `.design/`, check the relevant canon cards, build, run Layer 1 + a targeted verify. Still record decisions. |
+| existing UI works but looks plain / not premium | Sibling skill `polish` (upgrade ladder, verified rung by rung) |
+| "does this look AI-made?", or a pre-hand-off check | Sibling skill `slop-check` (pass/fail ledger; `--fix` for blockers) |
 
 ## Full pipeline
 
@@ -62,7 +65,8 @@ Load each module **only when you reach its step**. Keep context lean.
 ## How to use the canon
 
 - `canon/INDEX.md` lists every card (`id — principle`) and the tensions. Read it at the interview and blueprint steps.
-- Open a domain file (`canon/<domain>.md`) only when deciding in that domain: `usability`, `ia-nav`, `flows-forms`, `states`, `layout`, `typography`, `color`, `motion`, `data`, `a11y`, `writing`, `personality`.
+- Open a domain file (`canon/<domain>.md`) only when deciding in that domain: `usability`, `ia-nav`, `flows-forms`, `states`, `layout`, `typography`, `color`, `motion`, `data`, `a11y`, `writing`, `personality`, `craft`.
+- `craft` is the finishing layer (type setting, surfaces, radii, shadows, imagery, motif, honesty). Directions specs fill its values; build ends with a craft pass; the reviewer walks it for dimension 10.
 - A card's `applies-when` and `not-when` fields gate it. Its `checks` fields feed verification. Its `sources` are what you cite to the user in plain words ("Krug: don't make users think about navigation").
 - Personality cards say how a feeling is *produced* (contrast steps, spacing, type voice, easing). Combine them from the brief's personality answers. Do not name a style.
 - If the canon has no card for a situation, reason from first principles, say so in the decision record, and don't invent a citation.
