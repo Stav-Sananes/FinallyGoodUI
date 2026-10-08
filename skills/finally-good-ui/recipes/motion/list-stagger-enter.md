@@ -43,10 +43,11 @@ Promise.all(list.getAnimations({ subtree: true }).map(a => a.finished))
 ## React + Motion
 Worth it when items mount dynamically and you want variants to orchestrate parent → children.
 ```tsx
+import { sec, ease } from "./motion-tokens"; // recipes/INDEX.md
 const list = { hidden: {}, show: { transition: { staggerChildren: 0.04, delayChildren: 0 } } };
 const item = {
   hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0, 0, 0, 1] } },
+  show: () => ({ opacity: 1, y: 0, transition: { duration: sec('medium'), ease: ease('enter') } }), // resolved when it animates
 };
 export function StaggerList({ items }: { items: Item[] }) {
   const reduce = useReducedMotion();
@@ -67,8 +68,8 @@ export function StaggerList({ items }: { items: Item[] }) {
 ```
 
 ## Vue / Svelte
-- Vue: `<TransitionGroup appear tag="ul" name="stagger">` with `:style="{ '--i': index }"` , `.stagger-enter-from { opacity: 0; transform: translateY(8px) }` and `.stagger-enter-active { transition: opacity 300ms, transform 300ms var(--ease-enter); transition-delay: calc(min(var(--i), 7) * 40ms) }`; `appear` runs it on initial render, but later additions would also enter — bind `:css="!loaded"` and set `loaded = true` after the cascade.
-- Svelte: `in:fly={{ y: 8, duration: firstLoad ? 300 : 0, delay: firstLoad ? Math.min(i, 7) * 40 : 0, easing: cubicOut }}` inside `{#each}`; set `firstLoad = false` after the cascade so later additions don't replay it.
+- Vue: `<TransitionGroup appear tag="ul" name="stagger">` with `:style="{ '--i': index }"` , `.stagger-enter-from { opacity: 0; transform: translateY(8px) }` and `.stagger-enter-active { transition: opacity var(--duration-medium), transform var(--duration-medium) var(--ease-enter); transition-delay: calc(min(var(--i), 7) * var(--stagger, 40ms)) }`; `appear` runs it on initial render, but later additions would also enter — bind `:css="!loaded"` and set `loaded = true` after the cascade.
+- Svelte: `in:fly={{ y: 8, duration: firstLoad ? ms('medium') : 0, delay: firstLoad ? Math.min(i, 7) * 40 : 0, easing: cubicOut }}` inside `{#each}`; set `firstLoad = false` after the cascade so later additions don't replay it.
 
 ## A11y
 - Content must be in the DOM and readable immediately; the animation is purely visual (no delayed insertion).

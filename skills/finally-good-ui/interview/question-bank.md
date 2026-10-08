@@ -2,6 +2,8 @@
 
 Used by `modules/interview.md`. Ask in area order: purpose → context → jobs → content → personality → constraints → risks. Within an area, ask in the order listed. Reword freely for the project, but keep the options concrete and the recommendation first.
 
+Recommendations are conditional, not a work-tool default. The first option is listed first because the linter needs one default, but recommend it only when its "(recommended when/for …)" condition fits this project; for a consumer or personal app (booking, shopping, a hobby, a household tool), recommend the option whose condition fits and present it first (`modules/interview.md` §3).
+
 Depth values: `full` = new app, no brand · `brand` = new app with an existing brand (skip personality and visual questions) · `feature` = feature inside an existing app (jobs, flows, states only).
 
 ## Answer → downstream decision (most consequential)
@@ -11,6 +13,7 @@ Depth values: `full` = new app, no brand · `brand` = new app with an existing b
 | interview.context.frequency | many times a day | Persistent visible nav, keyboard shortcuts, motion budget near zero on repeated actions (≤150ms, no entrance choreography). `motion.frequency-budget` |
 | interview.context.frequency | a few times a year | Guided flows, one-thing-per-page, more explanation, room for one signature moment. `flows-forms.one-thing-per-page` |
 | interview.context.device | phone first | Bottom tabs (≤5 destinations), 44px targets, single-column layouts; desktop is the adaptation. `a11y.target-size` |
+| interview.context.device | both equally | 375 and 1440 designed together; one nav model with a phone and a desktop form, same destinations and order. `layout.intrinsic-responsive` |
 | interview.purpose.expertise | experts / daily pros | Density over air, tables over cards, shortcuts, fewer confirmations; resolve `usability.tension-guidance-expertise` toward efficiency. |
 | interview.jobs.top-tasks | 1 dominant task | That task owns the home screen and the primary action; nav may be minimal. `flows-forms.primary-action-clarity` |
 | interview.jobs.top-tasks | 6+ equal destinations | Sidebar or grouped nav, search. `ia-nav.nav-model-by-count` |
@@ -96,9 +99,9 @@ depth: [full, brand]
 area: context
 question: "Where will people mostly use it?"
 options:
-  - "Desktop/laptop mainly, phone must still work (recommended for work tools and dashboards)"
-  - "Phone mainly, desktop must still work (recommended for consumer, on-the-go, or field use)"
-  - "Both equally"
+  - "Desktop/laptop mainly, phone must still work (recommended for work tools, dashboards and long editing sessions)"
+  - "Phone mainly, desktop must still work (recommended for consumer, personal, on-the-go or field use)"
+  - "Both equally — the same people switch devices for the same tasks (e.g. booking, shopping, personal finance)"
   - "Tablet or a fixed screen (kiosk, TV, in-store)"
 why: "Primary device sets the navigation model (sidebar vs bottom tabs), target sizes, and which layout is designed first. Designing the secondary device as an adaptation, not a squeeze, avoids broken layouts at 375px."
 cards: [ia-nav.nav-model-by-count, a11y.target-size, layout.intrinsic-responsive]
@@ -111,9 +114,10 @@ depth: [full, brand]
 area: context
 question: "How often will a typical user open it?"
 options:
-  - "Several times a day (recommended to assume for work tools — err toward speed)"
+  - "Several times a day (recommended when it is a work tool or a daily habit — err toward speed)"
   - "A few times a week"
-  - "Once a month or less"
+  - "A few times a month"
+  - "A few times a year (renewals, taxes, booking an annual check-up)"
   - "Once, or a handful of times ever (onboarding, a form, a checkout)"
 why: "Frequency sets the motion budget and nav visibility: daily-use screens get near-instant feedback and persistent nav because every extra 200ms is paid hundreds of times; rare-use screens can afford guidance and one expressive moment."
 cards: [motion.frequency-budget, motion.tension-delight-speed, ia-nav.visible-destinations]
@@ -128,8 +132,8 @@ follow-ups:
 area: context
 question: "What's the situation around them when they use it?"
 options:
-  - "At a desk, focused (recommended default for work tools)"
-  - "On the move, distracted, one hand"
+  - "Seated and focused, at a desk or on the sofa (recommended for work tools and sit-down personal tasks)"
+  - "On the move, distracted, one hand (recommended for phone-first consumer apps)"
   - "Bright light or outdoors / shared screen / presentation"
   - "Under stress or time pressure (support, ops, emergencies)"
 why: "Distraction and stress shrink attention: they call for bigger targets, fewer choices per screen, higher contrast and forgiving errors. Focused desk use allows more density."

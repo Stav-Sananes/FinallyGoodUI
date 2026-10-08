@@ -101,3 +101,20 @@ test("next pages router", () => {
   assert.equal(p.router, "pages");
   assert.equal(p.frameworkVersion, "14.2.3");
 });
+
+test("testing tools installed in a parent node_modules are detected (Node resolution walks up)", () => {
+  const parent = tmp();
+  for (const p of ["playwright", "@axe-core/playwright"]) {
+    mkdirSync(join(parent, "node_modules", p), { recursive: true });
+    writeFileSync(join(parent, "node_modules", p, "package.json"), JSON.stringify({ name: p, version: "1.0.0" }));
+  }
+  const app = join(parent, "apps", "shop");
+  mkdirSync(app, { recursive: true });
+  writeFileSync(join(app, "index.html"), "<!doctype html>");
+  assert.deepEqual(detect(app).testing, { playwright: true, axe: true });
+  // negative control: same layout without the installed packages
+  const bare = join(tmp(), "apps", "shop");
+  mkdirSync(bare, { recursive: true });
+  writeFileSync(join(bare, "index.html"), "<!doctype html>");
+  assert.deepEqual(detect(bare).testing, { playwright: false, axe: false });
+});

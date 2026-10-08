@@ -1,10 +1,10 @@
-// DTCG-subset token helpers (spec §5.5): group metadata, value parsing and CSS formatting.
+// DTCG-subset token helpers: group metadata, value parsing and CSS formatting.
 
-export const GROUPS = ["color", "font", "text", "space", "radius", "shadow", "duration", "easing"];
-export const VAR_PREFIX = { color: "color", font: "font", text: "text", space: "space", radius: "radius",
+export const GROUPS = ["color", "font", "text", "tracking", "space", "radius", "shadow", "duration", "easing"];
+export const VAR_PREFIX = { color: "color", font: "font", text: "text", tracking: "tracking", space: "space", radius: "radius",
   shadow: "shadow", duration: "duration", easing: "ease" };
-export const TYPES = { color: "color", font: "fontFamily", text: "dimension", space: "dimension", radius: "dimension",
-  shadow: "shadow", duration: "duration", easing: "cubicBezier" };
+export const TYPES = { color: "color", font: "fontFamily", text: "dimension", tracking: "dimension", space: "dimension",
+  radius: "dimension", shadow: "shadow", duration: "duration", easing: "cubicBezier" };
 
 export const EASING_KEYWORDS = {
   linear: [0, 0, 1, 1], ease: [0.25, 0.1, 0.25, 1], "ease-in": [0.42, 0, 1, 1],
@@ -64,7 +64,7 @@ export function cssValue(group, value) {
   switch (group) {
     case "font":
       return fontCss(value);
-    case "text": case "space": case "radius": {
+    case "text": case "tracking": case "space": case "radius": {
       const d = parseDimension(value);
       return d ? `${fmtNum(d.value)}${d.unit}` : String(value);
     }
@@ -94,6 +94,19 @@ export function fontCss(list) {
 }
 
 export const darkOf = (tok) => tok?.$extensions?.fgu?.dark;
+
+/**
+ * Per-step type metrics carried on text tokens ($extensions.fgu): line-height (unitless) and
+ * letter-spacing (dimension, em). Returns [{suffix, prop, value}] as CSS strings, emitted as
+ * --text-<step>--line-height / --text-<step>--letter-spacing (Tailwind v4's own naming).
+ */
+export function textMetrics(tok) {
+  const fgu = tok?.$extensions?.fgu || {};
+  const out = [];
+  if (fgu.lineHeight != null) out.push({ suffix: "line-height", prop: "lineHeight", value: String(fgu.lineHeight) });
+  if (fgu.letterSpacing != null) out.push({ suffix: "letter-spacing", prop: "letterSpacing", value: cssValue("tracking", fgu.letterSpacing) });
+  return out;
+}
 
 /** Flatten to [{group, name, varName, light, dark, token}] in group order. */
 export function flatten(tokens) {

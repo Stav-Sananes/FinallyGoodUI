@@ -42,7 +42,7 @@ Suggest a dependency only if all three hold:
 Ask the user in one line, e.g. "The list-to-detail transition needs shared-element animation. Add `motion` (~5kb with LazyMotion)? Otherwise I'll use the View Transitions API with a crossfade fallback in Firefox." **Never add a second general-purpose animation library.**
 
 ## Code rules
-- Tokens only: no hex, rgb, px spacing or ms literals in components (the hook flags them).
+- Tokens only: no hex, rgb, px spacing or ms literals in components (the hook flags them). Durations and easings come from the motion tokens in CSS **and** JS: `var(--duration-*)`/`var(--ease-*)` in styles, the `motion-tokens` helper from `recipes/INDEX.md` for Motion, WAAPI, Svelte/Vue transition props and timers that wait on a transition. Never copy a recipe's example numbers.
 - Animate only `transform` and `opacity` (`motion.compositor-only`); never `transition: all`.
 - Wrap spatial motion so reduced motion drops it (`motion.reduced-motion`). Gate hover motion with `(hover: hover) and (pointer: fine)`.
 - Semantic HTML before ARIA; buttons are `<button>`; every input has a visible label (`flows-forms.labels-above`).

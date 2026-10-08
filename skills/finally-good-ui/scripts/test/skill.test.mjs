@@ -90,7 +90,7 @@ function exportSkill() {
   return d;
 }
 
-test("export-rules writes the 4 targets per §8", () => {
+test("export-rules writes the 4 targets", () => {
   const skill = exportSkill();
   const out = tmp();
   writeFileSync(join(out, "AGENTS.md"), "# Project\n\nKeep me.\n");

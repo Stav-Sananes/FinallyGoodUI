@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Build the stack profile (spec §5.4) from package.json, lockfiles and project files.
-import { join, basename, resolve } from "node:path";
+// Build the stack profile from package.json, lockfiles and project files.
+import { join, basename, resolve, dirname } from "node:path";
 import { runCli, isMain } from "./lib/cli.mjs";
 import { readJson, readText, walk, isDir, isFile, exists } from "./lib/fs.mjs";
 
@@ -9,7 +9,7 @@ Usage: detect-stack.mjs [--root <dir>]
 
 Detects framework, router, styling (Tailwind v3/v4, CSS modules, Sass, CSS-in-JS),
 component kit, animation and icon libraries, TypeScript, package manager, dev script,
-testing tools, design files and whether .design/ exists. Prints the §5.4 profile as JSON.
+testing tools, design files and whether .design/ exists. Prints the stack profile as JSON.
 
 Options:
   --root <dir>   project root (default: cwd)
@@ -25,6 +25,17 @@ const isDesignFile = (rel) => {
   return DESIGN_NAMES.has(b) || /^tailwind\.config\.(js|cjs|mjs|ts|cts|mts)$/.test(b) ||
     /^theme\.(ts|tsx|js|jsx|mjs|cjs|css|scss|json)$/.test(b) || /\.tokens\.json$/.test(b);
 };
+
+/**
+ * Is `name` importable from `root`? Mirrors Node's lookup: <dir>/node_modules/<name> in root and
+ * every parent. A stat per directory, no module loading, so it stays fast.
+ */
+export function resolvable(root, name) {
+  for (let d = resolve(root); ; d = dirname(d)) {
+    if (isFile(join(d, "node_modules", name, "package.json"))) return true;
+    if (dirname(d) === d) return false;
+  }
+}
 
 export function detectStack(rootArg = ".") {
   const root = resolve(rootArg);
@@ -125,7 +136,10 @@ export function detectStack(rootArg = ".") {
     typescript: has("typescript") || file("tsconfig.json"),
     packageManager,
     devScript,
-    testing: { playwright: has("@playwright/test") || has("playwright"), axe: has("@axe-core/playwright") },
+    testing: {
+      playwright: has("@playwright/test") || has("playwright") || resolvable(root, "playwright") || resolvable(root, "@playwright/test"),
+      axe: has("@axe-core/playwright") || resolvable(root, "@axe-core/playwright"),
+    },
     designFiles,
     existingDesign: exists(join(root, ".design")),
   };

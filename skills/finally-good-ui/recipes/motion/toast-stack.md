@@ -11,11 +11,12 @@
 ## CSS baseline
 ```html
 <section class="toasts" aria-label="Notifications">
-  <ol role="status" aria-live="polite" aria-relevant="additions"></ol>
+  <div class="toast-list" role="status" aria-live="polite" aria-relevant="additions"></div>
 </section>
 ```
+No `<ol>`/`<li>`: `role="status"` on a list strips its list role, so its items fail axe `listitem` / `aria-allowed-role`. Toasts are plain `div`s inside the one live region.
 ```css
-.toasts ol { position: fixed; inset: auto var(--space-4) var(--space-4) auto; display: grid; margin: 0; padding: 0; list-style: none; z-index: 50; }
+.toast-list { position: fixed; inset: auto var(--space-4) var(--space-4) auto; display: grid; margin: 0; padding: 0; list-style: none; z-index: 50; }
 .toast {
   grid-area: 1 / 1;                        /* all toasts share one cell; offset by --i */
   align-self: end;
@@ -41,40 +42,41 @@
 }
 ```
 ```js
-const list = document.querySelector('.toasts ol');
+import { ms } from './motion-tokens.js'; // helper in recipes/INDEX.md
+const list = document.querySelector('.toast-list');
 function restack() { [...list.children].forEach((t, i) => t.style.setProperty('--i', i)); }
-export function toast(message, { action, onAction, timeout = 5000 } = {}) {
-  const li = document.createElement('li');
-  li.className = 'toast';
-  li.innerHTML = `<p></p>${action ? '<button type="button"></button>' : ''}`;
-  li.querySelector('p').textContent = message;
-  if (action) Object.assign(li.querySelector('button'), { textContent: action, onclick: () => { onAction?.(); dismiss(li); } });
-  list.prepend(li);
+export function toast(message, { action, onAction, timeout = 5000 } = {}) { // reading time, not motion
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<p></p>${action ? '<button type="button"></button>' : ''}`;
+  el.querySelector('p').textContent = message;
+  if (action) Object.assign(el.querySelector('button'), { textContent: action, onclick: () => { onAction?.(); dismiss(el); } });
+  list.prepend(el);
   while (list.children.length > 3) list.lastElementChild.remove();
   restack();
-  let timer = setTimeout(() => dismiss(li), timeout);
-  li.addEventListener('pointerenter', () => clearTimeout(timer));
-  li.addEventListener('pointerleave', () => (timer = setTimeout(() => dismiss(li), 2000)));
-  li.addEventListener('focusin', () => clearTimeout(timer));
+  let timer = setTimeout(() => dismiss(el), timeout);
+  el.addEventListener('pointerenter', () => clearTimeout(timer));
+  el.addEventListener('pointerleave', () => (timer = setTimeout(() => dismiss(el), 2000)));
+  el.addEventListener('focusin', () => clearTimeout(timer));
 }
-function dismiss(li) {
-  if (!li.isConnected || li.classList.contains('is-leaving')) return;
-  li.classList.add('is-leaving');
-  const done = () => { li.remove(); restack(); };
-  li.addEventListener('transitionend', done, { once: true });
-  setTimeout(done, 400); // fallback when reduced motion skips the transition
+function dismiss(el) {
+  if (!el.isConnected || el.classList.contains('is-leaving')) return;
+  el.classList.add('is-leaving');
+  const done = () => { el.remove(); restack(); };
+  el.addEventListener('transitionend', done, { once: true });
+  setTimeout(done, ms('short') + 50); // fallback when reduced motion skips the transition
 }
 ```
 
 ## React + Motion
-Hand-rolling a stack in React is rarely worth it: use **Sonner** (shadcn's toast). Tune it rather than rebuild: `position`, `duration`, `visibleToasts={3}`, `closeButton`, action for Undo. If Motion is already present and you need a custom one, use `<AnimatePresence initial={false}>` with `m.li layout` and `exit={{ opacity: 0, x: 40 }}`.
+Hand-rolling a stack in React is rarely worth it: use **Sonner** (shadcn's toast). Tune it rather than rebuild: `position`, `duration`, `visibleToasts={3}`, `closeButton`, action for Undo. If Motion is already present and you need a custom one, use `<AnimatePresence initial={false}>` inside the persistent `role="status"` div, with `m.div layout`, `exit={{ opacity: 0, x: 40 }}` and durations from `sec()` (recipes/INDEX.md), never literals.
 
 ## Vue / Svelte
-- Vue: `<TransitionGroup tag="ol" name="toast">` gives enter/leave + `.toast-move` for restacking. Or `vue-sonner`.
-- Svelte: `{#each toasts as t (t.id)}<li in:fly={{ y: 24, duration: 300 }} out:fly={{ x: 40, duration: 150 }} animate:flip={{ duration: 250 }}>`. Or `svelte-sonner`.
+- Vue: `<TransitionGroup tag="div" name="toast">` inside the persistent `role="status"` div gives enter/leave + `.toast-move { transition: transform var(--duration-standard) var(--ease-move) }` for restacking. Or `vue-sonner`.
+- Svelte: `{#each toasts as t (t.id)}<div in:fly={{ y: 24, duration: ms('medium') }} out:fly={{ x: 40, duration: ms('short') }} animate:flip={{ duration: ms('standard') }}>` (`ms` from recipes/INDEX.md). Or `svelte-sonner`.
 
 ## A11y
-- One persistent live region in the DOM from page load (added-late regions are often not announced). `role="status"` + `polite`; use `role="alert"` only for urgent failures.
+- One persistent live region in the DOM from page load (added-late regions are often not announced). `role="status"` + `polite` on a `div`, never on a list; use `role="alert"` only for urgent failures.
 - Auto-dismiss ≥ 5s, paused on hover and focus (WCAG 2.2.1). Undo stays reachable by keyboard; provide a shortcut or a history for missed toasts in data-critical apps.
 - Don't move focus into the toast.
 

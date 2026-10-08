@@ -1,5 +1,5 @@
 {
-  "$description": "finally-good-ui neutral defaults (DTCG subset, spec §5.5). Cool neutrals with a slight hue, one restrained accent, designed dark values in $extensions.fgu.dark. Adjust from the brief; do not ship unexamined.",
+  "$description": "finally-good-ui neutral defaults (DTCG subset). Cool neutrals with a slight hue, one restrained accent, designed dark values in $extensions.fgu.dark. Adjust from the brief; do not ship unexamined.",
   "color": {
     "background": { "$type": "color", "$value": "oklch(0.99 0.002 265)", "$extensions": { "fgu": { "dark": "oklch(0.17 0.008 265)" } }, "$description": "App canvas" },
     "foreground": { "$type": "color", "$value": "oklch(0.21 0.012 265)", "$extensions": { "fgu": { "dark": "oklch(0.95 0.004 265)" } }, "$description": "Body text on background" },
@@ -26,16 +26,19 @@
     "mono": { "$type": "fontFamily", "$value": ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", "monospace"] }
   },
   "text": {
-    "xs": { "$type": "dimension", "$value": { "value": 12, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.5 } }, "$description": "Captions, badges; never body" },
-    "sm": { "$type": "dimension", "$value": { "value": 14, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.5 } } },
-    "base": { "$type": "dimension", "$value": { "value": 16, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.5 } }, "$description": "Body; also the minimum for inputs (prevents iOS zoom)" },
-    "lg": { "$type": "dimension", "$value": { "value": 18, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.5 } } },
-    "xl": { "$type": "dimension", "$value": { "value": 20, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.4 } } },
-    "2xl": { "$type": "dimension", "$value": { "value": 24, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.3 } } },
-    "3xl": { "$type": "dimension", "$value": { "value": 30, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.25 } } },
-    "4xl": { "$type": "dimension", "$value": { "value": 36, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.2 } } },
-    "5xl": { "$type": "dimension", "$value": { "value": 48, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.1 } } },
-    "6xl": { "$type": "dimension", "$value": { "value": 60, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.05 } } }
+    "xs": { "$type": "dimension", "$value": { "value": 12, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.5, "letterSpacing": { "value": 0, "unit": "em" } } }, "$description": "Captions, badges; never body" },
+    "sm": { "$type": "dimension", "$value": { "value": 14, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.5, "letterSpacing": { "value": 0, "unit": "em" } } } },
+    "base": { "$type": "dimension", "$value": { "value": 16, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.5, "letterSpacing": { "value": 0, "unit": "em" } } }, "$description": "Body; also the minimum for inputs (prevents iOS zoom)" },
+    "lg": { "$type": "dimension", "$value": { "value": 18, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.5, "letterSpacing": { "value": 0, "unit": "em" } } } },
+    "xl": { "$type": "dimension", "$value": { "value": 20, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.4, "letterSpacing": { "value": 0, "unit": "em" } } } },
+    "2xl": { "$type": "dimension", "$value": { "value": 24, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.3, "letterSpacing": { "value": -0.01, "unit": "em" } } } },
+    "3xl": { "$type": "dimension", "$value": { "value": 30, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.25, "letterSpacing": { "value": -0.015, "unit": "em" } } } },
+    "4xl": { "$type": "dimension", "$value": { "value": 36, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.2, "letterSpacing": { "value": -0.02, "unit": "em" } } } },
+    "5xl": { "$type": "dimension", "$value": { "value": 48, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.1, "letterSpacing": { "value": -0.025, "unit": "em" } } } },
+    "6xl": { "$type": "dimension", "$value": { "value": 60, "unit": "px" }, "$extensions": { "fgu": { "lineHeight": 1.05, "letterSpacing": { "value": -0.03, "unit": "em" } } } }
+  },
+  "tracking": {
+    "caps": { "$type": "dimension", "$value": { "value": 0.06, "unit": "em" }, "$description": "Uppercase labels at 10-13px open up (craft.tracking-by-size); never letterspace lowercase text" }
   },
   "space": {
     "0": { "$type": "dimension", "$value": { "value": 0, "unit": "px" } },

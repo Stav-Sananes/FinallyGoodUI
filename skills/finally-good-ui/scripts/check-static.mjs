@@ -1,10 +1,11 @@
 #!/usr/bin/env node
-// Layer-1 static checks (spec §5.6). Regex/heuristic based: fast, dependency-free, best effort.
+// Layer-1 static checks. Regex/heuristic based: fast, dependency-free, best effort.
 import { join, resolve, relative, isAbsolute, extname, basename } from "node:path";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
-import { readText, readJson, walk, isDir, isFile, toPosix, lineIndex } from "./lib/fs.mjs";
+import { readdirSync } from "node:fs";
+import { readText, readJson, walk, isFile, toPosix, lineIndex, IGNORE_DIRS } from "./lib/fs.mjs";
 import { cssBlocks, declarations, styleView, markupView } from "./lib/css.mjs";
-import { findColors, findSpacing, stripComments, JS_EXTS, MARKUP_EXTS } from "./lib/scan.mjs";
+import { findColors, findSpacing, stripComments, jsStringLiterals, JS_EXTS, MARKUP_EXTS } from "./lib/scan.mjs";
 import { RULE_CARDS, DEFAULT_SPACE_SCALE } from "./lib/rules.mjs";
 import { groupTokens, parseDimension } from "./lib/tokens.mjs";
 
@@ -17,14 +18,18 @@ Rules: ${Object.keys(RULE_CARDS).join(", ")}.
 
 Options:
   --root <dir>      project root (default: cwd)
-  --files <list>    comma-separated files (relative to root or absolute). Default: scan src/, app/,
-                    components/, pages/ and top-level files (css, scss, tsx, jsx, vue, svelte, html, astro)
+  --files <list>    comma-separated files (relative to root or absolute). Default: every UI source file
+                    under the root (css, scss, js, mjs, tsx, jsx, vue, svelte, html, astro), skipping
+                    node_modules/dist/build/.design etc., test dirs, *.test/*.spec, *.min.js and *.config.*
   --tokens <file>   tokens.json whose space scale replaces the default px scale for off-scale-spacing
   --help
 `;
 
-const SCAN_DIRS = ["src", "app", "components", "pages"];
-const SCAN_EXTS = new Set([".css", ".scss", ".tsx", ".jsx", ".vue", ".svelte", ".html", ".astro"]);
+const SCAN_EXTS = new Set([".css", ".scss", ".js", ".mjs", ".tsx", ".jsx", ".vue", ".svelte", ".html", ".astro"]);
+// Top-level directories that never hold the shipped UI (on top of fs.mjs IGNORE_DIRS).
+const SKIP_TOP = new Set(["test", "tests", "__tests__", "e2e", "cypress", "playwright", "fixtures", "__mocks__",
+  "venv", "env", "target", "Pods", "android", "ios"]);
+const SKIP_NESTED = /(^|\/)(__tests__|__mocks__|tests?|e2e|fixtures|vendor)\//;
 const LAYOUT_PROPS = /^(width|height|top|left|right|bottom|inset|margin(-[a-z-]+)?|padding(-[a-z-]+)?|(max|min)-(width|height))$/;
 const LAYOUT_JS_KEYS = /\b(width|height|top|left|right|bottom|margin\w*|padding\w*|maxHeight|maxWidth|minHeight|minWidth)\s*:/g;
 const INFINITE = /infinite|Infinity|animate-(spin|pulse|ping|bounce)/;
@@ -35,14 +40,49 @@ const EXEMPT_COLOR_FILE = (f) => {
 };
 
 function isDefaultScanned(f) {
-  return SCAN_EXTS.has(extname(f).toLowerCase()) && !/\.(test|spec)\.[jt]sx?$/.test(f) && !f.endsWith(".d.ts");
+  return SCAN_EXTS.has(extname(f).toLowerCase()) && !/\.(test|spec)\.[cm]?[jt]sx?$/.test(f) && !f.endsWith(".d.ts") &&
+    !/[.-]min\.m?js$/.test(f) && !/(^|\/)[^/]*\.config\.[cm]?[jt]s$/.test(f) && !SKIP_NESTED.test(f);
 }
 
+/** Every UI source file under root. Plain HTML apps keep UI in css/, js/, scripts/ etc., so walk it all. */
 export function listDefaultFiles(root) {
-  const files = [];
-  for (const d of SCAN_DIRS) if (isDir(join(root, d))) files.push(...walk(root, join(root, d), { exts: SCAN_EXTS }));
-  files.push(...walk(root, root, { exts: SCAN_EXTS, maxDepth: 0 }));
+  const files = walk(root, root, { exts: SCAN_EXTS, maxDepth: 0 });
+  let entries = [];
+  try { entries = readdirSync(root, { withFileTypes: true }); } catch { /* unreadable root */ }
+  for (const e of entries) {
+    if (!e.isDirectory() || IGNORE_DIRS.has(e.name) || SKIP_TOP.has(e.name) || e.name.startsWith(".")) continue;
+    files.push(...walk(root, join(root, e.name), { exts: SCAN_EXTS, maxDepth: 10, maxFiles: 5000 }));
+  }
   return [...new Set(files)].filter(isDefaultScanned).sort();
+}
+
+/** Custom properties defined in CSS (files and <style> blocks): Map name -> [values]. */
+function customProps(rel, text, vars) {
+  const ext = extname(rel).toLowerCase();
+  const clean = stripComments(rel, text);
+  const css = /^\.(css|scss|sass|less)$/.test(ext) ? clean : MARKUP_EXTS.has(ext) ? styleView(clean) : null;
+  if (!css) return;
+  for (const m of css.matchAll(/(?<![\w-])(--[\w-]+)\s*:\s*([^;{}]+)/g)) {
+    const list = vars.get(m[1]) || [];
+    list.push(m[2].trim());
+    vars.set(m[1], list);
+  }
+}
+
+const maxMs = (v) => Math.max(-1, ...[...String(v).matchAll(/(?<![\w.-])(\d*\.?\d+)(ms|s)\b/g)].map((m) => (m[2] === "s" ? m[1] * 1000 : Number(m[1]))));
+
+/**
+ * Replace var(--x[, fallback]) with its definition. With several definitions (themes, media
+ * queries) the longest duration wins: the check is about the worst case a user can see.
+ */
+export function resolveVars(value, vars, depth = 0) {
+  if (!vars || depth > 8 || !value.includes("var(")) return value;
+  return value.replace(/var\(\s*(--[\w-]+)\s*(?:,\s*((?:[^()]|\([^()]*\))*))?\)/g, (all, name, fb) => {
+    const cands = vars.get(name) || (fb != null ? [fb.trim()] : []);
+    if (!cands.length) return all;
+    const resolved = cands.map((c) => resolveVars(c, vars, depth + 1));
+    return resolved.reduce((a, b) => (maxMs(b) > maxMs(a) ? b : a));
+  });
 }
 
 function spaceScale(tokensFile) {
@@ -176,14 +216,14 @@ export function checkFile(rel, text, ctx) {
 
   // ---- long-duration
   const judge = (idx, ms, what) => {
-    if (ms > 500) add("long-duration", idx, "high", `${what} ${Math.round(ms)}ms exceeds the 500ms ceiling (spec §4); routine UI stays ≤300ms.`);
+    if (ms > 500) add("long-duration", idx, "high", `${what} ${Math.round(ms)}ms exceeds the 500ms ceiling (motion.frequency-budget); routine UI stays ≤300ms.`);
     else if (ms > 300) add("long-duration", idx, "medium", `${what} ${Math.round(ms)}ms is over 300ms; reserve long/hero durations for rare moments.`);
   };
   each(/(?<![\w-])(transition(?:-duration)?|animation(?:-duration)?|transitionDuration|animationDuration)\s*:\s*(['"`]?)([^;{}\n]+)/gi, clean, (m) => {
     const value = m[2] ? m[3].split(m[2])[0] : m[3];
     if (INFINITE.test(value) || INFINITE.test(enclosingBody(clean, m.index))) return;
     if (/backdrop|overlay/i.test(enclosingSelector(clean, m.index) + lineAt(clean, m.index))) return;
-    const ms = durationsMs(m[1].replace(/Duration$/, "-duration").toLowerCase(), value);
+    const ms = durationsMs(m[1].replace(/Duration$/, "-duration").toLowerCase(), value.includes("var(") ? resolveVars(value, ctx.vars?.()) : value);
     if (ms.length) judge(m.index, Math.max(...ms), "Duration");
   });
   if (markup) {
@@ -338,9 +378,21 @@ function textNodes(src) {
   return out;
 }
 
+/** Copy inside JS string/template literals: [text, index]. Markup in a literal yields its text nodes. */
+function literalTextNodes(clean) {
+  const out = [];
+  for (const { index, value } of jsStringLiterals(clean)) {
+    if (!/[A-Za-zÀ-ɏ]/.test(value)) continue;
+    if (/(?:\bfrom|\bimport\s*\(?|\brequire\s*\()\s*$/.test(clean.slice(Math.max(0, index - 12), index - 1))) continue;
+    if (/<[A-Za-z!/]/.test(value)) for (const [t, i] of textNodes(value)) out.push([t, index + i]);
+    else out.push([value, index]);
+  }
+  return out;
+}
+
 function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, each, ctx, line }) {
   const jsx = ext === ".tsx" || ext === ".jsx";
-  const hasText = isMarkup || jsx;
+  const hasText = isMarkup || isJs;
   const src = markup || clean;
 
   // ---- dead-control
@@ -369,7 +421,8 @@ function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, ea
     add("placeholder-content", m.index, "medium", `Stock/placeholder asset service ${m[1]}; use the product's real images, or initials/an honest empty slot.`));
 
   if (hasText) {
-    for (const [t, idx] of textNodes(src)) {
+    const nodes = isMarkup ? textNodes(src) : [...(jsx ? textNodes(src) : []), ...literalTextNodes(clean)];
+    for (const [t, idx] of nodes) {
       const claim = t.match(CLAIMS);
       if (claim) add("unsourced-claim", idx + claim.index, "medium", `Trust claim "${claim[0].trim()}" must come from the brief; invented proof misleads. Remove it or cite the source in decisions.md.`);
       const bw = t.match(BUZZWORDS);
@@ -474,21 +527,36 @@ function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, ea
 
 export function checkStatic(rootArg = ".", { files, tokens } = {}) {
   const root = resolve(rootArg);
-  const ctx = { scale: spaceScale(tokens ? resolve(root, tokens) : null), motionAt: null, guarded: false, glass: new Map() };
+  const ctx = { scale: spaceScale(tokens ? resolve(root, tokens) : null), motionAt: null, guarded: false, glass: new Map(), vars: null };
   const defaults = listDefaultFiles(root);
   const targets = files?.length
     ? files.map((f) => toPosix(isAbsolute(f) ? relative(root, f) : f)).filter((f) => isFile(join(root, f)))
     : defaults;
+  const texts = new Map();
+  const read = (rel) => { if (!texts.has(rel)) texts.set(rel, readText(join(root, rel))); return texts.get(rel); };
+  // custom properties from the whole project (so var(--duration-x) resolves even in a --files run);
+  // built on first use, and only CSS/markup files are read for it
+  let vars = null;
+  ctx.vars = () => {
+    if (vars) return vars;
+    vars = new Map();
+    for (const rel of new Set([...defaults, ...targets])) {
+      if (JS_EXTS.has(extname(rel).toLowerCase())) continue;
+      const t = read(rel);
+      if (t != null && t.length <= 1_000_000) customProps(rel, t, vars);
+    }
+    return vars;
+  };
   const findings = [];
   for (const rel of targets) {
-    const text = readText(join(root, rel));
+    const text = read(rel);
     if (text == null || text.length > 1_000_000) continue;
     findings.push(...checkFile(rel, text, ctx));
   }
   if (ctx.motionAt && !ctx.guarded && files?.length) {
     // single-file runs: look for a reduced-motion guard anywhere in the project before flagging
     for (const rel of defaults) {
-      const t = readText(join(root, rel));
+      const t = read(rel);
       if (t && /prefers-reduced-motion|motion-safe:|motion-reduce:|useReducedMotion|reducedMotion|MotionConfig/.test(t)) { ctx.guarded = true; break; }
     }
   }

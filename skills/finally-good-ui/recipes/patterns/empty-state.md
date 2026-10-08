@@ -58,7 +58,7 @@ Not needed. Switch variants with plain conditionals; the fade above covers the t
 
 ## Vue / Svelte
 - Vue: `<Transition name="fade" mode="out-in">` around `v-if="items.length" … v-else-if="filtersActive" … v-else`.
-- Svelte: `{#if}` chain with `in:fade={{ duration: 250 }}` on each variant.
+- Svelte: `{#if}` chain with `in:fade={{ duration: ms('standard') }}` on each variant.
 
 ## A11y
 - Headline is a real heading at the right level; the illustration is `aria-hidden`.

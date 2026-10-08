@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Export the canon index, interview checklist, motion tokens and rubric as rules for
-// Cursor, Windsurf, GitHub Copilot and AGENTS.md (spec §8).
+// Cursor, Windsurf, GitHub Copilot and AGENTS.md.
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkdirSync, writeFileSync } from "node:fs";

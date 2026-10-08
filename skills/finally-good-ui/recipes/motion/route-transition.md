@@ -46,13 +46,14 @@ export function navigate(render, direction /* 'forward' | 'back' | 'lateral' */)
 - Next.js / other meta-frameworks: use their built-in view-transition support if the installed version has it; otherwise wrap `router.push` in `document.startViewTransition`.
 - Motion alternative (interruptible, no snapshot): key the outlet by pathname.
 ```tsx
+import { sec, ease } from "./motion-tokens"; // recipes/INDEX.md
 const location = useLocation();
 const outlet = useOutlet();               // freeze the old page during exit
 <AnimatePresence mode="popLayout" initial={false}>
   <m.main key={location.pathname}
     initial={{ opacity: 0, x: reduce ? 0 : dir * 16 }}
-    animate={{ opacity: 1, x: 0, transition: { duration: 0.25, ease: [0, 0, 0, 1] } }}
-    exit={{ opacity: 0, x: reduce ? 0 : dir * -16, transition: { duration: 0.15, ease: [0.3, 0, 1, 1] } }}>
+    animate={{ opacity: 1, x: 0, transition: { duration: sec('standard'), ease: ease('enter') } }}
+    exit={{ opacity: 0, x: reduce ? 0 : dir * -16, transition: { duration: sec('short'), ease: ease('exit') } }}>
     {outlet}
   </m.main>
 </AnimatePresence>

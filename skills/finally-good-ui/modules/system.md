@@ -9,26 +9,28 @@ Goal: turn the chosen direction (or the confirmed existing brand) into **one sou
 | Direction chosen in step 4 | The direction's spec (palette, type, motion personality) |
 | Directions skipped, no brand | `tokens/default.tokens.json`, then adjust using the brief's personality cards |
 
-## 2. Build the tokens (contract: spec §5.5, DTCG subset)
+## 2. Build the tokens (DTCG subset)
+- **Contract:** the shape of `tokens/default.tokens.json`. Groups as in that file (`color`, `font`, `text`, `tracking`, `space`, `radius`, `shadow`, `duration`, `easing`; `GROUPS` in `scripts/lib/tokens.mjs` is authoritative); each token is `{"$type","$value","$description"?}`; dark values in `$extensions.fgu.dark`. `emit-tokens.mjs --help` lists the CSS variables emitted (`--color-*` … `--ease-*`).
 - **Colour**
   - Semantic pairs, never raw hues in components: `background/foreground`, `card/card-foreground`, `primary/primary-foreground`, `muted/muted-foreground`, `accent/accent-foreground`, `destructive/destructive-foreground`, `border`, `input`, `ring`.
   - Add `success`, `warning` and `info` pairs if the blueprint has status UI (`data.status-encoding`).
   - Generate from 3 inputs: **base** (neutral hue and temperature), **accent**, **contrast level** (`color.role-scale`, `color.contrast-by-construction`).
   - Neutrals take a slight tint of the accent hue.
   - Dark values go in `$extensions.fgu.dark`, designed rather than inverted (`color.dark-mode-not-inverted`).
-- **Check every text pair** in both themes:
+- **Check every text pair on every surface level** in both themes: each text role (`foreground`, `muted-foreground`, `primary` as text, status colours) on the canvas (`background`) **and** on every raised surface the blueprint uses: `card`, popover/menu, sheet/dialog, `muted` fills, selected/hover rows (`accent`). Dark-mode surfaces get lighter as they rise (`craft.tinted-shadows`), so a pair that passes on the canvas can fail on a popover.
   `node "${CLAUDE_SKILL_DIR}/scripts/lib/contrast.mjs" <fg> <bg>`
-  Body text needs at least 4.5:1, large text and UI at least 3:1. Fix the value, not the rule.
+  Body text needs at least 4.5:1, large text and UI at least 3:1 (`a11y.contrast-minimums`). Fix the value, not the rule.
 - **Type**
   - Families: at most 2 plus mono (`typography.limited-families-weights`).
-  - Scale: from the direction, or 12/14/16/18/20/24/30/36/48/60. Body at least 16px.
+  - Scale: from the direction, or 12/14/16/18/20/24/30/36/48/60.
+  - Body size follows density and audience: **16px** by default (consumer, mixed or beginner audiences, reading-heavy screens, phone-first, AAA/low-vision needs); **13–14px** only when the brief resolves to dense expert daily use (`personality.dense-expert`, `data.tension-density-clarity` → density). Either way, form inputs stay ≥ 16px on mobile (`a11y.target-size`) and no readable text goes below 12px.
   - Line-height 1.4–1.6 for body, tighter for display.
 - **Space**: a 4-based scale (`layout.spacing-scale`).
 - **Radius and shadow**: one radius family and one elevation system. Radius shows personality (tight means serious or dense; soft means friendly).
 - **Motion**: see below.
 
 ## 3. Motion language
-Start from the duration and easing tokens (spec §4). Then set them from the brief:
+Start from the `duration` and `easing` groups in `tokens/default.tokens.json` (durations instant 50 · micro 100 · short 150 · standard 250 · medium 300 · long 400 · hero 500 ms; easings enter, enter-emphasized, exit, move, snappy, linear). Then set them from the brief:
 
 | Brief says | Axis position | Adjust |
 |---|---|---|
@@ -53,6 +55,8 @@ node "${CLAUDE_SKILL_DIR}/scripts/emit-tokens.mjs" --in .design/tokens.json --fo
 | shadcn | `css` (+ tailwind format) | merge into the existing `:root` / `.dark` variables, keeping shadcn's names |
 | MUI | `mui` | `theme.ts` via `createTheme` |
 | Anything else / plain | `css` | `tokens.css`, imported first |
+
+If dark mode is applied by attribute, class or localStorage rather than `prefers-color-scheme`, or the app is dark by default, record how in `.design/config.json` `theme` (see `check-flows.mjs --help`) so the flow walk renders both schemes for real.
 
 **Merge, never clobber.** Show the diff for the existing theme files and keep any unrelated variables.
 

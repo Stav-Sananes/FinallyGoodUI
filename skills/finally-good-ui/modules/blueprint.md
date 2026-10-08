@@ -15,7 +15,7 @@ Inputs: `.design/brief.md` (must be `status: confirmed`; if not, run `modules/in
 
 ## 2. Choose the navigation model
 
-Count primary destinations (exclude settings, profile, help). Then apply, in order — the first matching row wins, and log a decision record:
+Count primary destinations (exclude settings, profile, help). Then apply, in order — the first matching row wins, and log a decision record. Frequency: `daily` = several times a day or week; `rare` = a few times a month or less (`context.frequency`).
 
 | Primary destinations | Device (`context.device`) | Frequency / depth | Model | Cards |
 |---|---|---|---|---|
@@ -23,8 +23,10 @@ Count primary destinations (exclude settings, profile, help). Then apply, in ord
 | 2–5 | phone-first | any | Bottom tab bar, labels always visible | ia-nav.visible-destinations, a11y.target-size |
 | 2–5 | desktop-first | daily | Persistent sidebar or top bar, always visible, current item marked | ia-nav.visible-destinations, ia-nav.wayfinding-location |
 | 2–5 | desktop-first | rare | Top bar; hub page linking to sections | ia-nav.tension-discoverability-minimalism |
+| 2–5 | both equally | any | One nav designed at both sizes: top bar or sidebar ≥ 1024px, bottom tab bar < 768px, same destinations in the same order; design 375 and 1440 together, neither is the squeeze | ia-nav.visible-destinations, layout.intrinsic-responsive |
 | 6–12 | desktop-first | any | Sidebar with 2–4 labelled groups; collapsible for experts | ia-nav.nav-model-by-count, ia-nav.progressive-disclosure |
 | 6–12 | phone-first | any | Merge/demote to ≤5 tabs + "More"; challenge the count first | ia-nav.tension-discoverability-minimalism |
+| 6–12 | both equally | any | Grouped sidebar ≥ 1024px; the same top groups as ≤ 5 tabs + "More" on phone; challenge the count first | ia-nav.nav-model-by-count, ia-nav.tension-discoverability-minimalism |
 | 12+ or volume in thousands | any | any | Search-first (command palette / global search) + grouped sidebar | ia-nav.search-vs-browse |
 | linear process (setup, checkout, application) | any | rare | Stepper / wizard, no global nav inside the flow, visible progress | flows-forms.one-thing-per-page, usability.system-status |
 

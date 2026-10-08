@@ -7,7 +7,7 @@ import { spawnSync } from "node:child_process";
 import { join, dirname, extname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const UI_EXT = new Set([".css", ".scss", ".tsx", ".jsx", ".vue", ".svelte", ".html", ".astro"]);
+const UI_EXT = new Set([".css", ".scss", ".tsx", ".jsx", ".js", ".mjs", ".vue", ".svelte", ".html", ".astro"]);
 const here = dirname(fileURLToPath(import.meta.url));
 
 function done() { process.exit(0); }

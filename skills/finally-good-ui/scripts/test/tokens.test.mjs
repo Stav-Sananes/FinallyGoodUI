@@ -71,7 +71,7 @@ test("extract --write never overwrites without --force", () => {
 // ---------- default tokens ----------
 const DEF = join(SR, "tokens", "default.tokens.json");
 
-test("default tokens: groups, motion exactly per spec §4", () => {
+test("default tokens: groups, motion exactly per the duration/easing tokens", () => {
   const t = JSON.parse(readFileSync(DEF, "utf8"));
   for (const g of ["color", "font", "text", "space", "radius", "shadow", "duration", "easing"]) assert.ok(t[g], g);
   const d = Object.fromEntries(Object.entries(t.duration).map(([k, v]) => [k, v.$value.value]));
@@ -108,7 +108,7 @@ test("default tokens: semantic pairs pass 4.5:1 in light and dark", () => {
 // ---------- emit ----------
 const emit = (fmt, file = DEF) => run("emit-tokens.mjs", ["--in", file, "--format", fmt]);
 
-test("emit css: names + dark blocks per §5.5", () => {
+test("emit css: names + dark blocks", () => {
   const r = emit("css");
   assert.equal(r.code, 0, r.stderr);
   const s = r.stdout;
@@ -164,4 +164,36 @@ test("emit handles extracted tokens round trip", () => {
   const s = emit("css", join(d, "t.json")).stdout;
   assert.match(s, /--color-primary-foreground: oklch\(0\.985 0 0\)/);
   assert.match(s, /--font-sans: Inter, ui-sans-serif, system-ui/);
+});
+
+// ---------- tracking (canon craft.tracking-by-size) ----------
+test("default tokens: letter-spacing per text step, tightening with size; caps tracking positive", () => {
+  const t = JSON.parse(readFileSync(DEF, "utf8"));
+  const ls = Object.fromEntries(Object.entries(t.text).map(([k, v]) => [k, v.$extensions.fgu.letterSpacing]));
+  for (const [k, v] of Object.entries(ls)) { assert.ok(v, `text.${k} has letterSpacing`); assert.equal(v.unit, "em"); }
+  for (const k of ["xs", "sm", "base", "lg"]) assert.equal(ls[k].value, 0, `body step ${k} untracked`);
+  for (const k of ["5xl", "6xl"]) assert.ok(ls[k].value <= -0.02 && ls[k].value >= -0.04, `display ${k}`);
+  for (const k of ["2xl", "3xl", "4xl"]) assert.ok(ls[k].value <= -0.01 && ls[k].value >= -0.02, `heading ${k}`);
+  assert.ok(t.tracking.caps.$value.value >= 0.04 && t.tracking.caps.$value.value <= 0.1);
+});
+
+test("emit: tracking reaches every format", () => {
+  const css = emit("css").stdout;
+  assert.match(css, /--text-6xl--letter-spacing: -0\.03em;/);
+  assert.match(css, /--text-base--letter-spacing: 0em;/);
+  assert.match(css, /--tracking-caps: 0\.06em;/);
+  const tw4 = emit("tailwind4").stdout;
+  assert.match(tw4, /@theme \{[^}]*--text-6xl--letter-spacing: -0\.03em;/);
+  assert.match(tw4, /--tracking-caps: 0\.06em;/);
+  const tw3 = emit("tailwind3").stdout;
+  assert.match(tw3, /"6xl": \["var\(--text-6xl\)",\{"lineHeight":"var\(--text-6xl--line-height\)","letterSpacing":"var\(--text-6xl--letter-spacing\)"\}\]/);
+  assert.match(tw3, /letterSpacing: \{[^}]*"caps": "var\(--tracking-caps\)"/);
+  const mui = JSON.parse(emit("mui").stdout);
+  assert.equal(mui.typography.h1.letterSpacing, "-0.03em");
+  assert.equal(mui.typography.h1.lineHeight, 1.05);
+  assert.equal(mui.typography.body1.letterSpacing, "0em");
+  assert.equal(mui.typography.overline.letterSpacing, "0.06em");
+  const json = JSON.parse(emit("json").stdout);
+  assert.equal(json.light["--text-6xl--letter-spacing"], "-0.03em");
+  assert.equal(json.light["--tracking-caps"], "0.06em");
 });

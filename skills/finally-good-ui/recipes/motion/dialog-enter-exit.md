@@ -58,18 +58,19 @@
 ## React + Motion
 Use when dialog content changes height/steps inside (layout animation) or the project already uses Motion. Radix/shadcn `Dialog` + `forceMount` pattern:
 ```tsx
+import { sec, ease } from "./motion-tokens"; // recipes/INDEX.md
 <AnimatePresence>
   {open && (
     <Dialog.Portal forceMount>
       <Dialog.Overlay asChild forceMount>
         <m.div className="overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-               exit={{ opacity: 0 }} transition={{ duration: 0.3 }} />
+               exit={{ opacity: 0 }} transition={{ duration: sec('medium') }} />
       </Dialog.Overlay>
       <Dialog.Content asChild forceMount>
         <m.div
           initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: 0.25, ease: [0, 0, 0, 1] } }}
-          exit={{ opacity: 0, ...(reduce ? {} : { y: 8, scale: 0.97 }), transition: { duration: 0.15, ease: [0.3, 0, 1, 1] } }}
+          animate={{ opacity: 1, y: 0, scale: 1, transition: { duration: sec('standard'), ease: ease('enter') } }}
+          exit={{ opacity: 0, ...(reduce ? {} : { y: 8, scale: 0.97 }), transition: { duration: sec('short'), ease: ease('exit') } }}
         >{children}</m.div>
       </Dialog.Content>
     </Dialog.Portal>
@@ -80,7 +81,7 @@ Use when dialog content changes height/steps inside (layout animation) or the pr
 
 ## Vue / Svelte
 - Vue: `<Teleport to="body"><Transition name="dlg">` around the panel; separate `<Transition name="fade">` for the backdrop so their durations differ.
-- Svelte: `in:fly={{ y: 8, duration: 250, easing: cubicOut }} out:fade={{ duration: 150 }}` on the panel; `transition:fade={{ duration: 300 }}` on the backdrop. Or use native `<dialog>` with the CSS above.
+- Svelte: `in:fly={{ y: 8, duration: ms('standard'), easing: cubicOut }} out:fade={{ duration: ms('short') }}` on the panel; `transition:fade={{ duration: ms('medium') }}` on the backdrop. Or use native `<dialog>` with the CSS above.
 
 ## A11y
 - `showModal()` gives focus trap, `Escape`, inert background and top layer for free — prefer it over a div.

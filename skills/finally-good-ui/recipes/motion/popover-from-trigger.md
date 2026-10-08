@@ -53,6 +53,7 @@ Use when the stack already has Radix/shadcn (they expose the origin as a CSS var
 ```tsx
 import { AnimatePresence, LazyMotion, domAnimation, m, useReducedMotion } from "motion/react";
 import * as Popover from "@radix-ui/react-popover";
+import { sec, ease } from "./motion-tokens"; // recipes/INDEX.md
 
 export function AnimatedPopover({ open, onOpenChange, trigger, children }: Props) {
   const reduce = useReducedMotion();
@@ -68,8 +69,8 @@ export function AnimatedPopover({ open, onOpenChange, trigger, children }: Props
                 <m.div
                   style={{ transformOrigin: "var(--radix-popover-content-transform-origin)" }}
                   initial={hidden}
-                  animate={{ opacity: 1, scale: 1, transition: { duration: 0.15, ease: [0.23, 1, 0.32, 1] } }}
-                  exit={{ ...hidden, transition: { duration: 0.1, ease: [0.3, 0, 1, 1] } }}
+                  animate={{ opacity: 1, scale: 1, transition: { duration: sec('short'), ease: ease('snappy') } }}
+                  exit={{ ...hidden, transition: { duration: sec('micro'), ease: ease('exit') } }}
                 >
                   {children}
                 </m.div>
@@ -86,7 +87,7 @@ Without Motion, shadcn's `data-[state=open]:animate-in zoom-in-95` utilities are
 
 ## Vue / Svelte
 - Vue: `<Transition name="pop">` with `.pop-enter-from, .pop-leave-to { opacity: 0; transform: scale(.95) }` and the enter/leave timings above on `.pop-enter-active` / `.pop-leave-active`.
-- Svelte: `transition:scale={{ start: 0.95, opacity: 0, duration: 150, easing: cubicOut }}`; set `transform-origin` via a style bound to the placement. Use `in:`/`out:` separately for a faster exit.
+- Svelte: `transition:scale={{ start: 0.95, opacity: 0, duration: ms('short'), easing: cubicOut }}`; set `transform-origin` via a style bound to the placement. Use `in:`/`out:` separately for a faster exit.
 
 ## A11y
 - Focus moves into menus on open and back to the trigger on close; `Escape` closes (the Popover API and Radix handle this).

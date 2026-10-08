@@ -86,3 +86,52 @@ export function findSpacing(text, jsLike = false) {
   }
   return out;
 }
+
+/**
+ * String and template literals in (comment-blanked) JS: [{index, value}]. `index` is the offset of
+ * the first character inside the quotes; `${...}` interpolations are blanked to spaces in `value`
+ * (offsets preserved) and literals nested inside them are returned too. Best effort: regex
+ * literals are not recognised.
+ */
+export function jsStringLiterals(text) {
+  const out = [];
+  const n = text.length;
+  // Scan code from i; stop at an unmatched "}" when inExpr. Returns the index reached.
+  const code = (i, inExpr) => {
+    let depth = 0;
+    while (i < n) {
+      const c = text[i];
+      if (c === '"' || c === "'") {
+        let j = i + 1;
+        while (j < n && text[j] !== c && text[j] !== "\n") { if (text[j] === "\\") j++; j++; }
+        out.push({ index: i + 1, value: text.slice(i + 1, Math.min(j, n)) });
+        i = j + 1;
+      } else if (c === "`") {
+        i = template(i + 1);
+      } else if (c === "{") { depth++; i++; }
+      else if (c === "}") {
+        if (inExpr && depth === 0) return i;
+        depth--; i++;
+      } else i++;
+    }
+    return i;
+  };
+  // Scan a template body starting after the opening backtick. Returns the index after the closer.
+  const template = (start) => {
+    let value = "", i = start;
+    while (i < n && text[i] !== "`") {
+      if (text[i] === "\\") { value += text.slice(i, i + 2); i += 2; continue; }
+      if (text[i] === "$" && text[i + 1] === "{") {
+        const end = code(i + 2, true);
+        value += " ".repeat(Math.min(end + 1, n) - i);
+        i = end + 1;
+        continue;
+      }
+      value += text[i++];
+    }
+    out.push({ index: start, value: value.slice(0, Math.max(0, Math.min(i, n) - start)) });
+    return i + 1;
+  };
+  code(0, false);
+  return out.sort((a, b) => a.index - b.index);
+}

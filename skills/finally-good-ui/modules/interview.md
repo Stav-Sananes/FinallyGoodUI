@@ -75,8 +75,9 @@ Then:
 > How often will a typical user open it?
 > **A. Several times a day (recommended — you described it as the team's daily tracker)**
 > B. A few times a week
-> C. Once a month or less
-> D. Once or a handful of times ever
+> C. A few times a month
+> D. A few times a year
+> E. Once or a handful of times ever
 > *Why it matters:* daily use means every animation is paid hundreds of times, so screens stay near-instant and navigation is always visible; rare use can afford guidance and one expressive moment. [motion.frequency-budget, ia-nav.visible-destinations]
 > Or say "you decide".
 

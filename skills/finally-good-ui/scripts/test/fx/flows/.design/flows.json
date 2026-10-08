@@ -1,0 +1,6 @@
+{"flows":[
+ {"name":"browse","steps":[{"goto":"/index.html"},{"waitFor":"text=Apple"},{"screenshot":"list"},
+   {"click":"text=Apple"},{"waitFor":"text=Apple details"},{"screenshot":"detail"}],
+  "states":[{"name":"error","route":"**/data/items.json","mock":"error"},
+            {"name":"empty","goto":"/index.html?state=empty","waitFor":"text=No items yet"}]}
+]}

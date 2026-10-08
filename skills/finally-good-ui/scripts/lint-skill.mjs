@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Structure lint for the skill: SKILL.md length, canon card schema (§5.2), question schema (§5.3),
+// Structure lint for the skill: SKILL.md length, canon card schema, question schema,
 // id references. With --write: regenerate canon/INDEX.md and backfill each card's asked-by.
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,8 +14,8 @@ Usage: lint-skill.mjs [--root <skill dir>] [--write] [--strict]
 
 Validates the finally-good-ui skill folder:
   - SKILL.md exists and is under 500 lines
-  - every canon card (canon/<domain>.md, "### <id>" + yaml) has the §5.2 fields
-  - every interview question (interview/question-bank.md) follows §5.3
+  - every canon card (canon/<domain>.md, "### <id>" + yaml) has the required card fields
+  - every interview question (interview/question-bank.md) follows the question schema
   - every referenced id resolves: card tensions/asked-by, question cards, static-rule cards
 Prints {"tool":"lint-skill","ok","errors":[{file,line,message}],"warnings","stats","written"}.
 

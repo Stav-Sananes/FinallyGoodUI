@@ -1,7 +1,7 @@
 /* finally-good-ui browser probe (self-contained, no imports).
  * Inject via Playwright (page.addInitScript({path}) or page.addScriptTag({path}))
  * or any browser tool's JS-exec, then: await window.__fguProbe({touch, focus, tokens, reducedMotion}).
- * Result (spec §5.6): {tool:"probe", findings:[{rule,severity,selector,message,card}], summary,
+ * Result: {tool:"probe", findings:[{rule,severity,selector,message,card}], summary,
  *   animations:[{selector,duration,easing,properties,iterations}], metrics:{overflowX,cls,viewport,
  *   type:{sizes,weights,families,bodySize,paragraphMaxCh,paragraphMinLineHeight}, tokenCoverage}}.
  * Injected early (init script) it also records animations that finish before the probe runs.
@@ -66,6 +66,17 @@
     var cs = getComputedStyle(el);
     if (cs.visibility === 'hidden' || cs.display === 'none' || +cs.opacity === 0) return false;
     return !el.closest('[aria-hidden="true"],[inert]');
+  }
+  // The visually-hidden (sr-only) pattern, detected by computed style rather than class name:
+  // a <=1px box with overflow hidden/clip, or an absolutely positioned box clipped to nothing
+  // (clip: rect(0 0 0 0) / clip-path: inset(50%)).
+  function visuallyHidden(el, cs) {
+    cs = cs || getComputedStyle(el);
+    var r = el.getBoundingClientRect();
+    if (r.width <= 1 && r.height <= 1 && /(hidden|clip)/.test(cs.overflowX + ' ' + cs.overflowY)) return true;
+    if (!/^(absolute|fixed)$/.test(cs.position)) return false;
+    if (/^rect\(\s*0(px)?[\s,]+0(px)?[\s,]+0(px)?[\s,]+0(px)?\s*\)$/.test(cs.clip)) return true;
+    return /^inset\(\s*50%\s*\)$/.test(cs.clipPath);
   }
   var cv = document.createElement('canvas'); cv.width = cv.height = 1;
   var ctx = cv.getContext('2d', { willReadFrequently: true }), cc = {};
@@ -162,6 +173,7 @@
         if (!ownText(el) || !visible(el)) return;
         var cs = getComputedStyle(el);
         if (cs.textOverflow === 'ellipsis' || (cs.webkitLineClamp && cs.webkitLineClamp !== 'none')) return;
+        if (visuallyHidden(el, cs)) return; // .sr-only / .visually-hidden: clipped on purpose, read by screen readers
         var x = /(hidden|clip)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1;
         var y = /(hidden|clip)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 2;
         if (x || y) add('clipped-text', 'medium', el, 'Text is cut off (' + (x ? 'horizontal' : 'vertical') + ') without an ellipsis', 'layout.intrinsic-responsive');
@@ -230,26 +242,54 @@
       });
     });
 
+    var focusStats = null;
     if (opts.focus) await run('focus-visible', async function () {
       var st = document.createElement('style');
       st.textContent = '*,*::before,*::after{transition:none!important;animation-play-state:paused!important}';
       document.head.appendChild(st);
-      var prevActive = document.activeElement, keys = ['outlineStyle', 'outlineWidth', 'outlineColor', 'outlineOffset', 'boxShadow', 'borderColor', 'backgroundColor', 'color', 'textDecorationLine'];
+      function fv(el) { try { return el.matches(':focus-visible'); } catch (_) { return true; } } // no :focus-visible support: don't gate
+      var prevActive = document.activeElement, prevFV = !!(prevActive && prevActive !== document.body && fv(prevActive));
+      // Visible signature of a box. Outline sub-properties only count when an outline is actually drawn
+      // (Chromium's UA sheet changes outline-offset on a:focus-visible even under `outline: none`).
+      function outlineSig(cs) { return cs.outlineStyle === 'none' || !(parseFloat(cs.outlineWidth) > 0) ? 'none' : [cs.outlineStyle, cs.outlineWidth, cs.outlineColor, cs.outlineOffset].join(' '); }
+      function boxSig(cs) { return [outlineSig(cs), cs.boxShadow, cs.borderTopStyle === 'none' ? 'none' : cs.borderColor + ' ' + cs.borderWidth, cs.backgroundColor].join('|'); }
+      function pseudoSig(el, p) { var cs = getComputedStyle(el, p); return cs.content === 'none' || cs.content === 'normal' ? 'none' : [cs.content, cs.opacity, cs.transform, cs.visibility, boxSig(cs)].join('|'); }
+      // The element itself, its ::before/::after, and the neighbours focus styles commonly target
+      // (`.field:has(input:focus-visible)`, `input:focus-visible + span`, `:focus-within`).
+      function snapshot(el) {
+        var cs = getComputedStyle(el), s = [boxSig(cs), cs.color, cs.textDecorationLine, pseudoSig(el, '::before'), pseudoSig(el, '::after')];
+        if (el.parentElement && el.parentElement !== document.body) s.push(boxSig(getComputedStyle(el.parentElement)));
+        if (el.nextElementSibling) s.push(boxSig(getComputedStyle(el.nextElementSibling)));
+        return s.join('#');
+      }
+      var checked = 0, unverified = 0;
       try {
         for (var i = 0; i < focusables.length && i < (opts.focusLimit || 60); i++) {
           var el = focusables[i];
-          var before = getComputedStyle(el), b = {}; keys.forEach(function (k) { b[k] = before[k]; });
-          el.focus({ preventScroll: true });
+          if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+          var b = snapshot(el);
+          // focusVisible:true makes scripted focus match :focus-visible (as keyboard Tab would). A plain
+          // el.focus() after any mouse click does not, so every :focus-visible style looked absent.
+          el.focus({ preventScroll: true, focusVisible: true });
           if (document.activeElement !== el) continue;
+          if (!fv(el)) { unverified++; el.blur(); continue; } // browser ignored focusVisible: can't judge
+          checked++;
           var after = getComputedStyle(el);
-          var changed = keys.some(function (k) { return after[k] !== b[k]; });
-          var ring = after.outlineStyle !== 'none' && parseFloat(after.outlineWidth) > 0;
-          if (!changed && !ring) add('focus-invisible', 'high', el, 'No visible change on focus (outline/box-shadow/border/background identical)', 'a11y.focus-visible');
+          var changed = snapshot(el) !== b;
+          var ring = outlineSig(after) !== 'none';
+          if (!changed) add('focus-invisible', 'high', el, 'No visible change on focus (outline/box-shadow/border/background identical)', 'a11y.focus-visible');
           else if (ring && after.outlineStyle !== 'auto' && parseFloat(after.outlineWidth) < 2) add('focus-weak', 'low', el, 'Focus outline ' + after.outlineWidth + ' (< 2px; WCAG 2.4.13 AAA advisory)', 'a11y.focus-visible');
           var r = el.getBoundingClientRect();
           if (r.right <= 0 || r.bottom + scrollY <= 0 || r.left >= root.scrollWidth) add('focus-hidden', 'medium', el, 'Focused element is off-canvas', 'a11y.focus-visible');
+          el.blur();
         }
-      } finally { if (prevActive && prevActive.focus) prevActive.focus({ preventScroll: true }); else if (document.activeElement) document.activeElement.blur(); st.remove(); }
+      } finally {
+        if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+        // Restore focus without leaving a forced ring behind for the screenshot taken next.
+        if (prevActive && prevActive !== document.body && prevActive.focus) prevActive.focus({ preventScroll: true, focusVisible: prevFV });
+        st.remove();
+        focusStats = { checked: checked, unverified: unverified };
+      }
     });
 
     var animations = [];
@@ -339,7 +379,7 @@
     var truncated = {}; Object.keys(counts).forEach(function (k) { if (k !== 'contrast-unknown' && counts[k] > max) truncated[k] = counts[k]; });
     return {
       tool: 'probe', url: location.href, findings: findings, summary: summary, animations: animations,
-      metrics: { overflowX: overflowX, cls: +cls.toFixed(4), viewport: { width: vw, height: vh }, contrastUnknown: counts['contrast-unknown'] || 0, type: type, tokenCoverage: tokenCoverage, truncated: truncated },
+      metrics: { overflowX: overflowX, cls: +cls.toFixed(4), viewport: { width: vw, height: vh }, contrastUnknown: counts['contrast-unknown'] || 0, type: type, tokenCoverage: tokenCoverage, truncated: truncated, focus: focusStats },
       errors: errors
     };
   };

@@ -58,10 +58,11 @@ function closeDetail(id) {
 ## React + Motion
 Inside one React tree, Motion `layoutId` is simpler and interruptible (VT is not):
 ```tsx
+import { sec, ease } from "./motion-tokens"; // recipes/INDEX.md
 <LazyMotion features={domMax}>
   {selected
     ? <m.img layoutId={`thumb-${selected.id}`} src={selected.img} alt={selected.name} className="detail-hero"
-             transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }} />
+             transition={{ duration: sec('medium'), ease: ease('move') }} />
     : items.map(it => <m.img key={it.id} layoutId={`thumb-${it.id}`} src={it.img} alt={it.name}
                              onClick={() => setSelected(it)} />)}
 </LazyMotion>

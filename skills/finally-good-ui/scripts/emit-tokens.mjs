@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// Emit a DTCG-subset tokens.json (spec §5.5) in a stack-native format.
+// Emit a DTCG-subset tokens.json in a stack-native format.
 import { resolve } from "node:path";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
 import { readText } from "./lib/fs.mjs";
-import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssValue, darkOf } from "./lib/tokens.mjs";
+import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssValue, darkOf, textMetrics } from "./lib/tokens.mjs";
 import { toHex } from "./lib/contrast.mjs";
 
 const HELP = `
@@ -13,9 +13,11 @@ Prints the tokens in the requested format to stdout:
   css        :root vars + ".dark, [data-theme=dark]" + prefers-color-scheme dark block
   tailwind4  @theme { ... } + the same dark override blocks (spacing aliases as --spacing-*)
   tailwind3  module.exports = { theme: { extend: {...} } } referencing the CSS vars (emit css too)
-  mui        createTheme-shaped JSON (palette, colorSchemes.light/dark, typography, shape, transitions)
+  mui        createTheme-shaped JSON (palette, colorSchemes.light/dark, typography incl. h1..caption/overline
+             variants with lineHeight + letterSpacing, shape, transitions)
   json       {"light": {"--var": value}, "dark": {...}}
-Variable names: --color-* --font-* --text-* --space-* --radius-* --shadow-* --duration-* --ease-*.
+Variable names: --color-* --font-* --text-* (+ --text-*--line-height, --text-*--letter-spacing) --tracking-*
+--space-* --radius-* --shadow-* --duration-* --ease-*.
 
 Options:
   --in <file>      tokens file (relative to --root)
@@ -41,8 +43,7 @@ function lightDecls(rows) {
   const out = [];
   for (const r of rows) {
     out.push(`${r.varName}: ${r.light};`);
-    const lh = r.group === "text" ? r.token?.$extensions?.fgu?.lineHeight : null;
-    if (lh != null) out.push(`${r.varName}--line-height: ${lh};`);
+    if (r.group === "text") for (const m of textMetrics(r.token)) out.push(`${r.varName}--${m.suffix}: ${m.value};`);
   }
   return out;
 }
@@ -63,12 +64,18 @@ export function emitTailwind4(tokens) {
 
 export function emitTailwind3(tokens) {
   const rows = flatten(tokens);
-  const KEYS = { color: "colors", font: "fontFamily", text: "fontSize", space: "spacing", radius: "borderRadius",
-    shadow: "boxShadow", duration: "transitionDuration", easing: "transitionTimingFunction" };
+  const KEYS = { color: "colors", font: "fontFamily", text: "fontSize", tracking: "letterSpacing", space: "spacing",
+    radius: "borderRadius", shadow: "boxShadow", duration: "transitionDuration", easing: "transitionTimingFunction" };
   const extend = {};
   for (const r of rows) {
     const k = KEYS[r.group];
-    (extend[k] ||= {})[r.name] = `var(${r.varName})`;
+    let v = `var(${r.varName})`;
+    if (r.group === "text") {
+      // Tailwind 3 fontSize tuple: [size, { lineHeight, letterSpacing }]
+      const metrics = Object.fromEntries(textMetrics(r.token).map((m) => [m.prop, `var(${r.varName}--${m.suffix})`]));
+      if (Object.keys(metrics).length) v = [v, metrics];
+    }
+    (extend[k] ||= {})[r.name] = v;
   }
   const body = Object.entries(extend).map(([k, obj]) =>
     `      ${k}: {\n${Object.entries(obj).map(([n, v]) => `        ${JSON.stringify(n)}: ${JSON.stringify(v)},`).join("\n")}\n      },`).join("\n");
@@ -79,7 +86,11 @@ export function emitTailwind3(tokens) {
 export function emitJson(tokens) {
   const rows = flatten(tokens);
   const light = {}, dark = {};
-  for (const r of rows) { light[r.varName] = r.light; if (r.dark != null) dark[r.varName] = r.dark; }
+  for (const r of rows) {
+    light[r.varName] = r.light;
+    if (r.group === "text") for (const m of textMetrics(r.token)) light[`${r.varName}--${m.suffix}`] = m.value;
+    if (r.dark != null) dark[r.varName] = r.dark;
+  }
   return { light, dark };
 }
 
@@ -117,6 +128,18 @@ export function emitMui(tokens) {
   if (fonts.mono) typography.fontFamilyMonospace = cssValue("font", fonts.mono.$value);
   const base = texts.base ?? texts.md;
   if (base) typography.fontSize = px(parseDimension(base.$value));
+  // Variants carry the per-step metrics (craft.tracking-by-size). Mapped by the default step names.
+  const variant = (tok) => {
+    const d = parseDimension(tok.$value);
+    const v = d ? { fontSize: `${Math.round((px(d) / 16) * 10000) / 10000}rem` } : {};
+    for (const m of textMetrics(tok)) v[m.prop] = m.prop === "lineHeight" ? Number(m.value) : m.value;
+    return v;
+  };
+  const VARIANTS = { h1: "6xl", h2: "5xl", h3: "4xl", h4: "3xl", h5: "2xl", h6: "xl", subtitle1: "lg",
+    body1: texts.base ? "base" : "md", body2: "sm", caption: "xs" };
+  for (const [mui, ours] of Object.entries(VARIANTS)) if (texts[ours]) typography[mui] = variant(texts[ours]);
+  const caps = Object.fromEntries(groupTokens(tokens?.tracking)).caps;
+  if (caps) typography.overline = { ...(texts.xs ? variant(texts.xs) : {}), textTransform: "uppercase", letterSpacing: cssValue("tracking", caps.$value) };
 
   const radii = Object.fromEntries(groupTokens(tokens?.radius));
   const r = radii.md ?? radii.base ?? radii.DEFAULT ?? Object.values(radii).find((t) => (parseDimension(t.$value)?.value ?? 0) > 0);

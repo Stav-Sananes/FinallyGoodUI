@@ -63,6 +63,16 @@ claude plugin marketplace add Stav-Sananes/finally-good-ui
 claude plugin install finally-good-ui@finally-good-ui-market
 ```
 
+### Develop from a clone
+
+Opening the repo in Claude Code does **not** load it as a plugin. The skills may still be readable, but `hooks/hooks.json` runs `${CLAUDE_PLUGIN_ROOT}/…/hook-check.mjs`, and that variable is only set for a loaded plugin, so the Layer-1 edit hook never fires. Load the clone for the session instead:
+
+```bash
+claude --plugin-dir /path/to/finally-good-ui   # the folder that holds .claude-plugin/plugin.json
+```
+
+Run it from the project you are testing on; restart the session to pick up edits to `hooks.json` or agents. Disable a marketplace copy first (`claude plugin disable finally-good-ui@finally-good-ui-market`) so two copies don't both run. `claude plugin validate .` checks the manifest. `--bare` skips plugin hooks, so don't combine it with `--plugin-dir` when testing the hook. The hook still only acts in projects that have a `.design/` folder.
+
 ## Use
 
 ```

@@ -25,7 +25,7 @@ const at = (o, file, line) => o.findings.filter((f) => f.file === file && f.line
 
 const all = ["next", "vite", "vue", "html", "mui"].map((n) => check(fx(n)));
 
-test("output shape per §5.6", () => {
+test("output shape", () => {
   for (const o of all) {
     for (const f of o.findings) {
       assert.ok(RULES[f.rule], f.rule);
@@ -140,4 +140,68 @@ test("clean project yields no findings", () => {
   const o = check(d);
   assert.deepEqual(o.findings, []);
   assert.deepEqual(o.summary, { high: 0, medium: 0, low: 0 });
+});
+
+// ---------- plain HTML + JS apps (bug A, found by the end-to-end examples) ----------
+const plainApp = () => {
+  const d = tmp();
+  for (const p of ["css", "js", "node_modules/lib", "dist", "test"]) mkdirSync(join(d, p), { recursive: true });
+  writeFileSync(join(d, "index.html"), '<!doctype html><link rel="stylesheet" href="css/app.css"><main id="app"></main><script src="js/app.js"></script>\n');
+  writeFileSync(join(d, "css", "tokens.css"), ":root { --duration-micro: 100ms; --duration-slow: 600ms; --duration-alias: var(--duration-slow); }\n");
+  writeFileSync(join(d, "css", "app.css"),
+    ".a { transition: transform var(--duration-micro) ease-out; }\n" +          // 1: 100ms, fine
+    ".b { transition: transform var(--duration-slow) ease-out; }\n" +           // 2: 600ms, high
+    ".c { animation: pop var(--duration-alias) ease-out both; }\n" +            // 3: alias -> 600ms, high
+    ".d { transition: opacity var(--nope, 450ms) ease-out; }\n" +               // 4: fallback 450ms, medium
+    "@media (prefers-reduced-motion: reduce) { .b { transition: none; } }\n");
+  writeFileSync(join(d, "js", "app.js"), [
+    "const robust = 2; if (a > robust && b < c) go();",                         // 1: code, not copy
+    'btn.textContent = "Unlock seamless booking";',                             // 2: buzzword
+    "list.innerHTML = `<p class=\"x\">Ready — ${count} pets</p>`;",            // 3: em-dash-copy
+    'const proof = "Trusted by 10,000+ customers";',                            // 4: unsourced-claim
+    "toast(`Saved 🎉`);",                                                        // 5: emoji-ui
+    'el.innerHTML = `<img src="${pet.photo}"><div onclick="open()">${pet.name}</div>`;', // 6: img-no-alt, div-onclick
+    'cta.innerHTML = `<button class="b">Get started</button>`;',               // 7: generic-cta
+  ].join("\n") + "\n");
+  writeFileSync(join(d, "js", "vendor.min.js"), 'x.innerHTML="<img src=a>";\n');
+  writeFileSync(join(d, "vite.config.js"), 'export default { server: { port: 5173 }, color: "#ff0000" };\n');
+  writeFileSync(join(d, "node_modules", "lib", "index.js"), 'x.innerHTML = "<img src=a>";\n');
+  writeFileSync(join(d, "dist", "app.js"), 'x.innerHTML = "<img src=a>";\n');
+  writeFileSync(join(d, "test", "app.test.js"), 'x.innerHTML = "<img src=a>";\n');
+  return d;
+};
+
+test("default scan covers .js files and css/ js/ dirs; excludes node_modules, dist, tests, minified, configs", () => {
+  const o = check(plainApp());
+  const files = new Set(o.findings.map((f) => f.file));
+  assert.ok(files.has("css/app.css"), "css/ scanned");
+  assert.ok(files.has("js/app.js"), "js/ scanned");
+  for (const f of files) assert.doesNotMatch(f, /node_modules|^dist\/|^test\/|\.min\.js$|vite\.config/, f);
+  assert.ok(has(o, "img-no-alt", "js/app.js", 6));
+  assert.ok(has(o, "div-onclick", "js/app.js", 6));
+  assert.ok(!has(o, "no-reduced-motion"), "guard in css/app.css is seen");
+});
+
+test("copy rules read JS string literals, not code", () => {
+  const o = check(plainApp());
+  const J = "js/app.js";
+  assert.ok(has(o, "buzzword", J, 2));
+  assert.ok(has(o, "em-dash-copy", J, 3));
+  assert.ok(has(o, "unsourced-claim", J, 4));
+  assert.ok(has(o, "emoji-ui", J, 5));
+  assert.ok(has(o, "generic-cta", J, 7));
+  assert.ok(!has(o, "buzzword", J, 1), "identifiers between > and < are code, not copy");
+});
+
+test("long-duration resolves var(--x) from custom properties in scanned CSS", () => {
+  const d = plainApp();
+  const o = check(d);
+  const C = "css/app.css";
+  assert.ok(!has(o, "long-duration", C, 1), "100ms token is fine");
+  assert.equal(o.findings.find((f) => f.rule === "long-duration" && f.file === C && f.line === 2)?.severity, "high");
+  assert.equal(o.findings.find((f) => f.rule === "long-duration" && f.file === C && f.line === 3)?.severity, "high");
+  assert.equal(o.findings.find((f) => f.rule === "long-duration" && f.file === C && f.line === 4)?.severity, "medium");
+  // single-file run still resolves tokens defined in another file
+  const one = check(d, ["--files", "css/app.css"]);
+  assert.ok(has(one, "long-duration", C, 2));
 });

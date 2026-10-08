@@ -1,6 +1,6 @@
 # Motion
 
-Scope: when to animate, how long, with which curve, on which properties, and how motion stays coherent and safe across the app. Token values come from the spec's motion language (durations `instant 50 · micro 100 · short 150 · standard 250 · medium 300 · long 400 · hero 500`; easings `enter`, `enter-emphasized`, `exit`, `move`, `snappy`, `linear`).
+Scope: when to animate, how long, with which curve, on which properties, and how motion stays coherent and safe across the app. Token values come from the `duration` and `easing` groups in `tokens/default.tokens.json` (durations `instant 50 · micro 100 · short 150 · standard 250 · medium 300 · long 400 · hero 500`; easings `enter`, `enter-emphasized`, `exit`, `move`, `snappy`, `linear`).
 
 ### motion.purpose-only
 

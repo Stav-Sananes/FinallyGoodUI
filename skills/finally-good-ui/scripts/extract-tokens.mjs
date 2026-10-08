@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Extract an existing design system into DTCG-subset tokens (spec §5.5) plus usage, drift
+// Extract an existing design system into DTCG-subset tokens plus usage, drift
 // and inferred roles. Never executes project code (Tailwind v3 config is read by regex).
 import { join, resolve, extname, basename, dirname } from "node:path";
 import { writeFileSync, mkdirSync } from "node:fs";
