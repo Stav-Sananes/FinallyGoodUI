@@ -15,13 +15,14 @@ const HELP = `
 Usage: extract-tokens.mjs [--root <dir>] [--files a.css,b.js] [--write [--force]]
 
 Reads the project's design files (from detect-stack, or --files) and prints JSON:
-  tokens    DTCG-subset groups (color/font/text/space/radius/shadow/duration/easing), colours as OKLCH,
+  tokens    DTCG-subset groups (color/font/text/tracking/space/radius/shadow/duration/easing), colours as OKLCH,
             dark values in $extensions.fgu.dark (from .dark, [data-theme=dark], prefers-color-scheme)
   usage     colour and px-spacing literals counted across source files
   drift     values used >= 3 times that are not tokens
   inferred  guessed roles from usage [{role, value, count, confidence}]
-Sources: CSS custom properties in :root/html/.dark/[data-theme]/@theme blocks, Tailwind v3
-theme(.extend) colors/spacing/borderRadius/fontFamily (regex, no execution), *.tokens.json,
+Sources: CSS custom properties in :root/html/.dark/[data-theme]/@theme blocks (incl. --tracking-*,
+--letter-spacing-*, --text-*--letter-spacing/--line-height), Tailwind v3 theme(.extend)
+colors/spacing/borderRadius/fontFamily/letterSpacing/fontSize (regex, no execution), *.tokens.json,
 MUI palette mains in theme files.
 
 Options:
@@ -32,7 +33,8 @@ Options:
   --help
 `;
 
-const PREFIXES = [["color-", "color"], ["font-", "font"], ["text-", "text"], ["spacing-", "space"], ["space-", "space"],
+const PREFIXES = [["color-", "color"], ["font-", "font"], ["text-", "text"], ["tracking-", "tracking"],
+  ["letter-spacing-", "tracking"], ["spacing-", "space"], ["space-", "space"],
   ["radius-", "radius"], ["shadow-", "shadow"], ["duration-", "duration"], ["ease-", "easing"], ["easing-", "easing"]];
 
 function resolveVars(value, vars, depth = 0) {
@@ -68,12 +70,19 @@ function classify(prop, value) {
       if (/weight|size|feature|variation/.test(name) || parseDimension(value) || /^\d+$/.test(value.trim())) return null;
       return [group, name, parseFontList(value)];
     }
-    case "text": case "space": case "radius": { const d = parseDimension(value); return d ? [group, name, d] : null; }
+    case "text": case "tracking": case "space": case "radius": { const d = parseDimension(value); return d ? [group, name, d] : null; }
     case "duration": { const d = parseDuration(value); return d ? [group, name, d] : null; }
     case "easing": { const e = parseEasing(value); return e ? [group, name, e] : null; }
     case "shadow": return [group, name, value.trim()];
   }
   return null;
+}
+
+/** Per-step type metric (Tailwind v4 --text-x--*, v3 fontSize tuple) into a text token's $extensions.fgu. */
+function setTextMetric(fgu, kind, raw) {
+  const v = String(raw ?? "").trim();
+  if (/^letter-?spacing$/i.test(kind)) { const d = parseDimension(v); if (d) fgu.letterSpacing = d; }
+  else if (v) fgu.lineHeight = /^\d*\.?\d+$/.test(v) ? Number(v) : v;
 }
 
 const isDarkCtx = (sel, parents) =>
@@ -102,6 +111,27 @@ function matchBrace(text, open) {
   return -1;
 }
 
+// Top-level array items: strings and object literals are kept; spreads, identifiers and numbers are dropped.
+function parseJsArray(inner) {
+  const items = [];
+  let depth = 0, q = null, start = 0;
+  const push = (piece) => {
+    const t = piece.trim();
+    if (/^(["'`])[\s\S]*\1$/.test(t)) items.push(t.slice(1, -1));
+    else if (t.startsWith("{")) items.push(parseJsObject(t.slice(1, matchBrace(t, 0))));
+  };
+  for (let i = 0; i < inner.length; i++) {
+    const c = inner[i];
+    if (q) { if (c === "\\") i++; else if (c === q) q = null; continue; }
+    if (c === '"' || c === "'" || c === "`") q = c;
+    else if (c === "{" || c === "[" || c === "(") depth++;
+    else if (c === "}" || c === "]" || c === ")") depth--;
+    else if (c === "," && depth === 0) { push(inner.slice(start, i)); start = i + 1; }
+  }
+  push(inner.slice(start));
+  return items;
+}
+
 export function parseJsObject(src) {
   let i = 0;
   const ws = () => { while (i < src.length && /[\s,]/.test(src[i])) i++; };
@@ -112,7 +142,7 @@ export function parseJsObject(src) {
     if (c === "{") { const end = matchBrace(src, i); const o = parseJsObject(src.slice(i + 1, end)); i = end + 1; return o; }
     if (c === "[") {
       const end = matchBrace(src, i); const inner = src.slice(i + 1, end); i = end + 1;
-      return [...inner.matchAll(/(["'`])((?:\\.|(?!\1).)*)\1/g)].map((m) => m[2]);
+      return parseJsArray(inner);
     }
     if (c === '"' || c === "'" || c === "`") return str();
     let s = "", depth = 0;
@@ -171,6 +201,16 @@ function readTailwind3(text, add, vars) {
   }
   for (const [name, v] of flattenObj(findObject(src, "spacing"))) { const d = parseDimension(raw(v)); if (d && name) add("space", name, d); }
   for (const [name, v] of flattenObj(findObject(src, "borderRadius"))) { const d = parseDimension(raw(v)); if (d) add("radius", name || "base", d); }
+  for (const [name, v] of flattenObj(findObject(src, "letterSpacing"))) { const d = parseDimension(raw(v)); if (d && name) add("tracking", name, d); }
+  for (const [name, v] of Object.entries(findObject(src, "fontSize") || {})) {
+    const [size, opts] = Array.isArray(v) ? v : [raw(v)];
+    const d = parseDimension(size);
+    if (!d) continue;
+    const fgu = {};
+    if (typeof opts === "string") setTextMetric(fgu, "line-height", opts);
+    else if (opts && typeof opts === "object") for (const k of ["lineHeight", "letterSpacing"]) if (opts[k]) setTextMetric(fgu, k, raw(opts[k]));
+    add("text", name, d, fgu);
+  }
   for (const [name, v] of Object.entries(findObject(src, "fontFamily") || {})) {
     const list = Array.isArray(v) ? v : typeof raw(v) === "string" ? parseFontList(raw(v)) : null;
     if (list?.length) add("font", name, list);
@@ -273,6 +313,11 @@ export function extractTokens(rootArg = ".", { files } = {}) {
     }
     add(group, name, $value, typeof dv === "object" && !Array.isArray(dv) ? undefined : dv, file);
   }
+  for (const [prop, { value }] of light) {
+    const m = prop.match(/^--text-(.+?)--(letter-spacing|line-height)$/);
+    const tok = m && tokens.text?.[m[1]];
+    if (tok) setTextMetric(((tok.$extensions ||= {}).fgu ||= {}), m[2], resolveIn(value, light));
+  }
   // dark-only properties still become tokens (value = dark value, flagged)
   for (const [prop, { value, file }] of dark) {
     if (light.has(prop)) continue;
@@ -284,7 +329,11 @@ export function extractTokens(rootArg = ".", { files } = {}) {
     const text = readText(join(root, f));
     if (text == null) continue;
     sources.push(f);
-    readTailwind3(text, (g, n, v) => { if (!tokens[g]?.[n]) add(g, n, v, undefined, f); }, light);
+    readTailwind3(text, (g, n, v, fgu) => {
+      if (tokens[g]?.[n]) return;
+      add(g, n, v, undefined, f);
+      if (fgu && Object.keys(fgu).length) tokens[g][n].$extensions = { fgu };
+    }, light);
   }
   for (const f of designFiles.filter((x) => /^theme\.(ts|tsx|js|jsx|mjs|cjs)$/.test(basename(x)))) {
     const text = readText(join(root, f));

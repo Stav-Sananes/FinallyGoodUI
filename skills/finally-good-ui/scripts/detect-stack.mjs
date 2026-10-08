@@ -23,7 +23,8 @@ const DESIGN_NAMES = new Set(["globals.css", "global.css", "app.css", "index.css
 const isDesignFile = (rel) => {
   const b = basename(rel).toLowerCase();
   return DESIGN_NAMES.has(b) || /^tailwind\.config\.(js|cjs|mjs|ts|cts|mts)$/.test(b) ||
-    /^theme\.(ts|tsx|js|jsx|mjs|cjs|css|scss|json)$/.test(b) || /\.tokens\.json$/.test(b);
+    /^theme\.(ts|tsx|js|jsx|mjs|cjs|css|scss|json)$/.test(b) || /\.tokens\.json$/.test(b) ||
+    /^_?(design[-_]?)?(tokens?|variables|vars|colou?rs|theme)\.(css|scss|sass|less)$/.test(b);
 };
 
 /**

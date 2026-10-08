@@ -118,3 +118,15 @@ test("testing tools installed in a parent node_modules are detected (Node resolu
   writeFileSync(join(bare, "index.html"), "<!doctype html>");
   assert.deepEqual(detect(bare).testing, { playwright: false, axe: false });
 });
+
+test("token and variable stylesheets count as design files", () => {
+  const d = tmp();
+  writeFileSync(join(d, "index.html"), "<!doctype html>");
+  mkdirSync(join(d, "src", "styles"), { recursive: true });
+  for (const f of ["tokens.css", "design-tokens.css", "_variables.scss", "vars.css", "colors.css", "theme.less", "button.css"])
+    writeFileSync(join(d, "src", "styles", f), ":root{}");
+  const files = detect(d).designFiles;
+  for (const f of ["tokens.css", "design-tokens.css", "_variables.scss", "vars.css", "colors.css", "theme.less"])
+    assert.ok(files.includes(`src/styles/${f}`), f);
+  assert.ok(!files.includes("src/styles/button.css"), "component stylesheet is not a design file");
+});

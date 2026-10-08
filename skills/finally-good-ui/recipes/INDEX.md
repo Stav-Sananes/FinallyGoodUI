@@ -4,14 +4,11 @@ Load a recipe only when building the thing it names. Each recipe: intent · card
 
 Rules that apply to all recipes:
 - Use the project's tokens (`--duration-*`, `--ease-*`, `--color-*`, `--space-*`); the numbers shown in recipes are the defaults from `tokens/default.tokens.json` (`duration`, `easing` groups), for reading only.
-- **No duration or easing literals in shipped code**, JS included. CSS: `var(--duration-standard) var(--ease-move)`. JS (Motion, WAAPI, Svelte/Vue transition props, timers that wait on a transition): read the emitted variables through one helper instead of pasting `0.25` or `[0.2, 0, 0, 1]`:
-  ```js
-  // motion-tokens.js: call when animating, not at module load (no document on the server)
-  const v = (n) => typeof document === "undefined" ? "" : getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-  export const ms = (name) => parseFloat(v(`--duration-${name}`)) || 0;       // "250ms" -> 250
-  export const sec = (name) => ms(name) / 1000;                               // Motion uses seconds
-  export const ease = (name) => (v(`--ease-${name}`).match(/-?[\d.]+/g) ?? [0, 0, 1, 1]).map(Number); // cubic-bezier(...) -> [x1,y1,x2,y2]
+- **No duration or easing literals in shipped code**, JS included. CSS: `var(--duration-standard) var(--ease-move)`. JS (Motion, WAAPI, Svelte/Vue transition props, timers that wait on a transition): import one generated helper instead of pasting `0.25` or `[0.2, 0, 0, 1]`. Generate it, never hand-write it:
   ```
+  node "${CLAUDE_SKILL_DIR}/scripts/emit-tokens.mjs" --in .design/tokens.json --format js > src/lib/motion-tokens.js
+  ```
+  It exports `ms("standard")` → 250, `sec("standard")` → 0.25 (Motion uses seconds), `ease("move")` → `[0.2, 0, 0, 1]`, plus `durations`/`easings` name lists. Call them when animating, not at module load: the live `--duration-*`/`--ease-*` variable wins (theme overrides), the token value is the fallback on the server, and a misspelt name throws instead of silently animating at 0. Re-run the command whenever `tokens.json` changes. The recipes' `import … from "./motion-tokens"` means this file.
   Under reduced motion pass `0` for spatial durations. MUI projects read `theme.transitions` (emitted by `emit-tokens --format mui`).
 - Start from the CSS baseline. Use the stack's built-ins next (Vue `<Transition>`/`<TransitionGroup>`, Svelte `transition:`/`animate:flip`). Reach for a library only at the recipe's upgrade trigger, and ask first with the reason and size cost.
 - Motion (`motion/react`): wrap in `LazyMotion` + `m` (`domAnimation` ≈ 4.6kb initial); `domMax` only for layout/`layoutId` recipes.

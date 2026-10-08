@@ -3,5 +3,6 @@
   "verify": "full",
   "viewports": [[375, 812], [1440, 900]],
   "interviewDepth": "auto",
-  "hook": "on"
+  "hook": "on",
+  "theme": "media"
 }

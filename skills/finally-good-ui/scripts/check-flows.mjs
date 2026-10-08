@@ -50,7 +50,7 @@ flows.json: {"flows":[{"name":"signup","steps":[{"goto":"/signup"},{"fill":["#em
          "end" to go further). Replayed actions are soft: each is capped at ${SOFT_WAIT_MS} ms and the first one that
          fails ends the replay, the next screen is captured as-is and a note is added (not an error).
          Base flow runs the full matrix; each state runs every viewport in the theme's default scheme.
-  config.theme: how a scheme is applied (default: emulate prefers-color-scheme only):
+  config.theme: how a scheme is applied. "media" (default) = emulate prefers-color-scheme only; otherwise:
          {"schemes":["dark","light"], "default":"dark", "media":true, "attribute":"data-theme" | "class":"dark",
           "lightClass":"light", "target":"html"|"body", "storage":"<localStorage key>", "query":"<url param>",
           "values":{"light":"light","dark":"dark"}}

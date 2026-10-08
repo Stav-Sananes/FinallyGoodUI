@@ -55,8 +55,9 @@ node "${CLAUDE_SKILL_DIR}/scripts/emit-tokens.mjs" --in .design/tokens.json --fo
 | shadcn | `css` (+ tailwind format) | merge into the existing `:root` / `.dark` variables, keeping shadcn's names |
 | MUI | `mui` | `theme.ts` via `createTheme` |
 | Anything else / plain | `css` | `tokens.css`, imported first |
+| Any stack that animates from JS (Motion, WAAPI, Svelte/Vue transitions) | `js` (in addition) | `motion-tokens.js` next to the components; re-emit whenever `tokens.json` changes |
 
-If dark mode is applied by attribute, class or localStorage rather than `prefers-color-scheme`, or the app is dark by default, record how in `.design/config.json` `theme` (see `check-flows.mjs --help`) so the flow walk renders both schemes for real.
+If dark mode is applied by attribute, class or localStorage rather than `prefers-color-scheme`, or the app is dark by default, replace `"theme": "media"` in `.design/config.json` with an object saying how (see `check-flows.mjs --help`, e.g. `{"attribute": "data-theme", "storage": "theme", "default": "dark"}`) so the flow walk renders both schemes for real.
 
 **Merge, never clobber.** Show the diff for the existing theme files and keep any unrelated variables.
 
