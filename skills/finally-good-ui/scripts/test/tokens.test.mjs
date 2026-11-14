@@ -560,3 +560,26 @@ test("emit antd: light and dark token sets (designed dark values, not just the a
   assert.match(light.fontFamily, /ui-sans-serif|system-ui|Inter/);
   assert.ok(light.colorBgContainer && light.colorBorder && light.colorTextSecondary);
 });
+
+// ---------- PrimeVue / PrimeNG / PrimeReact (one @primeuix preset) ----------
+test("emit prime: definePreset(Aura, …) with primary 50–950, light/dark colour schemes, radii, duration", () => {
+  const r = emit("prime");
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stdout, /import \{ definePreset \} from "@primeuix\/themes";/);
+  assert.match(r.stdout, /import Aura from "@primeuix\/themes\/aura";/);
+  assert.match(r.stdout, /export const FguPreset = definePreset\(Aura, overrides\);/);
+  const o = constObject(r.stdout, "overrides");
+  assert.deepEqual(Object.keys(o.semantic.primary), ["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"]);
+  assert.equal(o.semantic.transitionDuration, "0.25s");
+  assert.equal(o.primitive.borderRadius.md, "8px");
+  const { light, dark } = o.semantic.colorScheme;
+  assert.equal(light.primary.color, "oklch(0.5 0.14 262)");
+  assert.equal(dark.primary.color, "oklch(0.72 0.12 262)");
+  assert.match(light.primary.hoverColor, /^\{primary\.\d+\}$/);
+  assert.equal(light.surface["0"], "oklch(1 0 0)", "surface 0 = card");
+  assert.equal(Object.keys(light.surface).length, 12);
+  assert.equal(light.text.mutedColor, "oklch(0.5 0.012 265)");
+  assert.equal(dark.content.background, "oklch(0.205 0.009 265)");
+  assert.equal(light.formField.focusBorderColor, "{primary.color}");
+  assert.ok(light.overlay.modal.background && dark.overlay.popover.borderColor);
+});

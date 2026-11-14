@@ -9,7 +9,7 @@ import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssVa
 import { toHex } from "./lib/contrast.mjs";
 
 const HELP = `
-Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|tailwind3|mui|json|js] [--root <dir>]
+Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|prime|tailwind3|mui|json|js] [--root <dir>]
        emit-tokens.mjs --in <tokens.json> --format dtcg --out-dir <dir> [--name tokens] [--force]
 
 --in takes a tokens file in either shape (CSS-string values with dark in $extensions.fgu.dark, or
@@ -32,6 +32,8 @@ Prints the tokens in the requested format to stdout:
              radius, shadows) and a cssVariablesResolver with Mantine's and our vars per colour scheme
   antd       Ant Design v6: light and dark token sets (hex seeds, px numbers, "0.25s" durations, easings)
              and themeFor(isDark, theme) for ConfigProvider (our dark values on top of darkAlgorithm)
+  prime      PrimeVue, PrimeNG, PrimeReact: definePreset(Aura, …) with primary 50–950 (scale from primary),
+             light/dark colourScheme (surface, primary, highlight, text, content, formField, overlay), radii
   tailwind3  module.exports = { theme: { extend: {...} } } referencing the CSS vars (emit css too)
   mui        createTheme-shaped JSON (palette, colorSchemes.light/dark, typography incl. h1..caption/overline
              variants with lineHeight + letterSpacing, shape, transitions)
@@ -57,7 +59,7 @@ Options:
   --help
 `;
 
-const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "tailwind3", "mui", "json", "js", "dtcg"];
+const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "tailwind3", "mui", "json", "js", "dtcg"];
 
 function block(selector, decls, indent = "") {
   return `${indent}${selector} {\n${decls.map((d) => `${indent}  ${d}`).join("\n")}\n${indent}}`;
@@ -351,6 +353,60 @@ export function emitAntd(tokens) {
     "    : { algorithm: antdTheme.defaultAlgorithm, token: tokens.light, cssVar: true };\n}\n";
 }
 
+// ---------- PrimeVue / PrimeNG / PrimeReact: one @primeuix preset on top of Aura ----------
+// Shape checked against primefaces/primeuix packages/themes/src/presets/aura/base/index.ts.
+function primeOverrides(tokens) {
+  const rows = flatten(tokens);
+  const by = (g) => Object.fromEntries(rows.filter((r) => r.group === g).map((r) => [r.name, r]));
+  const colors = by("color"), radius = by("radius"), durations = by("duration");
+  const pick = (name, mode) => colors[name] && (mode === "dark" ? colors[name].dark ?? colors[name].light : colors[name].light);
+  const primary = colorScale(pick("primary", "light"), "tailwind");
+  const names = Object.keys(primary.steps);
+  const near = (css) => names[nearestStep(Object.values(primary.steps), css)];
+  const neighbour = (step, by) => `{primary.${names[Math.max(0, Math.min(names.length - 1, names.indexOf(step) + by))]}}`;
+  const neutral = colorScale(pick("muted-foreground", "light") ?? "oklch(0.55 0.01 265)", "tailwind").steps;
+
+  const scheme = (mode) => {
+    const c = (name) => pick(name, mode);
+    const step = near(c("primary"));
+    const darker = mode === "dark" ? -1 : 1; // hover moves away from the canvas
+    const surface = { 0: c("card"), ...neutral };
+    const panel = { background: c("card"), borderColor: c("border"), color: "{text.color}" };
+    return {
+      surface,
+      primary: { color: c("primary"), contrastColor: c("primary-foreground"), hoverColor: neighbour(step, darker), activeColor: neighbour(step, 2 * darker) },
+      highlight: { background: c("accent"), focusBackground: c("accent"), color: c("accent-foreground"), focusColor: c("accent-foreground") },
+      mask: { background: c("overlay") },
+      text: { color: c("foreground"), hoverColor: c("foreground"), mutedColor: c("muted-foreground"), hoverMutedColor: c("foreground") },
+      content: { background: c("card"), hoverBackground: c("muted"), borderColor: c("border"), color: "{text.color}", hoverColor: "{text.hover.color}" },
+      formField: { background: c("card"), borderColor: c("input"), hoverBorderColor: c("muted-foreground"), focusBorderColor: "{primary.color}",
+        color: c("foreground"), placeholderColor: c("muted-foreground") },
+      overlay: { select: panel, popover: panel, modal: panel },
+    };
+  };
+  const radii = Object.fromEntries(["none", "sm", "md", "lg", "xl"].filter((k) => radius[k]).map((k) => [k, radius[k].light]));
+  if (radius.sm) radii.xs = radius.sm.light;
+  const standard = durations.standard && parseDuration(durations.standard.light);
+  return {
+    primitive: { borderRadius: radii },
+    semantic: {
+      ...(standard ? { transitionDuration: `${standard.value / 1000}s` } : {}),
+      primary: primary.steps,
+      colorScheme: { light: scheme("light"), dark: scheme("dark") },
+    },
+  };
+}
+
+export function emitPrime(tokens) {
+  return "// generated by finally-good-ui emit-tokens.mjs (--format prime); edit the tokens, not this file.\n" +
+    "// PrimeVue: app.use(PrimeVue, { theme: { preset: FguPreset, options: { darkModeSelector: \".dark\" } } })\n" +
+    "// PrimeNG: providePrimeNG({ theme: { preset: FguPreset, options: { darkModeSelector: \".dark\" } } })\n" +
+    "// PrimeReact: <PrimeReactProvider value={{ theme: { preset: FguPreset, options: { darkModeSelector: \".dark\" } } }}>\n" +
+    'import { definePreset } from "@primeuix/themes";\nimport Aura from "@primeuix/themes/aura";\n\n' +
+    `const overrides = ${JSON.stringify(primeOverrides(tokens), null, 2)};\n\n` +
+    "export const FguPreset = definePreset(Aura, overrides);\n";
+}
+
 export function emitTailwind3(tokens) {
   const rows = flatten(tokens);
   const KEYS = { color: "colors", font: "fontFamily", text: "fontSize", tracking: "letterSpacing", space: "spacing",
@@ -548,6 +604,7 @@ export function emit(tokens, format, { muiScheme } = {}) {
     case "panda": return emitPanda(tokens);
     case "mantine": return emitMantine(tokens);
     case "antd": return emitAntd(tokens);
+    case "prime": return emitPrime(tokens);
     case "tailwind3": return emitTailwind3(tokens);
     case "mui": return emitMui(tokens, { scheme: muiScheme });
     case "json": return emitJson(tokens);

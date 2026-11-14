@@ -198,3 +198,12 @@ test("Ant Design detected as the component kit", () => {
   assert.equal(p.components, "antd");
   assert.equal(p.componentsVersion, 6);
 });
+
+test("Prime kits detected per framework", () => {
+  const kit = (deps) => { const d = tmp(); writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: deps })); return detect(d); };
+  assert.equal(kit({ vue: "3.5.0", primevue: "5.0.5", "@primeuix/themes": "3.1.1" }).components, "primevue");
+  assert.equal(kit({ "@angular/core": "21.0.0", primeng: "22.1.5" }).components, "primeng");
+  const react = kit({ react: "19.2.0", primereact: "11.2.3" });
+  assert.equal(react.components, "primereact");
+  assert.equal(react.componentsVersion, 11);
+});
