@@ -76,6 +76,8 @@ const ANIMATION = [
   ["lenis", (has) => has("lenis") || has("@studio-freight/lenis")],
   ["number-flow", (has, hasPrefix) => has("number-flow") || hasPrefix("@number-flow/")],
   ["angular-animations-legacy", (has) => has("@angular/animations")], // deprecated: use animate.enter / animate.leave
+  ["reanimated", (has) => has("react-native-reanimated")],
+  ["moti-unmaintained", (has) => has("moti")], // no release since 2025: animate with Reanimated directly
 ];
 
 /**
@@ -156,6 +158,11 @@ const INTERACTION = [
  */
 const KITS = [
   { name: "mui", test: (has) => has("@mui/material"), versionFrom: ["@mui/material"] },
+  // React Native kits
+  { name: "rn-reusables", test: (has, hasPrefix) => hasPrefix("@rn-primitives/") },
+  { name: "gluestack", test: (has, hasPrefix) => hasPrefix("@gluestack-ui/"), versionFrom: ["@gluestack-ui/core", "@gluestack-ui/themed"] },
+  { name: "tamagui", test: (has) => has("tamagui") || has("@tamagui/core"), versionFrom: ["tamagui", "@tamagui/core"] },
+  { name: "react-native-paper", test: (has) => has("react-native-paper"), versionFrom: ["react-native-paper"] },
   { name: "joy", test: (has) => has("@mui/joy"), versionFrom: ["@mui/joy"] }, // on hold upstream: build with Material UI patterns
   { name: "daisyui", test: (has) => has("daisyui"), versionFrom: ["daisyui"] },
   { name: "antd", test: (has) => has("antd"), versionFrom: ["antd"] },
@@ -206,13 +213,15 @@ export function detectStack(rootArg = ".") {
   // ---- framework (most specific first)
   const FW = [
     ["nuxt", "nuxt"], ["next", "next"], ["sveltekit", "@sveltejs/kit"], ["astro", "astro"],
-    ["angular", "@angular/core"], ["solid", "solid-js"], ["vue", "vue"], ["svelte", "svelte"], ["react", "react"],
+    ["angular", "@angular/core"], ["solid", "solid-js"], ["vue", "vue"], ["svelte", "svelte"],
+    ["expo", "expo"], ["react-native", "react-native"], ["react", "react"],
   ];
   let framework = "unknown", frameworkVersion = null;
   for (const [name, dep] of FW) {
     if (has(dep)) { framework = name; frameworkVersion = cleanVersion(deps[dep]); break; }
   }
   if (!pkg && framework === "unknown" && (file("index.html") || file("public", "index.html"))) framework = "html";
+  const isNative = framework === "expo" || framework === "react-native";
 
   // ---- files (bounded walk for design files / css flavours)
   const files = walk(root, root, { maxDepth: 6, maxFiles: 5000,
@@ -222,6 +231,7 @@ export function detectStack(rootArg = ".") {
   let router = null;
   if (framework === "next") router = dir("app") || dir("src", "app") ? "app" : dir("pages") || dir("src", "pages") ? "pages" : null;
   else if (framework === "sveltekit") router = "sveltekit";
+  else if (has("expo-router")) router = "expo-router";
   else if (framework === "nuxt" || has("vue-router")) router = "vue-router";
   else if (has("react-router") || has("react-router-dom")) router = "react-router";
 
@@ -245,7 +255,9 @@ export function detectStack(rootArg = ".") {
   };
 
   // ---- components
-  const kit = file("components.json") ? { name: "shadcn" } : KITS.find((k) => k.test(has, hasPrefix));
+  // react-native-reusables also writes a components.json; on native it is that kit, not shadcn/ui
+  const shadcnWeb = file("components.json") && !isNative;
+  const kit = shadcnWeb ? { name: "shadcn" } : KITS.find((k) => k.test(has, hasPrefix));
   const components = kit?.name ?? null;
   const versionFrom = kit?.versionFrom?.find(has);
   const componentsVersion = versionFrom ? major(deps[versionFrom]) : null;
@@ -253,7 +265,7 @@ export function detectStack(rootArg = ".") {
   // ---- unstyled primitives (no theme to emit; each animates through its own state attributes)
   const primitives = PRIMITIVES.filter(([, test]) => test(has, hasPrefix)).map(([name]) => name);
 
-  const shadcn = file("components.json") ? shadcnProfile(readJson(join(root, "components.json")), has) : null;
+  const shadcn = shadcnWeb ? shadcnProfile(readJson(join(root, "components.json")), has) : null;
 
   // ---- animation and interaction libraries (recipes map our motion tokens onto each one's timing options)
   const depNames = Object.keys(deps);
@@ -265,8 +277,17 @@ export function detectStack(rootArg = ".") {
   const forms = formLib || schema ? { lib: formLib, schema } : null;
   const [tables = null] = found(TABLES);
 
+  // ---- React Native: no DOM; the styling layer decides the token format
+  const nativeStyling = has("uniwind") ? "uniwind"
+    : has("nativewind") ? (major(deps.nativewind) >= 5 ? "nativewind-v5" : "nativewind")
+    : has("tamagui") || has("@tamagui/core") ? "tamagui"
+    : has("react-native-unistyles") ? "unistyles"
+    : "stylesheet";
+  const native = isNative ? { styling: nativeStyling, web: has("react-native-web") } : null;
+
   // ---- view transitions: which integration the route and shared-element recipes should use
-  const viewTransitions = has("react") && atLeast(deps.react, [19, 3]) ? "react" // <ViewTransition>, stable in 19.3
+  const viewTransitions = isNative ? null
+    : has("react") && atLeast(deps.react, [19, 3]) ? "react" // <ViewTransition>, stable in 19.3
     : framework === "astro" ? "astro" // <ClientRouter />
     : framework === "sveltekit" ? "sveltekit" // onNavigate + document.startViewTransition
     : "native";
@@ -279,7 +300,8 @@ export function detectStack(rootArg = ".") {
   if (hasPrefix("@fontsource/") || hasPrefix("@fontsource-variable/")) fontsInUse.push("fontsource");
   if (has("unplugin-fonts")) fontsInUse.push("unplugin-fonts");
   if (["index.html", "public/index.html", "src/app.html"].some((f) => file(f) && readsGoogleFonts(f)) || cssFiles.some(readsGoogleFonts)) fontsInUse.push("google-fonts");
-  const fontLoader = framework === "next" ? "next" : framework === "nuxt" ? "nuxt"
+  const fontLoader = isNative ? null // expo-font / useFonts: system.md step 4
+    : framework === "next" ? "next" : framework === "nuxt" ? "nuxt"
     : pkg && framework !== "unknown" && framework !== "html" ? "fontsource" : "google";
 
   // ---- icons: the first set found, the package to import from, and how its weight is set
@@ -324,6 +346,7 @@ export function detectStack(rootArg = ".") {
     forms,
     tables,
     viewTransitions,
+    native,
     fonts: { loader: fontLoader, inUse: fontsInUse },
     icons,
     tokensPipeline,

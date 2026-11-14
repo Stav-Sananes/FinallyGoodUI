@@ -33,6 +33,8 @@ Rules that apply to all recipes:
   | `lenis` | `duration` **seconds**, `easing` function | `lenis.scrollTo(t, { duration: sec("long"), easing: easeFn("move") })` | built in |
   | `lottie`, `dotlottie`, `rive` | own timeline; only speed | for empty and success states only; prefer dotLottie (lottie-web is barely maintained) | not built in: show a static final frame |
   | `sonner` | hard-coded `400ms` in its CSS | `[data-sonner-toast] { transition-duration: var(--duration-medium); transition-timing-function: var(--ease-move); }` | built in (removes fades too) |
+  | `reanimated` (React Native) | ms numbers; `cubicBezier(…)` for CSS transitions, `Easing.bezier(…)` for `withTiming` | the `rn-motion` module (`emit-tokens --format rn-motion`): `transition(["transform", "opacity"], "standard", "move", { reduced })`, `withTiming(v, timing("standard", "enter"))` | `withTiming` built in (`ReduceMotion.System`); CSS transitions: pass `reduced = useReducedMotion()` |
+  | `moti-unmaintained` | Reanimated underneath | don't add it to new code: use Reanimated directly | – |
   | `vaul-unmaintained` | hard-coded `0.5s` | don't add it to new code: use the primitive library's Drawer (Base UI, Reka) or native `<dialog>` | – |
   | `cmdk` | `--cmdk-list-height` | `.cmdk-list { height: var(--cmdk-list-height); transition: height var(--duration-short) var(--ease-move); }`; open instantly (used many times a day) | no animation to reduce |
   | `floating-ui` | `useTransitionStyles({ duration: ms or {open, close} })` | `{ open: ms("standard"), close: ms("short") }` | not built in: `msMotion()` |

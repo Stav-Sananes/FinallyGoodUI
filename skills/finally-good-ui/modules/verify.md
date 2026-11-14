@@ -18,9 +18,10 @@ If `config.verify` is `"static"`, do Layer 1 + static review only (§7b) and say
 1. Reuse a running server: try `http://localhost:<port>` for the port in the dev script / framework default (Next/Nuxt/Astro/SvelteKit 3000/3000/4321/5173, Vite 5173, Angular 4200). A 2xx/3xx/404 response means it is up.
 2. Otherwise start it **in the background**: `<packageManager> run <devScript>` (from the stack profile). Watch its output for the local URL; poll it up to 60 s.
 3. **No `devScript` but plain files** (an `index.html` at the root or in `public/`/`dist/`/`build/`, no bundler): serve that folder with a static server in the background and use its URL: `python3 -m http.server <port> --directory <dir>` or `npx --yes serve -l <port> <dir>`, on a **free port** (pick a random one in 4100–4999; other agents may be serving on the usual ones). Not `file://` (fetch, ES modules and routing break). This is a full browser verify, not §7b.
-4. If the server crashes, nothing can serve the app, or it needs secrets/services you do not have: go to §7b and tell the user what blocked it.
-5. **Check you have the right page:** after the first load, compare the page `<title>` (or a heading you wrote) with your app. Another process on the same port, or a stale cache, shows someone else's page. Static servers cache: reload with a query string (`?v=<n>`) after each edit.
-6. Stop only servers you started, when verify ends.
+4. **React Native / Expo** (stack profile `native`): verify on Expo's web target, a DOM rendering of the same components. With `native.web` true, start `npx expo start --web --port <free port>` in the background; without it, ask before `npx expo install react-dom react-native-web @expo/metro-runtime`. Mark the report `mode: expo-web` and tell the user it is an approximation: fonts, shadows (iOS shadow vs Android elevation), safe areas, native tab bars, sheets and gestures differ on devices. If the user has a device tool (Callstack's `agent-device` CLI/MCP, the Expo MCP's local `automation_take_screenshot` / `automation_tap`, or Maestro), add one pass per key screen on an iOS simulator or Android emulator and record those screenshots too. A bare React Native app without Expo has no web target: §7b, plus whatever device tool exists.
+5. If the server crashes, nothing can serve the app, or it needs secrets/services you do not have: go to §7b and tell the user what blocked it.
+6. **Check you have the right page:** after the first load, compare the page `<title>` (or a heading you wrote) with your app. Another process on the same port, or a stale cache, shows someone else's page. Static servers cache: reload with a query string (`?v=<n>`) after each edit.
+7. Stop only servers you started, when verify ends.
 
 ## 3. Author `.design/flows.json`
 
@@ -106,7 +107,7 @@ Do not tell it what you changed or what you think is wrong. It scores dimensions
 - States: force only what the tool can (Playwright MCP code execution can use `page.route`). List the rest as unverified.
 - Save results in the `check-flows` report shape to `.design/reports/<run>.json`, then continue at §5.
 
-**b) No browser, or nothing can serve the app (§2.4).** Run Layer 1, then a **static review**: `ui-reviewer` in static mode reads the components, tokens and styles and scores what code can show (3, 6, 7, 9 partially); dimensions needing pixels are `n/a`. Tell the user plainly, in the chat, not only in the report: *"I could not render the app (<reason>), so layout, hierarchy, states and motion were not verified in a browser."* Mark the report `mode: static`.
+**b) No browser, or nothing can serve the app (§2.5).** Run Layer 1, then a **static review**: `ui-reviewer` in static mode reads the components, tokens and styles and scores what code can show (3, 6, 7, 9 partially); dimensions needing pixels are `n/a`. Tell the user plainly, in the chat, not only in the report: *"I could not render the app (<reason>), so layout, hierarchy, states and motion were not verified in a browser."* Mark the report `mode: static`.
 
 ## 7c. Delivery gate (before any "done")
 
