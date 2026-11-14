@@ -183,3 +183,10 @@ test("daisyUI detected as the component kit, with its major version", () => {
   assert.equal(p.components, "daisyui");
   assert.equal(p.componentsVersion, 5);
 });
+
+test("Panda CSS detected as a styling engine", () => {
+  const d = tmp();
+  writeFileSync(join(d, "package.json"), JSON.stringify({ devDependencies: { "@pandacss/dev": "2.0.0" } }));
+  assert.equal(detect(d).styling.panda, true);
+  assert.equal(detect(fx("next")).styling.panda, false);
+});

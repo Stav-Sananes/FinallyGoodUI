@@ -110,6 +110,7 @@ export function detectStack(rootArg = ".") {
     tailwind,
     cssModules: files.some((f) => /\.module\.(css|scss|sass|less)$/.test(f)),
     sass: has("sass") || has("node-sass") || files.some((f) => /\.(scss|sass)$/.test(f)),
+    panda: has("@pandacss/dev") || files.some((f) => /^panda\.config\.(ts|js|mjs|cjs)$/.test(f)),
     cssInJs,
   };
 

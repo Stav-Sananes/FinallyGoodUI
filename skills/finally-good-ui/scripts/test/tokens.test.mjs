@@ -486,3 +486,34 @@ test("emit daisyui: a light (default) and a dark (prefersdark) theme block; moti
   assert.match(dark, /--color-base-100: oklch\(0\.17 0\.008 265\);/);
   assert.match(r.stdout, /@theme \{[^}]*--ease-move:/);
 });
+
+// ---------- Chakra UI v3 and Panda CSS v2: one token engine, two wrappers ----------
+const themeObject = (out) => JSON.parse(out.match(/^const theme = (\{[\s\S]*?\n\});$/m)[1]);
+
+test("emit chakra: createSystem with tokens, {base,_dark} semantic colours, a brand palette", () => {
+  const r = emit("chakra");
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stdout, /import \{ createSystem, defaultConfig, defineConfig \} from "@chakra-ui\/react";/);
+  assert.match(r.stdout, /export const system = createSystem\(defaultConfig, defineConfig\(\{ theme \}\)\);/);
+  const t = themeObject(r.stdout);
+  assert.equal(t.tokens.durations.standard.value, "250ms");
+  assert.equal(t.tokens.easings.move.value, "cubic-bezier(0.2, 0, 0, 1)");
+  assert.equal(t.tokens.fonts.body.value, t.tokens.fonts.sans.value, "Chakra reads fonts.body/heading");
+  assert.equal(t.tokens.radii.md.value, "8px");
+  assert.equal(t.tokens.colors.brand["700"].value, "oklch(0.5 0.14 262)", "seed sits on its step");
+  const sc = t.semanticTokens.colors;
+  assert.deepEqual(sc.bg.DEFAULT.value, { base: "oklch(0.99 0.002 265)", _dark: "oklch(0.17 0.008 265)" });
+  assert.deepEqual(sc.fg.muted.value, { base: sc["muted-foreground"].value.base, _dark: sc["muted-foreground"].value._dark });
+  assert.equal(sc.brand.solid.value.base, "oklch(0.5 0.14 262)");
+  assert.equal(sc.brand.subtle.value.base, "{colors.brand.100}");
+  assert.ok(sc.primary && sc["primary-foreground"], "our own roles stay addressable");
+  assert.ok(t.semanticTokens.shadows.md.value._dark, "shadows change in dark mode");
+});
+
+test("emit panda: the same theme as a preset", () => {
+  const r = emit("panda");
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stdout, /import \{ definePreset \} from "@pandacss\/dev";/);
+  assert.match(r.stdout, /export default definePreset\(\{ name: "finally-good-ui", theme: \{ extend: theme \} \}\);/);
+  assert.deepEqual(themeObject(r.stdout), themeObject(emit("chakra").stdout));
+});
