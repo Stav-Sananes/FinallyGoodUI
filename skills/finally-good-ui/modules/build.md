@@ -48,7 +48,10 @@ Ask the user in one line, e.g. "The list-to-detail transition needs shared-eleme
 - Semantic HTML before ARIA; buttons are `<button>`; every input has a visible label (`flows-forms.labels-above`).
 - Touch targets at least 24px, 44px on touch-first screens (`a11y.target-size`). Inputs at least 16px on mobile.
 - Numbers in tables and dashboards use `font-variant-numeric: tabular-nums`.
-- Copy follows the writing cards: the user's words, verb-first actions, and errors that say how to fix the problem.
+- Copy follows the writing cards: the user's words, verb-first actions, and errors that say how to fix the problem, set with real punctuation (`writing.typographic-punctuation`).
+- Dates, numbers and currencies through `Intl` in the user's locale (`i18n.locale-formats`); layout CSS in logical properties (`i18n.direction-logical`).
+- Server-rendered apps (Next, Nuxt, SvelteKit, Astro, Remix): anything that differs between server and browser (dates, time zones, random ids, `window` reads, saved preferences) renders the same on both or waits until after hydration; `suppressHydrationWarning` only on the one element that must differ, such as a timestamp.
+- Filters, tabs, sort, search and pagination live in the URL (`ia-nav.url-as-state`); forms never lose typed input (`flows-forms.protect-unsaved-work`).
 
 ## Completeness (no shortcuts)
 Before saying a screen is done, count: regions in the blueprint for this screen, state-matrix cells for its row, and controls on it. Report "N of N" for each. Never leave `TODO`, stub handlers, `href="#"`, "the rest follows the same pattern", or one example standing in for several (`craft.nothing-dead`). If the work is too large for one pass, finish whole screens and say which remain, rather than thinning every screen.

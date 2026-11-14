@@ -11,7 +11,7 @@ const RULES = {
   "ease-in-entrance": "motion.easing-roles", "scale-from-zero": "motion.easing-roles",
   "outline-none-no-focus": "a11y.focus-visible", "img-no-alt": "a11y.semantic-first",
   "div-onclick": "a11y.semantic-first", "user-scalable-no": "a11y.target-size", "small-input-font": "a11y.target-size",
-  "role-no-keyboard": "a11y.keyboard-complete", "img-no-dimensions": "states.loading-perceived",
+  "role-no-keyboard": "a11y.keyboard-complete", "img-no-dimensions": "layout.stable-media",
 };
 
 const check = (dir, extra = []) => {

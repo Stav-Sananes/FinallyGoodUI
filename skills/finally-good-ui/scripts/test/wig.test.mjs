@@ -77,7 +77,7 @@ test("img-no-dimensions: native <img> without width and height, unless sized by 
 ` });
   const hits = rules(f, "img-no-dimensions");
   assert.deepEqual(hits.map((h) => h.line), [2]);
-  assert.equal(hits[0].card, "states.loading-perceived");
+  assert.equal(hits[0].card, "layout.stable-media");
 });
 
 test("locale-format: dates formatted with no locale, and hard-coded day/month patterns (numbers in the browser locale are fine)", () => {

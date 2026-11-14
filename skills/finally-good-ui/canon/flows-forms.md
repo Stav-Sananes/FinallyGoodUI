@@ -87,6 +87,24 @@ checks:
   judged: "Squinting at the screenshot, is there exactly one obvious next action, and does its label say what will happen?"
 ```
 
+### flows-forms.protect-unsaved-work
+
+```yaml
+id: flows-forms.protect-unsaved-work
+domain: flows-forms
+principle: "Never lose what someone typed: autosave drafts where possible, and otherwise warn before anything discards unsaved changes (closing the tab, in-app navigation, closing a dialog or sheet), naming what will be lost and offering to save. Restore drafts after a crash or refresh."
+why: "Losing ten minutes of typing to a misclick is one of the fastest ways to lose trust, and it costs far more than the moment a confirmation takes."
+sources: ["Nielsen, 10 Usability Heuristics, #3 User control and freedom and #5 Error prevention", "WHATWG HTML Standard, the beforeunload event", "Vercel, Web Interface Guidelines (forms)"]
+applies-when: "Forms, editors, long text fields, settings with a save button, and dialogs or sheets that hold input."
+not-when: "Fields that save on change (autosave, inline-edit), where there is nothing unsaved to warn about."
+decides: [component.form, component.dialog, blueprint.flows]
+tensions: [usability.user-control-undo, flows-forms.one-thing-per-page]
+asked-by: []
+checks:
+  measured: "Flow walk: type into a form, then navigate away and close the dialog: a warning appears (or the draft is restored on return)."
+  judged: "Is there any path on which someone could lose typed input without being told?"
+```
+
 ### flows-forms.input-ergonomics
 
 ```yaml

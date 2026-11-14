@@ -20,7 +20,7 @@ export const RULE_CARDS = {
   "paste-blocked": "flows-forms.input-ergonomics",
   "autofocus": "flows-forms.input-ergonomics",
   "spellcheck-on-codes": "flows-forms.input-ergonomics",
-  "img-no-dimensions": "states.loading-perceived",
+  "img-no-dimensions": "layout.stable-media",
   "locale-format": "i18n.locale-formats",
   // Slop detectors: the mechanical half of rubric/ai-default-fingerprints.md.
   "dead-control": "craft.nothing-dead",

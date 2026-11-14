@@ -79,7 +79,7 @@ checks:
 ```yaml
 id: data.dense-tables
 domain: data
-principle: "Design tables for scanning and comparison: right-align numbers with tabular figures, left-align text, keep units in headers, use sticky headers, quiet row separators and a density setting (row height about 32-48px)."
+principle: "Design tables for scanning and comparison: right-align numbers with tabular figures, left-align text, keep units in headers, use sticky headers, quiet row separators and a density setting (row height about 32-48px). Virtualise long lists once rendering lags (consider it from about 50 complex rows; it is required in the hundreds), without row animations."
 why: "Aligned tabular digits let the eye compare magnitudes down a column; zebra stripes, heavy borders and centred numbers break that vertical scan."
 sources: ["Few, Show Me the Numbers", "NN/g, Data Tables: Four Major User Tasks", "IBM Carbon, Data table (row size options)"]
 applies-when: "Any list with 3+ attributes per item or numeric columns."

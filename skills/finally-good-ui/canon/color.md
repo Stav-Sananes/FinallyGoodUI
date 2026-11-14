@@ -61,7 +61,7 @@ checks:
 ```yaml
 id: color.dark-mode-not-inverted
 domain: color
-principle: "Design dark mode as its own scale: near-black but not pure black base (OKLCH L about 0.13-0.22), surfaces that get lighter as they rise, accents lowered in chroma and raised in lightness, and every pair re-verified."
+principle: "Design dark mode as its own scale: near-black but not pure black base (OKLCH L about 0.13-0.22), surfaces that get lighter as they rise, accents lowered in chroma and raised in lightness, and every pair re-verified. Declare color-scheme so native controls, scrollbars and form autofill follow, give native selects an explicit background and text colour, and match the theme-color meta to the background of each theme."
 why: "Inverting a light palette flips elevation cues, makes saturated accents vibrate on dark grounds, and silently breaks contrast pairs tuned for white."
 sources: ["Material Design, Dark theme guidance", "Apple HIG, Dark Mode", "Radix Colors docs, dark scales"]
 applies-when: "Any app that ships a dark theme or follows prefers-color-scheme."

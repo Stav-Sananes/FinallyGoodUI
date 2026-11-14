@@ -74,7 +74,7 @@ checks:
 ```yaml
 id: ia-nav.progressive-disclosure
 domain: ia-nav
-principle: "Show what most people need for the current step and reveal advanced or rare options on request (expanders, 'more options', secondary screens). Keep the trigger visible and descriptively labelled, and never hide what the top tasks need."
+principle: "Show what most people need for the current step and reveal advanced or rare options on request (expanders, 'more options', secondary screens). Keep the trigger visible and descriptively labelled, and never hide what the top tasks need. Explain inline first (a hint under the field, a line under the heading); a tooltip is the last resort for help."
 why: "Fewer choices speed decisions and reduce errors for the majority, while experts still reach everything. It fails when the split between basic and advanced is wrong, because frequent needs then cost an extra click every time."
 sources: ["Lidwell et al., Universal Principles of Design, 'Progressive Disclosure'", "NN/g, Progressive Disclosure (Nielsen)", "Tidwell et al., Designing Interfaces (3rd ed.), ch.10 (forms and controls)"]
 applies-when: "Settings, filters, forms with optional fields, and feature-rich toolbars."
@@ -102,6 +102,24 @@ asked-by: [interview.content.volume]
 checks:
   measured: "If any list route renders more than 50 items, a search input (role=search or type=search) is present on that route or globally."
   judged: "Given content.volume in the brief, can both a known-item seeker and a browser reach a target in 3 steps or fewer?"
+```
+
+### ia-nav.url-as-state
+
+```yaml
+id: ia-nav.url-as-state
+domain: ia-nav
+principle: "Put view state people would want to share or come back to in the URL: the selected tab, filters, sort, search query, page and the open record. Back and Forward step through those views and restore the scroll position; refreshing never loses the view. Keep transient UI (a hovered row, an open menu) out of it."
+why: "A view that can't be linked can't be shared, bookmarked or recovered after a refresh, and a Back button that leaves the app or loses the filter breaks the one navigation everyone knows."
+sources: ["Nielsen, URL as UI (1999)", "WHATWG HTML Standard, session history and history.scrollRestoration", "Vercel, Web Interface Guidelines (navigation and state)"]
+applies-when: "Lists with filters or sort, tabbed screens, search, pagination and master-detail views."
+not-when: "Secrets and personal data (never in the URL), and throwaway UI state."
+decides: [blueprint.routes, component.filters, component.tabs]
+tensions: [ia-nav.wayfinding-location, usability.user-control-undo]
+asked-by: []
+checks:
+  measured: "Flow walk: set a filter and a tab, reload: the same view returns; navigate to a detail and press Back: the list returns with its filter and scroll position."
+  judged: "If someone pastes this URL to a colleague, does the colleague see what they saw?"
 ```
 
 ### ia-nav.tension-discoverability-minimalism

@@ -23,7 +23,7 @@ checks:
 ```yaml
 id: states.loading-perceived
 domain: states
-principle: "Match the loading signal to the wait. Under about 300 ms show nothing (delay the indicator so it doesn't flash). From 300 ms to 2 s show a skeleton that mirrors the final layout, or an inline spinner for actions. Over 2 s keep the skeleton and show progressive content. Over about 10 s show determinate progress, an estimate and a way to cancel or leave."
+principle: "Match the loading signal to the wait. Under about 300 ms show nothing (delay the indicator so it doesn't flash). From 300 ms to 2 s show a skeleton that mirrors the final layout, or an inline spinner for actions. Over 2 s keep the skeleton and show progressive content. Over about 10 s show determinate progress, an estimate and a way to cancel or leave. Once an indicator appears, keep it for at least about 300-500 ms so it never flickers in and out."
 why: "Perceived speed depends on predictability and on something happening, more than on raw time. Layout-matched skeletons avoid jumps, and a delayed indicator stops fast responses from flickering."
 sources: ["Nielsen, Response Times: The 3 Important Limits (NN/g)", "NN/g, Progress Indicators Make a Slow System Less Insufferable", "Yablonski, Laws of UX, 'Doherty Threshold'", "Vercel, Web Interface Guidelines (loading states)"]
 applies-when: "Every data fetch, route transition, submission and long-running job."

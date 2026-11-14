@@ -123,7 +123,7 @@ Scores say how good it is; the gate says whether it can be handed over. Write on
 | G7 | Each screen has one focal point and at least one deliberate accent moment | screenshot paths |
 | G8 | The identity motif appears in ≥ 3 places | decisions.md + shots |
 | G9 | Direction fidelity ≥ 4 (if directions ran) | reviewer JSON |
-| G10 | Light, dark and 375 px all render without overflow or broken surfaces | flow-walk run |
+| G10 | Light, dark and 375 px all render without overflow or broken surfaces; one pass with scrollbars always visible (no layout shift when they appear) and one at 1440 px and 50% zoom (ultra-wide: lines stay within a readable measure) | flow-walk run |
 
 ## 8. Report
 

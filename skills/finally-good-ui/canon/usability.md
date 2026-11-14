@@ -104,6 +104,24 @@ checks:
   judged: "In a 5-second look at the screenshot, can you say what the screen is for and what the single next action is?"
 ```
 
+### usability.keyboard-shortcuts
+
+```yaml
+id: usability.keyboard-shortcuts
+domain: usability
+principle: "Give frequent actions keyboard shortcuts that follow platform conventions and show them where people already look: next to the menu item, in the tooltip and in a ⌘/ shortcut list. Write them the platform's way (⌘K on Apple, Ctrl+K elsewhere, in <kbd>), never override the browser's or assistive technology's own shortcuts, and let single-character shortcuts be turned off or remapped."
+why: "Shortcuts are how daily users get fast, but only if they can discover them without reading a manual. A single-letter shortcut that fires while someone dictates or types into the wrong place does real damage (WCAG 2.1.4)."
+sources: ["WCAG 2.2 SC 2.1.4 Character Key Shortcuts", "Apple Human Interface Guidelines, Keyboards", "Microsoft, Guidelines for keyboard accelerators", "Vercel, Web Interface Guidelines (keyboard)"]
+applies-when: "Apps used daily or for long sessions, editors, dashboards and anything with a command palette."
+not-when: "Rarely used, linear flows (sign-up, checkout), where shortcuts add surface without payoff."
+decides: [component.menu, component.command-palette, blueprint.expert-paths]
+tensions: [usability.tension-guidance-expertise, a11y.keyboard-complete]
+asked-by: []
+checks:
+  measured: "Shortcut labels render per platform (⌘ vs Ctrl); single-character shortcuts are ignored while focus is in a text field and can be disabled."
+  judged: "Could a daily user learn the three most frequent shortcuts from the interface itself within a week?"
+```
+
 ### usability.tension-guidance-expertise
 ```yaml
 id: usability.tension-guidance-expertise

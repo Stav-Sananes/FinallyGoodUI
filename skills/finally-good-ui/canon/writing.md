@@ -25,7 +25,7 @@ checks:
 ```yaml
 id: writing.action-labels
 domain: writing
-principle: "Label buttons and links with a specific verb plus object that says what will happen (Save changes, Send invoice, Delete project), in sentence case; avoid OK, Submit, Yes/No and Click here. Destructive confirmations repeat the consequence."
+principle: "Label buttons and links with a specific verb plus object that says what will happen (Save changes, Send invoice, Delete project), in sentence case; avoid OK, Submit, Yes/No and Click here. Destructive confirmations repeat the consequence. Sentence case is deliberate here even where some guides (Vercel's Web Interface Guidelines) prefer Title Case: it reads faster and matches GOV.UK and Material."
 why: "A specific label lets users predict the outcome without reading surrounding text, and it stays meaningful when screen reader users list links and buttons out of context."
 sources: ["GOV.UK Design System, Button component guidance", "Mailchimp Content Style Guide", "WCAG 2.2 SC 2.4.6 Headings and Labels"]
 applies-when: "Every button, link, menu item and dialog action."

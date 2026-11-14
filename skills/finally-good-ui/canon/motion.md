@@ -79,7 +79,7 @@ checks:
 ```yaml
 id: motion.compositor-only
 domain: motion
-principle: "Anything that moves, grows or shrinks animates transform and opacity only; never width, height, top, left, margin or padding, and never `transition: all`. Colour crossfades are allowed for small state changes."
+principle: "Anything that moves, grows or shrinks animates transform and opacity only; never width, height, top, left, margin or padding, and never `transition: all`. Colour crossfades are allowed for small state changes. In SVG, animate a <g> wrapper with transform-box: fill-box and an explicit transform-origin, not the paths."
 why: "Transform and opacity can run on the compositor without re-layout, so they hold 60fps on weak devices; layout properties trigger reflow every frame and stutter."
 sources: ["Paul Lewis, web.dev, Stick to compositor-only properties and manage layer count", "Josh Comeau, An Interactive Guide to CSS Transitions", "Emil Kowalski, emilkowal.ski animation writing"]
 applies-when: "All CSS transitions, keyframes, and JS animation libraries."
@@ -115,7 +115,7 @@ checks:
 ```yaml
 id: motion.reduced-motion
 domain: motion
-principle: "Under prefers-reduced-motion, drop spatial movement (translate, scale, parallax, auto-play) but keep opacity and colour changes so state changes are still visible. Reduced means fewer, not zero."
+principle: "Under prefers-reduced-motion, drop spatial movement (translate, scale, parallax, auto-play) but keep opacity and colour changes so state changes are still visible. Reduced means fewer, not zero. Anything that moves on its own for more than 5 s (carousels, looping illustrations, tickers) gets a visible pause control in every mode (WCAG 2.2.2)."
 why: "Large or vestibular-triggering motion can cause nausea and dizziness; removing all feedback instead leaves those users with abrupt, confusing jumps."
 sources: ["WCAG 2.2 SC 2.3.3 Animation from Interactions (AAA, advisory)", "WCAG 2.2 SC 2.2.2 Pause, Stop, Hide", "Josh Comeau, Accessible Animations in React"]
 applies-when: "Every project with any animation."
