@@ -139,6 +139,16 @@ export function textMetrics(tok) {
   return out;
 }
 
+export class MissingTokenError extends Error {}
+
+/** var(--…) for a token that must exist; `who` names the output that needs it in the error. */
+export function tokenRef(tokens, group, name, who) {
+  if (![...groupTokens(tokens?.[group])].some(([n]) => n === name)) {
+    throw new MissingTokenError(`${who} needs the token ${group}.${name}`);
+  }
+  return `var(--${VAR_PREFIX[group]}-${name})`;
+}
+
 /** The CSS font-family list for a font token, loaded face first when it has one. */
 export const fontValue = (name, tok) => (fontLoad(tok) ? loadedFontCss(name, tok) : cssValue("font", tok.$value));
 

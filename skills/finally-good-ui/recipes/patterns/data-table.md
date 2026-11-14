@@ -71,6 +71,11 @@ Sorting/filtering motion: list-reorder-flip only for < ~50 rows; otherwise swap 
 ## React + Motion
 Motion adds nothing here. For logic, use TanStack Table (headless) when sorting/filtering/selection/virtualisation grow beyond ~200 lines of hand code; render with the markup above.
 
+## Grid libraries (stack profile `tables`)
+- `tanstack-table`: headless; render the markup and CSS above.
+- `ag-grid`: generate its theme from the tokens and pass it as `theme`: `node "${CLAUDE_SKILL_DIR}/scripts/emit-tokens.mjs" --in .design/tokens.json --format ag-grid > src/lib/grid-theme.ts`. Its parameters are our variables, so the dark theme follows without a second grid theme. Turn off its row animations for live data (`animateRows={false}`) per motion.frequency-budget.
+- `mui-x-data-grid`: themed by `--format mui` (it reads the MUI theme); set `density` from the brief's density decision.
+
 ## Vue / Svelte
 - Vue: TanStack Table has a Vue adapter; `<TransitionGroup tag="tbody">` + `.row-move` for small reorders.
 - Svelte: TanStack Table adapter or hand-rolled `$derived` sorting; `animate:flip` on keyed `<tr>` for small sets.

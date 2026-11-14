@@ -11,7 +11,8 @@ Detects framework, router, styling (Tailwind v3/v4, CSS modules, Sass, CSS-in-JS
 UnoCSS, StyleX, vanilla-extract),
 component kit (for shadcn: its primitive base, style, CSS entry and port), unstyled primitive
 libraries (Radix, Base UI, React Aria, Reka, Bits UI, Ark UI, Kobalte, Headless UI, UI SDK), animation,
-interaction (toasts, drawers, command menus, positioning, drag and drop, carousels, virtual lists), chart and icon libraries,
+interaction (toasts, drawers, command menus, positioning, drag and drop, carousels, virtual lists), chart, form,
+schema, table and icon libraries,
 the view-transition integration, font loading, TypeScript, package manager, dev script,
 testing tools, design files and whether .design/ exists. Prints the stack profile as JSON.
 
@@ -95,6 +96,22 @@ const ICONS = [
   ["unplugin-icons", (d) => d === "unplugin-icons", "em"],
   ["iconify", (d) => d.startsWith("@iconify/") && !d.startsWith("@iconify/json"), "em"],
   ["react-icons", (d) => d === "react-icons", "em"],
+];
+
+/** [name, present?] lists, first match wins: form state libraries, schema validators, tables. */
+const FORM_LIBS = [
+  ["react-hook-form", (has) => has("react-hook-form")],
+  ["tanstack-form", (has, hasPrefix, deps) => deps.some((d) => /^@tanstack\/[\w-]*form$/.test(d))],
+  ["conform", (has, hasPrefix) => hasPrefix("@conform-to/")],
+  ["vee-validate", (has) => has("vee-validate")],
+  ["superforms", (has) => has("sveltekit-superforms")],
+  ["formik", (has) => has("formik")], // little maintenance: build new forms without it
+];
+const SCHEMAS = [["zod", (has) => has("zod")], ["valibot", (has) => has("valibot")], ["arktype", (has) => has("arktype")], ["yup", (has) => has("yup")]];
+const TABLES = [
+  ["ag-grid", (has) => has("ag-grid-community") || has("ag-grid-react") || has("ag-grid-vue3") || has("ag-grid-angular") || has("ag-grid-enterprise")],
+  ["mui-x-data-grid", (has, hasPrefix) => hasPrefix("@mui/x-data-grid")],
+  ["tanstack-table", (has, hasPrefix, deps) => deps.some((d) => /^@tanstack\/[\w-]*table$/.test(d))],
 ];
 
 /** [name, present?]: chart libraries. SVG ones take var(--color-chart-N); canvas ones (echarts, chartjs,
@@ -244,6 +261,9 @@ export function detectStack(rootArg = ".") {
   const animation = found(ANIMATION);
   const interaction = found(INTERACTION);
   const charts = found(CHARTS);
+  const [formLib = null] = found(FORM_LIBS), [schema = null] = found(SCHEMAS);
+  const forms = formLib || schema ? { lib: formLib, schema } : null;
+  const [tables = null] = found(TABLES);
 
   // ---- view transitions: which integration the route and shared-element recipes should use
   const viewTransitions = has("react") && atLeast(deps.react, [19, 3]) ? "react" // <ViewTransition>, stable in 19.3
@@ -293,6 +313,8 @@ export function detectStack(rootArg = ".") {
     animation,
     interaction,
     charts,
+    forms,
+    tables,
     viewTransitions,
     fonts: { loader: fontLoader, inUse: fontsInUse },
     icons,

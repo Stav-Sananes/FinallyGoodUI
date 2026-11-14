@@ -7,12 +7,13 @@ import { loadTokens, dtcgFiles, formatJson } from "./lib/token-files.mjs";
 import { emitAdapters, MissingTokenError } from "./lib/adapters.mjs";
 import { emitChartTheme } from "./lib/chart-theme.mjs";
 import { emitFonts, LOADERS } from "./lib/fonts.mjs";
+import { emitAgGrid } from "./lib/ag-grid.mjs";
 import { colorScale } from "./lib/ramp.mjs";
 import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssValue, darkOf, textMetrics, fontValue } from "./lib/tokens.mjs";
 import { toHex } from "./lib/contrast.mjs";
 
 const HELP = `
-Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|prime|angular-material|tailwind3|mui|json|js|adapters|chart-theme|fonts] [--root <dir>]
+Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|prime|angular-material|tailwind3|mui|json|js|adapters|chart-theme|fonts|ag-grid] [--root <dir>]
        emit-tokens.mjs --in <tokens.json> --format dtcg --out-dir <dir> [--name tokens] [--force]
 
 --in takes a tokens file in either shape (CSS-string values with dark in $extensions.fgu.dark, or
@@ -47,6 +48,7 @@ Prints the tokens in the requested format to stdout:
              tokens.resolver.json into --out-dir; refuses to overwrite without --force
   adapters   override CSS so libraries with hard-coded motion (sonner, cmdk, react-day-picker, vaul)
              use our --duration-*/--ease-* variables; --libs picks them by stack-profile name
+  ag-grid    AG Grid Quartz theme (withParams) pointing at our variables; dark mode follows them
   fonts      loader code for the faces font tokens name ($extensions.fgu.load): --loader next (next/font),
              nuxt (@nuxt/fonts), fontsource (self-hosted npm packages) or google (default, <link>)
   chart-theme  chart-theme.js for canvas chart libraries: chartColors(), echartsTheme(),
@@ -73,7 +75,7 @@ Options:
   --help
 `;
 
-const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "chart-theme", "fonts", "dtcg"];
+const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "chart-theme", "fonts", "ag-grid", "dtcg"];
 
 function block(selector, decls, indent = "") {
   return `${indent}${selector} {\n${decls.map((d) => `${indent}  ${d}`).join("\n")}\n${indent}}`;
@@ -659,6 +661,7 @@ export function emit(tokens, format, { muiScheme, libs, loader } = {}) {
     case "adapters": return emitAdaptersOrUsageError(tokens, libs);
     case "chart-theme": return emitChartThemeOrUsageError(tokens);
     case "fonts": return emitFonts(tokens, loader);
+    case "ag-grid": return missingTokenAsUsage(() => emitAgGrid(tokens));
     default: throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
   }
 }
@@ -672,12 +675,14 @@ function emitChartThemeOrUsageError(tokens) {
   try { return emitChartTheme(tokens); } catch (e) { throw new UsageError(e.message); }
 }
 
-function emitAdaptersOrUsageError(tokens, libs) {
-  try { return emitAdapters(tokens, libs); } catch (e) {
+function missingTokenAsUsage(emitFn) {
+  try { return emitFn(); } catch (e) {
     if (e instanceof MissingTokenError) throw new UsageError(e.message);
     throw e;
   }
 }
+
+const emitAdaptersOrUsageError = (tokens, libs) => missingTokenAsUsage(() => emitAdapters(tokens, libs));
 
 export function writeDtcg(tokens, outDir, { force = false, name = "tokens" } = {}) {
   const files = dtcgFiles(tokens, name);

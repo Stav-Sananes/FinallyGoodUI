@@ -2,7 +2,9 @@
 // tokens. Keyed by the stack profile's `interaction` names. Every selector starts with `:root` to
 // out-rank the library's own rules whatever order the stylesheets load in; only timing is
 // overridden, never what the library animates.
-import { groupTokens, VAR_PREFIX } from "./tokens.mjs";
+import { tokenRef, MissingTokenError } from "./tokens.mjs";
+
+export { MissingTokenError };
 
 const REDUCE = "@media (prefers-reduced-motion: reduce)";
 
@@ -55,16 +57,10 @@ ${REDUCE} {
 
 export const ADAPTER_LIBS = Object.keys(ADAPTERS);
 
-export class MissingTokenError extends Error {}
-
 /** var(--…) references for the tokens an adapter uses; throws when the token set lacks one. */
 function references(tokens, uses, lib) {
   const refs = {};
-  for (const [group, name] of uses) {
-    const present = [...groupTokens(tokens?.[group])].some(([n]) => n === name);
-    if (!present) throw new MissingTokenError(`the ${lib} adapter needs the token ${group}.${name}`);
-    (refs[group] ||= {})[name] = `var(--${VAR_PREFIX[group]}-${name})`;
-  }
+  for (const [group, name] of uses) (refs[group] ||= {})[name] = tokenRef(tokens, group, name, `the ${lib} adapter`);
   return refs;
 }
 
