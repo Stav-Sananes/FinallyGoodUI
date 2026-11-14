@@ -77,6 +77,26 @@ const ANIMATION = [
   ["angular-animations-legacy", (has) => has("@angular/animations")], // deprecated: use animate.enter / animate.leave
 ];
 
+/**
+ * [lib, package matcher, api]. api says where the icon-stroke token goes: "stroke" (a stroke width),
+ * "weight" (named weights, Phosphor), "fixed-grid" (drawn per size, pick the grid nearest the icon
+ * size), "font-axes" (variable icon font), "em" (sized by font-size, no stroke control).
+ */
+const ICONS = [
+  ["lucide", (d) => d === "lucide" || d.startsWith("lucide-") || d.startsWith("@lucide/"), "stroke"],
+  ["heroicons", (d) => d.startsWith("@heroicons/"), "fixed-grid"],
+  ["phosphor", (d) => d.startsWith("@phosphor-icons/") || d === "phosphor-react", "weight"],
+  ["tabler", (d) => d.startsWith("@tabler/icons"), "stroke"],
+  ["radix-icons", (d) => d === "@radix-ui/react-icons", "fixed-grid"],
+  ["hugeicons", (d) => d === "@hugeicons/react" || d === "@hugeicons/vue" || d === "hugeicons-react", "stroke"],
+  ["solar", (d) => d.startsWith("@solar-icons/"), "stroke"],
+  ["remix", (d) => d.startsWith("@remixicon/") || d === "remixicon", "fixed-grid"],
+  ["material-symbols", (d) => d === "material-symbols" || d.startsWith("@material-symbols/"), "font-axes"],
+  ["unplugin-icons", (d) => d === "unplugin-icons", "em"],
+  ["iconify", (d) => d.startsWith("@iconify/") && !d.startsWith("@iconify/json"), "em"],
+  ["react-icons", (d) => d === "react-icons", "em"],
+];
+
 /** [name, present?]: chart libraries. SVG ones take var(--color-chart-N); canvas ones (echarts, chartjs,
  * ag-charts, uplot) need the resolved colours from --format chart-theme. */
 const CHARTS = [
@@ -242,14 +262,9 @@ export function detectStack(rootArg = ".") {
   const fontLoader = framework === "next" ? "next" : framework === "nuxt" ? "nuxt"
     : pkg && framework !== "unknown" && framework !== "html" ? "fontsource" : "google";
 
-  // ---- icons
-  let icons = null;
-  if (has("lucide-react")) icons = "lucide-react";
-  else if (hasPrefix("lucide")) icons = Object.keys(deps).find((d) => d.startsWith("lucide"));
-  else if (hasPrefix("@heroicons/")) icons = "heroicons";
-  else if (hasPrefix("@phosphor-icons/") || has("phosphor-react")) icons = "phosphor";
-  else if (hasPrefix("@tabler/icons")) icons = "tabler";
-  else if (has("react-icons")) icons = "react-icons";
+  // ---- icons: the first set found, the package to import from, and how its weight is set
+  const iconSet = ICONS.find(([, match]) => depNames.some(match));
+  const icons = iconSet ? { lib: iconSet[0], package: depNames.find(iconSet[1]), api: iconSet[2] } : null;
 
   // ---- package manager
   let packageManager = null;

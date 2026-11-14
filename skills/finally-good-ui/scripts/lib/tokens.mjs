@@ -3,11 +3,11 @@
 // (colour/shadow objects, dark in a resolver context); toDtcg converts the first into the second.
 import { parseColor, toHex } from "./contrast.mjs";
 
-export const GROUPS = ["color", "font", "text", "tracking", "space", "radius", "shadow", "duration", "easing"];
+export const GROUPS = ["color", "font", "text", "tracking", "space", "radius", "shadow", "icon", "duration", "easing"];
 export const VAR_PREFIX = { color: "color", font: "font", text: "text", tracking: "tracking", space: "space", radius: "radius",
-  shadow: "shadow", duration: "duration", easing: "ease" };
+  shadow: "shadow", icon: "icon", duration: "duration", easing: "ease" };
 export const TYPES = { color: "color", font: "fontFamily", text: "dimension", tracking: "dimension", space: "dimension",
-  radius: "dimension", shadow: "shadow", duration: "duration", easing: "cubicBezier" };
+  radius: "dimension", shadow: "shadow", icon: "dimension", duration: "duration", easing: "cubicBezier" };
 
 export const EASING_KEYWORDS = {
   linear: [0, 0, 1, 1], ease: [0.25, 0.1, 0.25, 1], "ease-in": [0.42, 0, 1, 1],
@@ -71,6 +71,9 @@ export function cssValue(group, value) {
       return cssColor(value);
     case "tracking":
       if (typeof value === "number") return `${fmtNum(value)}em`; // DTCG number token: a multiple of the font size
+    // falls through
+    case "icon":
+      if (typeof value === "number") return fmtNum(value); // stroke width, in the icon's own grid units
     // falls through
     case "text": case "space": case "radius": {
       const d = parseDimension(value);

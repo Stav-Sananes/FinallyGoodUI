@@ -600,3 +600,13 @@ test("emit angular-material: mat.theme with light-dark() system overrides; our v
   assert.match(s, /\.dark, \[data-theme="dark"\] \{[^}]*--shadow-md: /, "shadows can't use light-dark(): dark blocks");
   assert.match(s, /\.dark \{ color-scheme: dark; \}/);
 });
+
+test("icon tokens: sizes as px and a unitless stroke, in CSS and Tailwind", () => {
+  const raw = JSON.parse(readFileSync(DEF, "utf8"));
+  assert.deepEqual(Object.keys(raw.icon).filter((k) => !k.startsWith("$")), ["sm", "md", "lg", "stroke"]);
+  const css = emit("css").stdout;
+  assert.match(css, /--icon-sm: 16px;/);
+  assert.match(css, /--icon-lg: 24px;/);
+  assert.match(css, /--icon-stroke: 2;/);
+  assert.match(emit("tailwind4").stdout, /--icon-md: 20px;/);
+});

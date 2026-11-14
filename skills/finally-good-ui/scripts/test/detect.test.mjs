@@ -18,7 +18,7 @@ test("next + tailwind v4 + shadcn", () => {
   assert.equal(p.styling.tailwind, "v4");
   assert.equal(p.components, "shadcn");
   assert.deepEqual(p.animation, ["motion"]);
-  assert.equal(p.icons, "lucide-react");
+  assert.deepEqual(p.icons, { lib: "lucide", package: "lucide-react", api: "stroke" });
   assert.equal(p.typescript, true);
   assert.equal(p.packageManager, "pnpm");
   assert.equal(p.devScript, "dev");
@@ -37,7 +37,8 @@ test("vite + react + tailwind v3", () => {
   assert.equal(p.styling.cssModules, true);
   assert.equal(p.components, "headlessui");
   assert.deepEqual(p.animation, ["motion"]); // framer-motion -> motion
-  assert.equal(p.icons, "heroicons");
+  assert.equal(p.icons.lib, "heroicons");
+  assert.equal(p.icons.api, "fixed-grid");
   assert.equal(p.typescript, false);
   assert.equal(p.packageManager, "yarn");
   assert.equal(p.devScript, "start");
@@ -51,7 +52,7 @@ test("vue + css", () => {
   assert.equal(p.router, "vue-router");
   assert.equal(p.styling.tailwind, null);
   assert.deepEqual(p.animation, ["gsap"]);
-  assert.equal(p.icons, "tabler");
+  assert.equal(p.icons.lib, "tabler");
   assert.equal(p.packageManager, "npm");
   assert.equal(p.devScript, "serve");
   assert.ok(p.designFiles.includes("src/assets/main.css"));
@@ -71,7 +72,8 @@ test("mui + many animation libs + axe", () => {
   assert.equal(p.components, "mui");
   assert.equal(p.styling.cssInJs, "emotion");
   assert.deepEqual([...p.animation].sort(), ["auto-animate", "gsap", "lottie", "react-spring"]);
-  assert.equal(p.icons, "phosphor");
+  assert.equal(p.icons.lib, "phosphor");
+  assert.equal(p.icons.api, "weight");
   assert.equal(p.packageManager, "bun");
   assert.deepEqual(p.testing, { playwright: true, axe: true });
   assert.ok(p.designFiles.includes("src/theme.ts"));
@@ -290,4 +292,18 @@ test("viewTransitions names the integration the route recipes should use", () =>
   assert.equal(vt({ astro: "6.0.0" }), "astro");
   assert.equal(vt({ "@sveltejs/kit": "2.40.0", svelte: "5.0.0" }), "sveltekit");
   assert.equal(vt({ vue: "3.5.0" }), "native");
+});
+
+test("icon sets: the first one found, its package and how its weight is controlled", () => {
+  const icons = (deps) => { const d = tmp(); writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: deps })); return detect(d).icons; };
+  assert.deepEqual(icons({ "lucide-vue-next": "1.0.0" }), { lib: "lucide", package: "lucide-vue-next", api: "stroke" });
+  assert.deepEqual(icons({ "@lucide/svelte": "1.0.0" }), { lib: "lucide", package: "@lucide/svelte", api: "stroke" });
+  assert.deepEqual(icons({ "@radix-ui/react-icons": "1.3.2" }), { lib: "radix-icons", package: "@radix-ui/react-icons", api: "fixed-grid" });
+  assert.deepEqual(icons({ "@iconify/react": "6.0.4" }), { lib: "iconify", package: "@iconify/react", api: "em" });
+  assert.deepEqual(icons({ "unplugin-icons": "24.0.0", "@iconify-json/mdi": "1.2.0" }), { lib: "unplugin-icons", package: "unplugin-icons", api: "em" });
+  assert.deepEqual(icons({ "material-symbols": "0.49.0" }), { lib: "material-symbols", package: "material-symbols", api: "font-axes" });
+  assert.deepEqual(icons({ "@remixicon/react": "4.9.0" }), { lib: "remix", package: "@remixicon/react", api: "fixed-grid" });
+  assert.deepEqual(icons({ "@hugeicons/react": "1.1.10", "@hugeicons/core-free-icons": "4.4.0" }), { lib: "hugeicons", package: "@hugeicons/react", api: "stroke" });
+  assert.deepEqual(icons({ "@solar-icons/react": "2.6.0" }), { lib: "solar", package: "@solar-icons/react", api: "stroke" });
+  assert.equal(icons({}), null);
 });

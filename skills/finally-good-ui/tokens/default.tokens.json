@@ -704,6 +704,35 @@
       "$description": "Overlays: dialogs, popovers"
     }
   },
+  "icon": {
+    "$description": "Icon box sizes, about 1.15-1.25x the text beside them (sm with text.sm, md with text.base, lg standalone); stroke in the icon set own 24-unit grid",
+    "sm": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      }
+    },
+    "md": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      }
+    },
+    "lg": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      }
+    },
+    "stroke": {
+      "$type": "number",
+      "$value": 2,
+      "$description": "1.5 for calm, editorial or luxurious directions; 2 by default; up to 2.5 for playful or raw ones"
+    }
+  },
   "duration": {
     "instant": {
       "$type": "duration",

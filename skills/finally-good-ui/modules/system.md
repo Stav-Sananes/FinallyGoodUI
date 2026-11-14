@@ -31,6 +31,7 @@ Goal: turn the chosen direction (or the confirmed existing brand) into **one sou
   - Scale: from the direction, or 12/14/16/18/20/24/30/36/48/60.
   - Body size follows density and audience: **16px** by default (consumer, mixed or beginner audiences, reading-heavy screens, phone-first, AAA/low-vision needs); **13–14px** only when the brief resolves to dense expert daily use (`personality.dense-expert`, `data.tension-density-clarity` → density). Either way, form inputs stay ≥ 16px on mobile (`a11y.target-size`) and no readable text goes below 12px.
   - Line-height 1.4–1.6 for body, tighter for display.
+- **Icons**: `icon.sm` / `icon.md` / `icon.lg` are box sizes about 1.15–1.25× the text beside them (16 with 14px text, 20 with 16px, 24 standalone); `icon.stroke` follows the direction's weight (1.5 calm, editorial or luxurious; 2 default; up to 2.5 playful or raw) and should match the type's stroke weight. Wire them per the stack profile's `icons.api` (table in step 4). One set per app (`craft.real-imagery-and-icons`).
 - **Space**: a 4-based scale (`layout.spacing-scale`).
 - **Radius and shadow**: one radius family and one elevation system. Radius shows personality (tight means serious or dense; soft means friendly).
 - **Motion**: see below.
@@ -88,6 +89,16 @@ node "${CLAUDE_SKILL_DIR}/scripts/emit-tokens.mjs" --in .design/tokens.json --fo
 | `styling.unocss` | `css`, then `theme: { colors: { primary: 'var(--color-primary)', … }, radius, ease, font }` in `uno.config` (preset-wind4 names: `radius`, `ease`, `font`, `text`) |
 | `styling.stylex` | one `tokens.stylex.ts` with `stylex.defineVars` per group, values from `json`; dark values under the `'@media (prefers-color-scheme: dark)'` key |
 | `styling.vanillaExtract` | `createGlobalTheme(':root', vars, light)` and `createGlobalTheme('.dark', vars, dark)` in `theme.css.ts`, values from `json` |
+
+**Icons** (stack profile `icons`: `{lib, package, api}`); the variables come from `css` / `tailwind4`:
+| `icons.api` | Libraries | Wiring |
+|---|---|---|
+| `stroke` | lucide, tabler, hugeicons, solar | Lucide and Tabler in global CSS: `svg.lucide, svg.tabler-icon { width: var(--icon-md); height: var(--icon-md); stroke-width: var(--icon-stroke); }` plus `.icon-sm`/`.icon-lg` classes for the other sizes (CSS beats their `size` props, so size icons by class from then on). Hugeicons and Solar: pass `strokeWidth` with the token's number through `SolarProvider` or one wrapper component |
+| `weight` | phosphor | `<IconContext.Provider value={{ weight }}>` with weight from the stroke token: ≤ 1.25 `thin`, 1.5 `light`, 2 `regular`, ≥ 2.5 `bold`; size by CSS on the icon's class or `size="1.25em"` |
+| `fixed-grid` | heroicons, radix-icons, remix | drawn per size, so pick the drawing nearest the token: Heroicons `24/outline` at `icon.lg`, `20/solid` at `icon.md`, `16/solid` at `icon.sm`; Radix Icons at 15px only (off-grid sizes blur); Remix scales freely. No stroke control: keep the set's own weight in mind when choosing it |
+| `font-axes` | material-symbols | `.material-symbols-outlined { font-size: var(--icon-md); font-variation-settings: "wght" W, "opsz" P; }` with W = 300 / 400 / 500 for stroke 1.5 / 2 / 2.5 and P = the icon size clamped to 20–48 |
+| `em` | iconify, unplugin-icons, react-icons | they size to `1em`: set `font-size: var(--icon-md)` on the icon or its wrapper; stroke follows the chosen icon set |
+Tailwind v4: `size-(--icon-md)` sizes an icon from the token.
 
 If dark mode is applied by attribute, class or localStorage rather than `prefers-color-scheme`, or the app is dark by default, replace `"theme": "media"` in `.design/config.json` with an object saying how (see `check-flows.mjs --help`, e.g. `{"attribute": "data-theme", "storage": "theme", "default": "dark"}`) so the flow walk renders both schemes for real.
 
