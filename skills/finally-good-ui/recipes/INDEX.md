@@ -77,6 +77,7 @@ Rules that apply to all recipes:
 | [chat-log](patterns/chat-log.md) | conversation that follows new messages only at the end, jump to latest, chat composer keys, streaming replies | usability.system-status, states.optimistic-feedback, a11y.keyboard-complete | No |
 | [inline-edit](patterns/inline-edit.md) | rename in place: Enter saves, Escape cancels, blur saves, optimistic with rollback | states.optimistic-feedback, usability.user-control-undo, a11y.keyboard-complete | No |
 | [focus-after-delete](patterns/focus-after-delete.md) | focus moves to the next, previous or empty state when the focused item goes | a11y.keyboard-complete, usability.user-control-undo, usability.system-status | No |
+| [chart](patterns/chart.md) | charts in the project's palette, type and grid colours in both themes, through any chart library (SVG: variables; canvas: chart-theme.js) | data.chart-palette, data.chart-choice, color.color-not-sole-signal | Uses the installed chart library |
 | [settings-page](patterns/settings-page.md) | grouped options, one save model per group | layout.proximity-grouping, usability.user-control-undo, states.optimistic-feedback | No |
 
 ## Pick by situation
@@ -108,4 +109,5 @@ Rules that apply to all recipes:
 | understand why a screen is empty and what to do | empty-state |
 | catch a form mistake as soon as they leave the field | form-validation |
 | scan, sort and compare many rows | data-table |
+| see a trend, comparison or share at a glance | chart |
 | change preferences and trust they stuck | settings-page |

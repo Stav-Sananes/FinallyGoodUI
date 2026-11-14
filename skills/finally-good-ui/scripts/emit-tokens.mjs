@@ -5,12 +5,13 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
 import { loadTokens, dtcgFiles, formatJson } from "./lib/token-files.mjs";
 import { emitAdapters, MissingTokenError } from "./lib/adapters.mjs";
+import { emitChartTheme } from "./lib/chart-theme.mjs";
 import { colorScale } from "./lib/ramp.mjs";
 import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssValue, darkOf, textMetrics } from "./lib/tokens.mjs";
 import { toHex } from "./lib/contrast.mjs";
 
 const HELP = `
-Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|prime|angular-material|tailwind3|mui|json|js|adapters] [--root <dir>]
+Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|prime|angular-material|tailwind3|mui|json|js|adapters|chart-theme] [--root <dir>]
        emit-tokens.mjs --in <tokens.json> --format dtcg --out-dir <dir> [--name tokens] [--force]
 
 --in takes a tokens file in either shape (CSS-string values with dark in $extensions.fgu.dark, or
@@ -45,6 +46,8 @@ Prints the tokens in the requested format to stdout:
              tokens.resolver.json into --out-dir; refuses to overwrite without --force
   adapters   override CSS so libraries with hard-coded motion (sonner, cmdk, react-day-picker, vaul)
              use our --duration-*/--ease-* variables; --libs picks them by stack-profile name
+  chart-theme  chart-theme.js for canvas chart libraries: chartColors(), echartsTheme(),
+             applyChartJsTheme(Chart), onThemeChange(cb); reads the live variables, resolves any colour
   js         motion-tokens ES module for JS animation (Motion, WAAPI, transition props, timers):
              ms, sec, ease, cssEase, easeFn, bezierString, spring, reduced, msMotion, secMotion,
              durations, easings. Reads the live --duration-*/--ease-*
@@ -66,7 +69,7 @@ Options:
   --help
 `;
 
-const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "dtcg"];
+const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "chart-theme", "dtcg"];
 
 function block(selector, decls, indent = "") {
   return `${indent}${selector} {\n${decls.map((d) => `${indent}  ${d}`).join("\n")}\n${indent}}`;
@@ -650,8 +653,13 @@ export function emit(tokens, format, { muiScheme, libs } = {}) {
     case "json": return emitJson(tokens);
     case "js": return emitJs(tokens);
     case "adapters": return emitAdaptersOrUsageError(tokens, libs);
+    case "chart-theme": return emitChartThemeOrUsageError(tokens);
     default: throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
   }
+}
+
+function emitChartThemeOrUsageError(tokens) {
+  try { return emitChartTheme(tokens); } catch (e) { throw new UsageError(e.message); }
 }
 
 function emitAdaptersOrUsageError(tokens, libs) {

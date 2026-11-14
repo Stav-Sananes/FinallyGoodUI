@@ -175,6 +175,71 @@
         "hex": "#426ec2"
       },
       "$description": "Focus ring; >= 3:1 against background"
+    },
+    "chart-1": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.43, 0.19, 264],
+        "hex": "#1541b6"
+      },
+      "$description": "Categorical chart series in order; >= 3:1 on background, the first six distinct under protanopia, deuteranopia and tritanopia (check-palette.mjs)"
+    },
+    "chart-2": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.665, 0.142, 71],
+        "hex": "#c98206"
+      }
+    },
+    "chart-3": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.57, 0.096, 195],
+        "hex": "#078989"
+      }
+    },
+    "chart-4": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.42, 0.18, 343],
+        "hex": "#880066"
+      }
+    },
+    "chart-5": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.495, 0.1, 95],
+        "hex": "#746005"
+      }
+    },
+    "chart-6": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.672, 0.19, 298],
+        "hex": "#a676f9"
+      }
+    },
+    "chart-7": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.633, 0.174, 132],
+        "hex": "#609e06"
+      }
+    },
+    "chart-8": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.569, 0.19, 16],
+        "hex": "#ce344f"
+      }
     }
   },
   "font": {

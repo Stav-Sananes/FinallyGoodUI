@@ -11,7 +11,7 @@ Detects framework, router, styling (Tailwind v3/v4, CSS modules, Sass, CSS-in-JS
 UnoCSS, StyleX, vanilla-extract),
 component kit (for shadcn: its primitive base, style, CSS entry and port), unstyled primitive
 libraries (Radix, Base UI, React Aria, Reka, Bits UI, Ark UI, Kobalte, Headless UI, UI SDK), animation,
-interaction (toasts, drawers, command menus, positioning, drag and drop, carousels, virtual lists) and icon libraries,
+interaction (toasts, drawers, command menus, positioning, drag and drop, carousels, virtual lists), chart and icon libraries,
 the view-transition integration, TypeScript, package manager, dev script,
 testing tools, design files and whether .design/ exists. Prints the stack profile as JSON.
 
@@ -75,6 +75,24 @@ const ANIMATION = [
   ["lenis", (has) => has("lenis") || has("@studio-freight/lenis")],
   ["number-flow", (has, hasPrefix) => has("number-flow") || hasPrefix("@number-flow/")],
   ["angular-animations-legacy", (has) => has("@angular/animations")], // deprecated: use animate.enter / animate.leave
+];
+
+/** [name, present?]: chart libraries. SVG ones take var(--color-chart-N); canvas ones (echarts, chartjs,
+ * ag-charts, uplot) need the resolved colours from --format chart-theme. */
+const CHARTS = [
+  ["recharts", (has) => has("recharts")],
+  ["tremor", (has) => has("@tremor/react")],
+  ["visx", (has, hasPrefix) => hasPrefix("@visx/")],
+  ["nivo", (has, hasPrefix) => hasPrefix("@nivo/")],
+  ["echarts", (has) => has("echarts") || has("echarts-for-react") || has("vue-echarts")],
+  ["chartjs", (has) => has("chart.js") || has("react-chartjs-2") || has("vue-chartjs")],
+  ["plot", (has) => has("@observablehq/plot")],
+  ["d3", (has, hasPrefix) => has("d3") || hasPrefix("d3-")],
+  ["ag-charts", (has, hasPrefix) => hasPrefix("ag-charts-")],
+  ["uplot", (has) => has("uplot")],
+  ["victory", (has) => has("victory")],
+  ["unovis", (has, hasPrefix) => hasPrefix("@unovis/")],
+  ["layerchart", (has) => has("layerchart")],
 ];
 
 /** [name, present?]: interaction libraries, one name per family across its framework ports. */
@@ -205,6 +223,7 @@ export function detectStack(rootArg = ".") {
   const found = (list) => list.filter(([, test]) => test(has, hasPrefix, depNames)).map(([name]) => name);
   const animation = found(ANIMATION);
   const interaction = found(INTERACTION);
+  const charts = found(CHARTS);
 
   // ---- view transitions: which integration the route and shared-element recipes should use
   const viewTransitions = has("react") && atLeast(deps.react, [19, 3]) ? "react" // <ViewTransition>, stable in 19.3
@@ -247,6 +266,7 @@ export function detectStack(rootArg = ".") {
     primitives,
     animation,
     interaction,
+    charts,
     viewTransitions,
     icons,
     typescript: has("typescript") || file("tsconfig.json"),
