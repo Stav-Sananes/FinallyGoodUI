@@ -175,3 +175,11 @@ test("component kit major version; Joy UI (on hold) is no longer reported as Mat
   assert.equal(p.components, "joy");
   assert.equal(p.componentsVersion, 5);
 });
+
+test("daisyUI detected as the component kit, with its major version", () => {
+  const d = tmp();
+  writeFileSync(join(d, "package.json"), JSON.stringify({ devDependencies: { tailwindcss: "4.3.0", daisyui: "5.8.0" } }));
+  const p = detect(d);
+  assert.equal(p.components, "daisyui");
+  assert.equal(p.componentsVersion, 5);
+});

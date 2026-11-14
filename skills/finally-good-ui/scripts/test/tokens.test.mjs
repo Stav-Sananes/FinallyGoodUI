@@ -469,3 +469,20 @@ test("emit mui: CSS theme variables with the project's dark-mode selector (MUI v
   const custom = run("emit-tokens.mjs", ["--in", DEF, "--format", "mui", "--mui-scheme", "[data-theme=%s]"]);
   assert.deepEqual(JSON.parse(custom.stdout).cssVariables, { colorSchemeSelector: "[data-theme=%s]" });
 });
+
+test("emit daisyui: a light (default) and a dark (prefersdark) theme block; motion stays ours", () => {
+  const r = emit("daisyui");
+  assert.equal(r.code, 0, r.stderr);
+  const [light, dark] = [...r.stdout.matchAll(/@plugin "daisyui\/theme" \{([^}]*)\}/g)].map((m) => m[1]);
+  assert.ok(light && dark, "two theme blocks");
+  assert.match(light, /name: "fgu-light";\s*default: true;\s*prefersdark: false;\s*color-scheme: light;/);
+  assert.match(light, /--color-base-100: oklch\(0\.99 0\.002 265\);/, "base-100 = background");
+  assert.match(light, /--color-base-content: oklch\(0\.21 0\.012 265\);/);
+  assert.match(light, /--color-primary: oklch\(0\.5 0\.14 262\);/);
+  assert.match(light, /--color-accent: oklch\(0\.5 0\.14 262\);/, "daisy accent is a brand colour; without a mark role it follows primary");
+  assert.match(light, /--color-error: /, "destructive -> error");
+  assert.match(light, /--radius-field: 8px;/);
+  assert.match(dark, /name: "fgu-dark";\s*default: false;\s*prefersdark: true;\s*color-scheme: dark;/);
+  assert.match(dark, /--color-base-100: oklch\(0\.17 0\.008 265\);/);
+  assert.match(r.stdout, /@theme \{[^}]*--ease-move:/);
+});
