@@ -78,6 +78,9 @@ Chosen 2026-11-14: reach work first (0.1 first because it is a shipped accessibi
 - [x] 6.1
 - [x] 6.2
 - [ ] 6.4
+- [x] 0.5a
+- [ ] 0.5b
+- [ ] 0.5c
 - [ ] 0.2
 - [ ] 0.3
 - [ ] 0.4
@@ -111,6 +114,56 @@ Chosen 2026-11-14: reach work first (0.1 first because it is a shipped accessibi
 - [ ] 5.4
 - [ ] 5.5
 - [ ] 5.6
+
+Ticks added 2026-11-14 from the four gallery runs (feedback below):
+- **0.5a** check-static false positives: radiogroup around native radios, hash routes in single-file apps, long-duration on token definitions and the one signature moment, `:focus-within` focus rings, 1px screen-reader clip.
+- **0.5b** tokens: `color-scheme` in emitted dark blocks, overlay/scrim and other roles recipes need, document custom roles and a brand-accent slot.
+- **0.5c** unattended runs and verify robustness: an autonomous mode (interview, references fallback, approvals, deps), directions without subagents, free port + page-title check, `await` the probe, cached-Playwright fallback, shared-browser warning.
+
+### Gallery-run feedback (verbatim notes, 2026-11-14)
+#### meals (skill run) feedback
+1. dead-control flags hash routes (#week) in single-file apps; accept #/ routes or explain.
+2. long-duration flags token definitions in :root (default tokens long 400 / hero 500) — flag usage, not definition.
+3. verify assumes screenshots writable into project; MCP writes only to its workspace. http.server served stale index.html (cache-bust note).
+4. no headless/self-confirm mode for no-user runs (interview confirm, blueprint approval, "ask first" deps).
+5. editorial cookbook brief lands on cream-serif-terracotta fingerprint; no guidance on staying editorial without it.
+6. layout axis single value; phone vs desktop composition slot missing in spec template.
+7. tokens: no overlay/backdrop color token (dialog recipe uses literal); emit css lacks color-scheme property.
+8. config.theme can't express "media + toggle".
+9. probe small-target checks <input> not its wrapping label.
+10. unclear whether non-motion timers (undo window, fetch delay) count as duration literals; toast recipe uses 5000.
+11. SKILL.md "outside Claude Code" says build all 3 directions sequentially vs task (specs only) — wording conflict.
+12. check-flows token coverage never computed when playwright missing.
+#### booking (skill run) feedback
+1. interview recommendations skew to frequent/serious apps; "you decide" sometimes has no recommended option (frequency, calm vs energetic) for consumer apps.
+2. references question has no unattended answer; say what to do without a user.
+3. directions step assumes subagents + compare page + user wait; "specs only, pick one" unsupported; record format expects user rejection reasons.
+4. cream-serif-terracotta fingerprint pulls against brand derivation (brand name implies warm palette).
+5. verify assumes check-flows+playwright in project; MCP fallback shares ONE browser across parallel agents (got another agent's app); writes .playwright-mcp into repo. verify.md §7a should warn; cached playwright-core w/ pinned headless shell worked.
+6. role-no-keyboard FALSE POSITIVE: role=radiogroup wrapping native radios (native radios handle arrows).
+7. long-duration can't tell signature moment from routine motion; always one medium needing justification.
+8. build.md says Layer 1 runs automatically after each screen; not outside plugin.
+9. emit-tokens dark block: needs color-scheme; can't carry extra tokens like scrim.
+#### finance (skill run) feedback
+1. verify needs node playwright; accept python playwright / cached browser path.
+2. verify docs suggest port 4173; say pick a free/random port (parallel agents collided).
+3. blueprint nav table frequency rows miss "weekly".
+4. build step 1 (shell + nav) vs craft.nothing-dead on single-screen builds; need rule.
+5. references question: no "you decide" default.
+6. tokens contract: no brand-accent slot (accent = hover tint, shadcn sense); docs don't say custom roles allowed; needed overlay + skeleton-shine tokens (recipes use literals).
+7. motion-literal rule: no exception for business timers (undo window, simulated fetch).
+8. direction re-roll rules can loop (8 rerolls when one value passes).
+9. probe CLS catches JS-rendered pages after blocking CDN script; build.md note.
+10. interview needs autonomous mode.
+#### tracker (skill run) feedback
+1. references question needs no-user fallback.
+2. directions: brief fixes composition but module requires 3 different layouts -> deadlock; say what to do.
+3. directions w/o subagents: no prototype, G9 fidelity check has nothing to compare.
+4. verify main blocker: check-flows needs project playwright; MCP shared browser + repo-only saves; port 4173 collisions; fall back to cached playwright browser; pick free port, check page title.
+5. probe call is async; say "await window.__fguProbe(...)" in verify §7a.
+6. outline-none-no-focus false positive: focus ring on wrapper via :focus-within.
+7. tokens: no slot for motif colour / backdrop; say custom roles fine.
+8. verify still says spawn ui-reviewer w/o non-interactive note; check-static flags 1px sr-only clip as off-scale.
 
 Avoid (Part 4): "N stacks supported" tables without emit/verify behind them, and theme/style catalogs (contradict the no-presets canon).
 

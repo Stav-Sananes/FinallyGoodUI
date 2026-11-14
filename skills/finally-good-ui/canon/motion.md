@@ -142,7 +142,7 @@ decides: [motion.signature, motion.level]
 tensions: [motion.frequency-budget, motion.purpose-only, motion.tension-delight-speed]
 asked-by: []
 checks:
-  measured: "Probe across the flow walk: at most one distinct animation over 300ms (backdrops excepted) or using spatial spring bounce; it is triggered at most once per session."
+  measured: "Probe across the flow walk: at most one distinct animation over 300ms (backdrops excepted) or using spatial spring bounce; it is triggered at most once per session. Put \"signature\" in that moment's selector or class (e.g. .booked-signature) so check-static's long-duration rule accepts it up to the 500ms ceiling."
   judged: "Is the signature moment tied to something this user actually cares about, and would they see it rarely enough to still enjoy it on day 30?"
 ```
 

@@ -32,6 +32,8 @@ const SKIP_TOP = new Set(["test", "tests", "__tests__", "e2e", "cypress", "playw
 const SKIP_NESTED = /(^|\/)(__tests__|__mocks__|tests?|e2e|fixtures|vendor)\//;
 const LAYOUT_PROPS = /^(width|height|top|left|right|bottom|inset|margin(-[a-z-]+)?|padding(-[a-z-]+)?|(max|min)-(width|height))$/;
 const LAYOUT_JS_KEYS = /\b(width|height|top|left|right|bottom|margin\w*|padding\w*|maxHeight|maxWidth|minHeight|minWidth)\s*:/g;
+const SIGNATURE = /signature/i;
+const VISUALLY_HIDDEN = /\bclip\s*:\s*rect\(|clip-path\s*:\s*inset\(\s*50%/;
 const INFINITE = /infinite|Infinity|animate-(spin|pulse|ping|bounce)/;
 const EXEMPT_COLOR_FILE = (f) => {
   const b = basename(f).toLowerCase();
@@ -215,16 +217,19 @@ export function checkFile(rel, text, ctx) {
   }
 
   // ---- long-duration
-  const judge = (idx, ms, what) => {
+  // The app's one signature moment (motion.one-signature-moment) may take a long duration; name its
+  // selector or class "signature" to mark it. The 500ms ceiling still holds.
+  const judge = (idx, ms, what, signature = false) => {
     if (ms > 500) add("long-duration", idx, "high", `${what} ${Math.round(ms)}ms exceeds the 500ms ceiling (motion.frequency-budget); routine UI stays ≤300ms.`);
-    else if (ms > 300) add("long-duration", idx, "medium", `${what} ${Math.round(ms)}ms is over 300ms; reserve long/hero durations for rare moments.`);
+    else if (ms > 300 && !signature) add("long-duration", idx, "medium", `${what} ${Math.round(ms)}ms is over 300ms; reserve long/hero durations for rare moments. For the app's one signature moment, put "signature" in its selector.`);
   };
   each(/(?<![\w-])(transition(?:-duration)?|animation(?:-duration)?|transitionDuration|animationDuration)\s*:\s*(['"`]?)([^;{}\n]+)/gi, clean, (m) => {
     const value = m[2] ? m[3].split(m[2])[0] : m[3];
     if (INFINITE.test(value) || INFINITE.test(enclosingBody(clean, m.index))) return;
-    if (/backdrop|overlay/i.test(enclosingSelector(clean, m.index) + lineAt(clean, m.index))) return;
+    const where = enclosingSelector(clean, m.index) + lineAt(clean, m.index);
+    if (/backdrop|overlay/i.test(where)) return;
     const ms = durationsMs(m[1].replace(/Duration$/, "-duration").toLowerCase(), value.includes("var(") ? resolveVars(value, ctx.vars?.()) : value);
-    if (ms.length) judge(m.index, Math.max(...ms), "Duration");
+    if (ms.length) judge(m.index, Math.max(...ms), "Duration", SIGNATURE.test(where));
   });
   if (markup) {
     each(/\bduration\s*:\s*(\d*\.?\d+)(?![\w.%])(?!\s*(?:ms|s)\b)/g, markup, (m) => {
@@ -234,9 +239,10 @@ export function checkFile(rel, text, ctx) {
       judge(m.index, n < 10 ? n * 1000 : n, "Duration");
     });
     each(/(?<![\w-])duration-(?:(\d+)|\[(\d*\.?\d+)(ms|s)\])(?![\w-])/g, markup, (m) => {
-      if (INFINITE.test(lineAt(markup, m.index))) return;
+      const l = lineAt(markup, m.index);
+      if (INFINITE.test(l)) return;
       const ms = m[1] ? Number(m[1]) : m[3] === "s" ? Number(m[2]) * 1000 : Number(m[2]);
-      judge(m.index, ms, "Duration");
+      judge(m.index, ms, "Duration", SIGNATURE.test(l));
     });
   }
 
@@ -275,6 +281,7 @@ export function checkFile(rel, text, ctx) {
     const byLine = new Map();
     for (const s of findSpacing(clean, isJs)) {
       if (ctx.scale.has(Math.round(s.px * 100) / 100)) continue;
+      if (VISUALLY_HIDDEN.test(enclosingBody(clean, s.index))) continue; // the standard 1px screen-reader clip
       const ln = line(s.index);
       if (!byLine.has(ln)) byLine.set(ln, { idx: s.index, vals: [] });
       byLine.get(ln).vals.push(`${Math.round(s.px * 100) / 100}px`);
@@ -289,11 +296,15 @@ export function checkFile(rel, text, ctx) {
     const blocks = cssBlocks(css);
     const bases = (sel) => sel.split(",").map((s) => s.replace(/::?[\w-]+(\([^)]*\))?/g, "").trim()).filter(Boolean);
     const fvBases = new Set(blocks.filter((b) => /focus-visible/.test(b.prelude)).flatMap((b) => bases(b.prelude)));
+    // A wrapper that draws the ring with :focus-within covers the controls inside it.
+    const ringParents = blocks.filter((b) => /:focus-within/.test(b.prelude) && /\b(outline|box-shadow|border(-color)?)\s*:/.test(b.own))
+      .flatMap((b) => bases(b.prelude));
+    const insideRingParent = (prelude) => bases(prelude).every((sel) => ringParents.some((p) => sel.startsWith(p + " ") || sel.startsWith(p + ">")));
     for (const b of blocks) {
       if (/focus-visible/.test(b.prelude) || /focus-visible/.test(b.own)) continue;
       for (const d of declarations(b.own)) {
         if (!/^outline(-style)?$/.test(d.prop) || !/^(none|0)(\s|!|$)/.test(d.value)) continue;
-        if (bases(b.prelude).some((x) => fvBases.has(x))) continue;
+        if (bases(b.prelude).some((x) => fvBases.has(x)) || insideRingParent(b.prelude)) continue;
         add("outline-none-no-focus", b.bodyStart + d.offset, "high", focusMsg);
       }
     }
@@ -398,6 +409,13 @@ const NATIVE_CONTROL = /^(button|input|select|textarea|summary)$/i;
 const TAG_KEY_HANDLER = /\s(?:onKeyDown|onKeyUp|onkeydown|onkeyup|@keydown|@keyup|v-on:keydown|v-on:keyup|on:keydown|on:keyup|\(keydown\)|\(keyup\))\b/;
 const SCRIPT_KEY_LISTENER = /addEventListener\(\s*["'`]key(?:down|up)["'`]/;
 
+// A radiogroup that only labels native radios is fine: the browser gives them arrow keys.
+function wrapsNativeRadios(markup, bodyStart, tagName) {
+  const close = markup.indexOf(`</${tagName}`, bodyStart);
+  const body = markup.slice(bodyStart, close < 0 ? bodyStart + 3000 : close);
+  return /type\s*=\s*\{?\s*["'`]radio["'`]/.test(body) && !/role\s*=\s*\{?\s*["'`]radio["'`]/.test(body);
+}
+
 function checkWidgetKeyboard(markup, clean, add) {
   if (SCRIPT_KEY_LISTENER.test(clean)) return;
   WIDGET_ROLE.lastIndex = 0;
@@ -405,7 +423,9 @@ function checkWidgetKeyboard(markup, clean, add) {
   while ((m = WIDGET_ROLE.exec(markup))) {
     const start = markup.lastIndexOf("<", m.index);
     const tagName = (markup.slice(start + 1).match(/^[\w.-]+/) || [""])[0];
-    if (start < 0 || NATIVE_CONTROL.test(tagName) || TAG_KEY_HANDLER.test(tagText(markup, start))) continue;
+    const tag = start < 0 ? "" : tagText(markup, start);
+    if (start < 0 || NATIVE_CONTROL.test(tagName) || TAG_KEY_HANDLER.test(tag)) continue;
+    if (m[1] === "radiogroup" && wrapsNativeRadios(markup, start + tag.length, tagName)) continue;
     add("role-no-keyboard", start, "high",
       `role="${m[1]}" promises a keyboard model (arrow keys, Home/End, typeahead, focus on open) that this element doesn't implement. ` +
       "Use the installed component library's widget, a native control, or add the key handling; otherwise drop the role.");
@@ -424,8 +444,9 @@ function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, ea
     add("dead-control", m.index, "high", "Handler does nothing; every visible control must do what its label says (or not be shown)."));
   each(/\s(?:onclick|@click|v-on:click|on:click)\s*=\s*["']\s*["']/g, src, (m) =>
     add("dead-control", m.index, "high", "Empty click handler; the control does nothing."));
-  if (ext === ".html") {
-    // Single-page HTML (prototypes): an in-page anchor must have a target in the same file.
+  if (ext === ".html" && !/hashchange|location\.hash/.test(text)) {
+    // Single-page HTML (prototypes): an in-page anchor must have a target in the same file,
+    // unless the file routes on the hash itself.
     const ids = new Set([...text.matchAll(/\s(?:id|name)\s*=\s*["']([^"']+)["']/g)].map((x) => x[1]));
     each(/\bhref\s*=\s*["']#([\w-]+)["']/g, src, (m) => {
       if (!ids.has(m[1])) add("dead-control", m.index, "high", `Link to #${m[1]}, but nothing in this file has id="${m[1]}"; the link goes nowhere.`);

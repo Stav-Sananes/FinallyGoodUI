@@ -231,3 +231,43 @@ test("role-no-keyboard: a widget role on a custom element needs key handling", (
   assert.equal(f.severity, "high");
   assert.match(f.message, /menu/);
 });
+
+// ---------- false positives found by the 2026-11-14 gallery runs ----------
+test("gallery false positives: legitimate patterns are not flagged; their unsafe twins still are", () => {
+  const d = tmp();
+  mkdirSync(join(d, "src"), { recursive: true });
+  writeFileSync(join(d, "src", "Radios.tsx"), [
+    '<div role="radiogroup" aria-label="Groomer">',                    // 1: wraps native radios: fine
+    '  <label><input type="radio" name="g" /> Maya</label>',
+    '</div>',
+    '<div role="radiogroup" aria-label="Size"><span role="radio">S</span></div>', // 4: custom radios: flagged
+  ].join("\n") + "\n");
+  writeFileSync(join(d, "app.html"), [
+    '<nav><a href="#week">Week</a><a href="#list">List</a></nav>',      // 1: hash routes: fine
+    '<script>addEventListener("hashchange", route); function route(){ show(location.hash) }</script>',
+  ].join("\n") + "\n");
+  writeFileSync(join(d, "page.html"), '<a href="#pricing">Pricing</a>\n'); // 1: no router, no target: flagged
+  writeFileSync(join(d, "motion.css"), [
+    ":root { --duration-long: 400ms; }",
+    ".booked-signature { transition: transform var(--duration-long) ease-out; }", // 2: the one signature: fine
+    ".toast { transition: opacity var(--duration-long) ease-out; }",              // 3: routine: medium
+    ".hero-signature { transition: transform 700ms ease-out; }",                  // 4: over the ceiling: high anyway
+    "@media (prefers-reduced-motion: reduce) { * { transition: none; } }",
+  ].join("\n") + "\n");
+  writeFileSync(join(d, "forms.css"), [
+    ".field:focus-within { box-shadow: 0 0 0 2px var(--color-ring); }",
+    ".field input { outline: none; }",                                  // 2: ring on the wrapper: fine
+  ].join("\n") + "\n");
+  writeFileSync(join(d, "loose.css"), ".card button { outline: none; }\n"); // 1: no replacement: flagged
+  writeFileSync(join(d, "a11y.css"), [
+    ".sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); }",
+    ".nudge { margin-top: 3px; }",                                      // 2: off scale: flagged
+  ].join("\n") + "\n");
+  const o = check(d);
+  const hits = (rule) => o.findings.filter((f) => f.rule === rule).map((f) => `${f.file}:${f.line}`).sort();
+  assert.deepEqual(hits("role-no-keyboard"), ["src/Radios.tsx:4"]);
+  assert.deepEqual(hits("dead-control"), ["page.html:1"]);
+  assert.deepEqual(hits("long-duration"), ["motion.css:3", "motion.css:4"]);
+  assert.deepEqual(hits("outline-none-no-focus"), ["loose.css:1"]);
+  assert.deepEqual(hits("off-scale-spacing"), ["a11y.css:2"]);
+});
