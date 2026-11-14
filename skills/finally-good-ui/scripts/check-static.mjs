@@ -3,11 +3,12 @@
 import { join, resolve, relative, isAbsolute, extname, basename } from "node:path";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
 import { readdirSync } from "node:fs";
-import { readText, readJson, walk, isFile, toPosix, lineIndex, IGNORE_DIRS } from "./lib/fs.mjs";
+import { readText, walk, isFile, toPosix, lineIndex, IGNORE_DIRS } from "./lib/fs.mjs";
 import { cssBlocks, declarations, styleView, markupView } from "./lib/css.mjs";
 import { findColors, findSpacing, stripComments, jsStringLiterals, JS_EXTS, MARKUP_EXTS } from "./lib/scan.mjs";
 import { RULE_CARDS, DEFAULT_SPACE_SCALE } from "./lib/rules.mjs";
 import { groupTokens, parseDimension } from "./lib/tokens.mjs";
+import { loadTokens } from "./lib/token-files.mjs";
 
 const HELP = `
 Usage: check-static.mjs [--root <dir>] [--files a,b] [--tokens <tokens.json>]
@@ -89,8 +90,8 @@ export function resolveVars(value, vars, depth = 0) {
 
 function spaceScale(tokensFile) {
   if (!tokensFile) return new Set(DEFAULT_SPACE_SCALE);
-  const t = readJson(tokensFile);
-  if (!t) throw new UsageError(`cannot read tokens file ${tokensFile}`);
+  let t;
+  try { t = loadTokens(tokensFile); } catch (e) { throw new UsageError(`cannot read tokens file ${tokensFile}: ${e.message}`); }
   const s = new Set([0]);
   for (const [, tok] of groupTokens(t.space)) {
     const d = parseDimension(tok.$value);

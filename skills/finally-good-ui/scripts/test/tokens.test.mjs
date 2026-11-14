@@ -283,3 +283,88 @@ test("emit js: motion-tokens module reads CSS vars, falls back to token values",
   } finally { delete globalThis.document; delete globalThis.getComputedStyle; }
   assert.throws(() => m.ms("nope"), /unknown duration token "nope"/);
 });
+
+// ---------- DTCG 2025.10: read both shapes, write the standard one ----------
+import { cssValue, toDtcg } from "../lib/tokens.mjs";
+import { loadTokens } from "../lib/token-files.mjs";
+import { mkdirSync } from "node:fs";
+
+test("cssValue reads DTCG colour objects (oklch, alpha, none, srgb) and keeps CSS strings", () => {
+  assert.equal(cssValue("color", "oklch(0.5 0.14 262)"), "oklch(0.5 0.14 262)");
+  assert.equal(cssValue("color", { colorSpace: "oklch", components: [0.5, 0.14, 262] }), "oklch(0.5 0.14 262)");
+  assert.equal(cssValue("color", { colorSpace: "oklch", components: [0.21, 0.012, 265], alpha: 0.45 }), "oklch(0.21 0.012 265 / 0.45)");
+  assert.equal(cssValue("color", { colorSpace: "oklch", components: [1, 0, "none"] }), "oklch(1 0 none)");
+  assert.equal(cssValue("color", { colorSpace: "srgb", components: [1, 0, 0], hex: "#ff0000" }), "#ff0000");
+  assert.equal(cssValue("color", { colorSpace: "srgb", components: [1, 0, 0], alpha: 0.5 }), "color(srgb 1 0 0 / 0.5)");
+  assert.equal(cssValue("tracking", 0.06), "0.06em", "letter-spacing as a number token (em multiple)");
+  assert.equal(cssValue("shadow", [{ color: { colorSpace: "oklch", components: [0, 0, 0], alpha: 0.4 },
+    offsetX: { value: 0, unit: "px" }, offsetY: { value: 1, unit: "px" }, blur: { value: 2, unit: "px" }, spread: { value: 0, unit: "px" } }]),
+  "0 1px 2px 0 oklch(0 0 0 / 0.4)");
+});
+
+test("toDtcg: spec-shaped base and dark trees; nothing lost", () => {
+  const legacy = JSON.parse(readFileSync(DEF, "utf8"));
+  const { base, dark } = toDtcg(legacy);
+  for (const tok of Object.values(base.color)) {
+    assert.equal(tok.$value.colorSpace, "oklch");
+    assert.equal(tok.$value.components.length, 3);
+    assert.match(tok.$value.hex, /^#[0-9a-f]{6}$/);
+    assert.equal(tok.$extensions?.fgu?.dark, undefined, "dark lives in its own file");
+  }
+  for (const tok of Object.values(base.shadow)) for (const layer of [].concat(tok.$value)) {
+    assert.deepEqual(Object.keys(layer).sort(), ["blur", "color", "offsetX", "offsetY", "spread"]);
+    assert.equal(layer.color.colorSpace, "oklch");
+  }
+  assert.equal(base.tracking.caps.$type, "number");
+  assert.equal(base.tracking.caps.$value, 0.06);
+  assert.equal(dark.color.background.$value.colorSpace, "oklch");
+  assert.equal(dark.font, undefined, "only themed tokens go in the dark set");
+});
+
+test("emit --format dtcg writes tokens + dark + resolver; reading them back emits the same CSS", () => {
+  const d = tmp();
+  const w = run("emit-tokens.mjs", ["--in", DEF, "--format", "dtcg", "--out-dir", d]);
+  assert.equal(w.code, 0, w.stderr);
+  assert.deepEqual(w.json.written.sort(), ["tokens.dark.json", "tokens.json", "tokens.resolver.json"]);
+  const resolver = JSON.parse(readFileSync(join(d, "tokens.resolver.json"), "utf8"));
+  assert.equal(resolver.version, "2025.10");
+  assert.deepEqual(resolver.modifiers.theme.contexts.dark, [{ $ref: "tokens.dark.json" }]);
+  const want = emit("css").stdout;
+  assert.equal(emit("css", join(d, "tokens.json")).stdout, want, "tokens.json picks up its sibling resolver");
+  assert.equal(emit("css", join(d, "tokens.resolver.json")).stdout, want, "or read through the resolver directly");
+  for (const fmt of ["js", "tailwind4", "tailwind3", "mui", "json"])
+    assert.equal(emit(fmt, join(d, "tokens.json")).stdout, emit(fmt).stdout, `${fmt} is the same from either shape`);
+  const again = run("emit-tokens.mjs", ["--in", DEF, "--format", "dtcg", "--out-dir", d]);
+  assert.equal(again.code, 2, "refuses to overwrite without --force");
+  assert.equal(run("emit-tokens.mjs", ["--in", DEF, "--format", "dtcg", "--out-dir", d, "--force"]).code, 0);
+});
+
+test("loadTokens resolves {aliases}, in base and dark values", () => {
+  const d = tmp();
+  writeFileSync(join(d, "tokens.json"), JSON.stringify({ color: {
+    primary: { $type: "color", $value: { colorSpace: "oklch", components: [0.5, 0.14, 262] } },
+    ring: { $type: "color", $value: "{color.primary}" },
+  } }));
+  writeFileSync(join(d, "tokens.dark.json"), JSON.stringify({ color: {
+    primary: { $value: { colorSpace: "oklch", components: [0.72, 0.12, 262] } },
+    ring: { $value: "{color.primary}" },
+  } }));
+  writeFileSync(join(d, "tokens.resolver.json"), JSON.stringify({ version: "2025.10",
+    sets: { base: { sources: [{ $ref: "tokens.json" }] } },
+    modifiers: { theme: { contexts: { light: [], dark: [{ $ref: "tokens.dark.json" }] }, default: "light" } },
+    resolutionOrder: [{ $ref: "#/sets/base" }, { $ref: "#/modifiers/theme" }] }));
+  const t = loadTokens(join(d, "tokens.json"));
+  assert.equal(cssValue("color", t.color.ring.$value), "oklch(0.5 0.14 262)");
+  assert.equal(cssValue("color", t.color.ring.$extensions.fgu.dark), "oklch(0.72 0.12 262)");
+  writeFileSync(join(d, "loop.json"), JSON.stringify({ color: { a: { $value: "{color.b}" }, b: { $value: "{color.a}" } } }));
+  assert.throws(() => loadTokens(join(d, "loop.json")), /circular/);
+});
+
+test("check-static --tokens reads a DTCG token set", () => {
+  const d = tmp();
+  run("emit-tokens.mjs", ["--in", DEF, "--format", "dtcg", "--out-dir", join(d, ".design")]);
+  writeFileSync(join(d, "a.css"), ".x { margin: 16px; padding: 13px; }\n");
+  const r = run("check-static.mjs", ["--root", d, "--tokens", ".design/tokens.json"]);
+  assert.equal(r.code, 0, r.stderr);
+  assert.deepEqual(r.json.findings.filter((f) => f.rule === "off-scale-spacing").map((f) => f.message.match(/Spacing (\S+)/)[1]), ["13px"]);
+});

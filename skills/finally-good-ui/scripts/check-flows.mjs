@@ -9,6 +9,8 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import os from 'node:os';
+import { loadTokens } from './lib/token-files.mjs';
+import { cssColor } from './lib/tokens.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const PROBE_PATH = join(HERE, 'browser', 'probe.js');
@@ -281,9 +283,9 @@ export function tokensForProbe(json, remPx = 16) {
     if (!node || typeof node !== 'object') return;
     if ('$value' in node) {
       if (group === 'color') {
-        colors.push(node.$value);
+        colors.push(cssColor(node.$value));
         const dark = node.$extensions && node.$extensions.fgu && node.$extensions.fgu.dark;
-        if (dark) colors.push(dark);
+        if (dark) colors.push(cssColor(dark));
       } else if (group === 'space') { const n = px(node.$value); if (n != null) spacing.push(n); }
       return;
     }
@@ -562,7 +564,7 @@ async function main() {
   if (sel.unknown.length) return out({ tool: 'check-flows', error: 'bad-input', message: `--only: nothing matches ${sel.unknown.join(', ')}`,
     available: flows.flatMap((f) => [f.name, ...f.states.map((s) => variantId(f.name, s.name))]) }, 1);
   const tokPath = join(root, '.design', 'tokens.json');
-  if (existsSync(tokPath)) { try { o.tokens = tokensForProbe(JSON.parse(readFileSync(tokPath, 'utf8'))); } catch { /* ignore bad tokens */ } }
+  if (existsSync(tokPath)) { try { o.tokens = tokensForProbe(loadTokens(tokPath)); } catch { /* ignore bad tokens */ } }
 
   const pw = await loadPlaywright(root);
   if (!pw) return out({ tool: 'check-flows', error: 'playwright-missing', fix: 'npm i -D playwright @axe-core/playwright && npx playwright install chromium' }, 2);

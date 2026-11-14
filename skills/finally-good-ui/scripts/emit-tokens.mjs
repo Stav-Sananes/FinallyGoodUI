@@ -1,13 +1,19 @@
 #!/usr/bin/env node
-// Emit a DTCG-subset tokens.json in a stack-native format.
-import { resolve } from "node:path";
+// Emit a token set in a stack-native format, or as standard DTCG 2025.10 files.
+import { resolve, join } from "node:path";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
-import { readText } from "./lib/fs.mjs";
+import { loadTokens, dtcgFiles } from "./lib/token-files.mjs";
 import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssValue, darkOf, textMetrics } from "./lib/tokens.mjs";
 import { toHex } from "./lib/contrast.mjs";
 
 const HELP = `
 Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|tailwind3|mui|json|js] [--root <dir>]
+       emit-tokens.mjs --in <tokens.json> --format dtcg --out-dir <dir> [--force]
+
+--in takes a tokens file in either shape (CSS-string values with dark in $extensions.fgu.dark, or
+DTCG 2025.10 objects), or a *.resolver.json. A tokens file whose sibling <name>.resolver.json
+reads it is loaded through that resolver (light/dark contexts). {group.token} aliases resolve.
 
 Prints the tokens in the requested format to stdout:
   css        :root vars + ".dark, [data-theme=dark]" + prefers-color-scheme dark block
@@ -16,6 +22,8 @@ Prints the tokens in the requested format to stdout:
   mui        createTheme-shaped JSON (palette, colorSchemes.light/dark, typography incl. h1..caption/overline
              variants with lineHeight + letterSpacing, shape, transitions)
   json       {"light": {"--var": value}, "dark": {...}}
+  dtcg       writes tokens.json (DTCG 2025.10 colour/shadow objects), tokens.dark.json and
+             tokens.resolver.json into --out-dir; refuses to overwrite without --force
   js         motion-tokens ES module for JS animation (Motion, WAAPI, transition props, timers):
              ms(name), sec(name), ease(name), durations, easings. Reads the live --duration-*/--ease-*
              variable, falls back to the token value (server, tests); unknown names throw
@@ -25,11 +33,13 @@ Variable names: --color-* --font-* --text-* (+ --text-*--line-height, --text-*--
 Options:
   --in <file>      tokens file (relative to --root)
   --format <fmt>   default css
-  --root <dir>     base dir for --in (default: cwd)
+  --root <dir>     base dir for --in and --out-dir (default: cwd)
+  --out-dir <dir>  dtcg only: where to write the three files
+  --force          dtcg only: overwrite existing files
   --help
 `;
 
-const FORMATS = ["css", "tailwind4", "tailwind3", "mui", "json", "js"];
+const FORMATS = ["css", "tailwind4", "tailwind3", "mui", "json", "js", "dtcg"];
 
 function block(selector, decls, indent = "") {
   return `${indent}${selector} {\n${decls.map((d) => `${indent}  ${d}`).join("\n")}\n${indent}}`;
@@ -141,7 +151,7 @@ export function emitMui(tokens) {
   const hex = (name, mode) => {
     const t = colors[name];
     if (!t) return undefined;
-    const v = mode === "dark" ? darkOf(t) ?? t.$value : t.$value;
+    const v = cssValue("color", mode === "dark" ? darkOf(t) ?? t.$value : t.$value);
     return toHex(v) ?? v;
   };
   const palette = (mode) => {
@@ -219,20 +229,28 @@ export function emit(tokens, format) {
   }
 }
 
+function writeDtcg(tokens, outDir, force) {
+  const files = dtcgFiles(tokens);
+  const taken = Object.keys(files).filter((f) => existsSync(join(outDir, f)));
+  if (taken.length && !force) throw new UsageError(`${taken.join(", ")} already exist in ${outDir}; pass --force to overwrite`);
+  mkdirSync(outDir, { recursive: true });
+  for (const [name, content] of Object.entries(files)) writeFileSync(join(outDir, name), JSON.stringify(content, null, 2) + "\n");
+  return { tool: "emit-tokens", format: "dtcg", outDir, written: Object.keys(files) };
+}
+
 if (isMain(import.meta.url)) {
   runCli({
     help: HELP,
-    spec: { string: ["root", "in", "format"] },
+    spec: { string: ["root", "in", "format", "out-dir"], boolean: ["force"] },
     main: ({ flags }) => {
       const format = flags.format || "css";
       if (!FORMATS.includes(format)) throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
       if (!flags.in) throw new UsageError("--in <tokens.json> is required");
-      const file = resolve(flags.root || ".", flags.in);
-      const text = readText(file);
-      if (text == null) throw new UsageError(`cannot read ${flags.in}`);
       let tokens;
-      try { tokens = JSON.parse(text); } catch (e) { throw new UsageError(`invalid JSON in ${flags.in}: ${e.message}`); }
-      return emit(tokens, format);
+      try { tokens = loadTokens(resolve(flags.root || ".", flags.in)); } catch (e) { throw new UsageError(e.message); }
+      if (format !== "dtcg") return emit(tokens, format);
+      if (!flags["out-dir"]) throw new UsageError("--format dtcg needs --out-dir <dir>");
+      return writeDtcg(tokens, resolve(flags.root || ".", flags["out-dir"]), flags.force);
     },
   });
 }

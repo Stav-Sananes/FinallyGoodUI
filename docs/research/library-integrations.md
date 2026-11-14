@@ -81,7 +81,8 @@ Chosen 2026-11-14: reach work first (0.1 first because it is a shipped accessibi
 - [x] 0.5a
 - [x] 0.5b
 - [x] 0.5c
-- [ ] 0.2
+- [x] 0.2a
+- [ ] 0.2b
 - [ ] 0.3
 - [ ] 0.4
 - [ ] 1.1
@@ -114,6 +115,8 @@ Chosen 2026-11-14: reach work first (0.1 first because it is a shipped accessibi
 - [ ] 5.4
 - [ ] 5.5
 - [ ] 5.6
+
+0.2 was split (user chose "read both, write standard"): **0.2a** read DTCG 2025.10 colour/shadow objects, resolvers and {aliases} everywhere, plus `emit-tokens --format dtcg`; **0.2b** write the standard shape by default (default tokens, extract --write, system module).
 
 Ticks added 2026-11-14 from the four gallery runs (feedback below):
 - **0.5a** check-static false positives: radiogroup around native radios, hash routes in single-file apps, long-duration on token definitions and the one signature moment, `:focus-within` focus rings, 1px screen-reader clip.
