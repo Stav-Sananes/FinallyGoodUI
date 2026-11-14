@@ -207,3 +207,13 @@ test("Prime kits detected per framework", () => {
   assert.equal(react.components, "primereact");
   assert.equal(react.componentsVersion, 11);
 });
+
+test("Angular Material detected; legacy @angular/animations flagged (deprecated, use animate.enter/leave)", () => {
+  const d = tmp();
+  writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: { "@angular/core": "22.2.0", "@angular/material": "22.2.7", "@angular/animations": "22.2.0" } }));
+  const p = detect(d);
+  assert.equal(p.framework, "angular");
+  assert.equal(p.components, "angular-material");
+  assert.equal(p.componentsVersion, 22);
+  assert.ok(p.animation.includes("angular-animations-legacy"));
+});

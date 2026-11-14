@@ -583,3 +583,20 @@ test("emit prime: definePreset(Aura, …) with primary 50–950, light/dark colo
   assert.equal(light.formField.focusBorderColor, "{primary.color}");
   assert.ok(light.overlay.modal.background && dark.overlay.popover.borderColor);
 });
+
+// ---------- Angular Material (M3 system tokens) ----------
+test("emit angular-material: mat.theme with light-dark() system overrides; our vars and motion on :root", () => {
+  const r = emit("angular-material");
+  assert.equal(r.code, 0, r.stderr);
+  const s = r.stdout;
+  assert.match(s, /@use '@angular\/material' as mat;/);
+  assert.match(s, /color-scheme: light dark;/);
+  assert.match(s, /@include mat\.theme\(\(color: mat\.\$azure-palette, typography: \(plain-family: '[^']+', brand-family: '[^']+'\), density: 0\), \$overrides: \(/);
+  assert.match(s, /primary: light-dark\(oklch\(0\.5 0\.14 262\), oklch\(0\.72 0\.12 262\)\),/);
+  for (const t of ["on-primary", "primary-container", "surface", "on-surface", "on-surface-variant", "surface-container", "outline", "outline-variant", "error", "on-error", "scrim"])
+    assert.match(s, new RegExp(`\\n\\s+${t}: light-dark\\(`), t);
+  assert.match(s, /:root \{[^}]*--color-primary: light-dark\(/);
+  assert.match(s, /:root \{[^}]*--duration-standard: 250ms;/);
+  assert.match(s, /\.dark, \[data-theme="dark"\] \{[^}]*--shadow-md: /, "shadows can't use light-dark(): dark blocks");
+  assert.match(s, /\.dark \{ color-scheme: dark; \}/);
+});

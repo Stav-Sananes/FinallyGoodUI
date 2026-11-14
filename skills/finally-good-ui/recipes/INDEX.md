@@ -21,7 +21,8 @@ Rules that apply to all recipes:
 
   Motion (`motion/react`): put one `<MotionConfig reducedMotion="user">` at the app root instead of branching per component. Tailwind v4: the emitted `@utility duration-*` gives `duration-standard`, `duration-short`… as classes. Call them when animating, not at module load: the live `--duration-*`/`--ease-*` variable wins (theme overrides), the token value is the fallback on the server, and a misspelt name throws instead of silently animating at 0. Re-run the command whenever `tokens.json` changes. The recipes' `import … from "./motion-tokens"` means this file.
   Under reduced motion pass `0` for spatial durations. MUI projects read `theme.transitions` (emitted by `emit-tokens --format mui`).
-- Start from the CSS baseline. Use the stack's built-ins next (Vue `<Transition>`/`<TransitionGroup>`, Svelte `transition:`/`animate:flip`). Reach for a library only at the recipe's upgrade trigger, and ask first with the reason and size cost.
+- Start from the CSS baseline. Use the stack's built-ins next (Vue `<Transition>`/`<TransitionGroup>`, Svelte `transition:`/`animate:flip`, Angular `animate.enter`/`animate.leave`).
+- **Angular:** put the recipe's CSS in a class and bind it with `animate.enter="pop-in"` / `animate.leave="pop-out"`; Angular adds the class, waits for the CSS transition or animation, then removes the element. Don't use `@angular/animations` (`trigger()`, `state()`): it is deprecated with removal planned for v23, and it can't be mixed with `animate.enter`. The stack profile flags it as `angular-animations-legacy`. Reach for a library only at the recipe's upgrade trigger, and ask first with the reason and size cost.
 - Motion (`motion/react`): wrap in `LazyMotion` + `m` (`domAnimation` ≈ 4.6kb initial); `domMax` only for layout/`layoutId` recipes.
 
 ## Motion

@@ -124,12 +124,13 @@ export function detectStack(rootArg = ".") {
   else if (has("primevue")) components = "primevue";
   else if (has("primeng")) components = "primeng";
   else if (has("primereact")) components = "primereact";
+  else if (has("@angular/material")) components = "angular-material";
   else if (has("@chakra-ui/react")) components = "chakra";
   else if (has("@mantine/core")) components = "mantine";
   else if (hasPrefix("@radix-ui/")) components = "radix";
   else if (hasPrefix("@headlessui/")) components = "headlessui";
 
-  const KIT_PACKAGE = { mui: "@mui/material", joy: "@mui/joy", daisyui: "daisyui", antd: "antd", primevue: "primevue", primeng: "primeng", primereact: "primereact", chakra: "@chakra-ui/react", mantine: "@mantine/core" };
+  const KIT_PACKAGE = { mui: "@mui/material", joy: "@mui/joy", daisyui: "daisyui", antd: "antd", primevue: "primevue", primeng: "primeng", primereact: "primereact", "angular-material": "@angular/material", chakra: "@chakra-ui/react", mantine: "@mantine/core" };
   const componentsVersion = KIT_PACKAGE[components] ? major(deps[KIT_PACKAGE[components]]) : null;
 
   // ---- unstyled primitives (no theme to emit; each animates through its own state attributes)
@@ -145,6 +146,7 @@ export function detectStack(rootArg = ".") {
   if (hasPrefix("@react-spring/") || has("react-spring")) add("react-spring");
   if (has("@formkit/auto-animate")) add("auto-animate");
   if (has("lottie-web") || has("lottie-react") || hasPrefix("@lottiefiles/")) add("lottie");
+  if (has("@angular/animations")) add("angular-animations-legacy"); // deprecated: use animate.enter / animate.leave
 
   // ---- icons
   let icons = null;
