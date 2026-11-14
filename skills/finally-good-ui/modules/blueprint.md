@@ -15,7 +15,7 @@ Inputs: `.design/brief.md` (must be `status: confirmed`; if not, run `modules/in
 
 ## 2. Choose the navigation model
 
-Count primary destinations (exclude settings, profile, help). Then apply, in order — the first matching row wins, and log a decision record. Frequency: `daily` = several times a day or week; `rare` = a few times a month or less (`context.frequency`).
+Count primary destinations (exclude settings, profile, help). Then apply, in order — the first matching row wins, and log a decision record. Frequency: `daily` = several times a day or week, including a fixed weekly routine (a Monday review); `rare` = a few times a month or less (`context.frequency`).
 
 | Primary destinations | Device (`context.device`) | Frequency / depth | Model | Cards |
 |---|---|---|---|---|

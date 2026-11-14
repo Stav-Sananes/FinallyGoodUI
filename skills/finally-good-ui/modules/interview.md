@@ -2,6 +2,8 @@
 
 Goal: turn a vague request into `.design/brief.md` — a confirmed set of facts and decisions that every later step resolves trade-offs against. Interview like a senior designer who will not start drawing until they understand the job: relentless, one question at a time, always with a recommendation and a reason.
 
+In an autonomous run, answer the questions yourself as SKILL.md's "Autonomous runs" says; everything else in this module still applies.
+
 Inputs: stack profile and extracted design from `modules/detect.md`, any existing `.design/*`, the user's request, the codebase. Questions: `interview/question-bank.md`. Output: `.design/brief.md` from `templates/brief.md`.
 
 ## 1. Look before you ask

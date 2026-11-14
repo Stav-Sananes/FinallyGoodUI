@@ -5,7 +5,7 @@ Goal: three written, then built, directions for the **key screen**, each fully a
 ## 0. Gate
 1. Read `.design/config.json`. If `"directions": "off"` → skip this module, log `directions: skipped (config)` in `decisions.md`, go to `system`.
 2. Require an approved `.design/blueprint.md`. If missing, run `blueprint` first.
-3. Show the cost warning (verbatim, then wait for an answer):
+3. Show the cost warning (verbatim, then wait for an answer). In an autonomous run (SKILL.md, "Autonomous runs"), skip the warning and follow that section instead:
 
 > Directions builds 3 full HTML prototypes in parallel subagents. Expect roughly 3–4× the tokens of one screen build and a few minutes. Proceed (recommended for new apps), build only 1 direction, or skip? To turn this step off permanently, set `"directions": "off"` in `.design/config.json`.
 
@@ -41,7 +41,8 @@ Six axes, each with three positions:
   `node -e "console.log(1+Math.floor(Math.random()*3))"`
   Record the raw roll in the spec. Then enforce:
   - B and C each differ from A on **≥4 of 6** axes, and from each other on ≥3. Re-roll only the axes that fail (when B and C clash, C re-rolls; B keeps); record re-rolls. After 10 re-rolls of one axis, take the nearest position that satisfies the rules and log it.
-  - **Structure, not skin:** the three directions take three different **layout** positions, and at least two different **material** positions. Re-roll layout/material until they do.
+  - **Structure, not skin:** the three directions take three different **layout** positions, and at least two different **material** positions. Re-roll layout/material until they do. **Exception:** when the brief fixes the composition ("the list with the issue open in a side panel"), that composition binds all three; don't roll layout. Make B and C differ harder on the other five axes instead, and log it.
+  - When only one position can satisfy every rule, assign it and log why; don't re-roll toward it.
   - **Every roll and re-roll stays inside the frequency budget** (`motion.frequency-budget`, budget per screen type from `interview.context.frequency`). The motion position picks curve, bounce and which moments move; it never buys duration the key screen's frequency forbids. Key screen opened several times a day: repeated actions ≤ 150ms and no entrance choreography, even at `expressive` (spend its range on the one real transition and first-run only). Nothing routine over 300ms at any position. Log in the spec how the rolled position was fitted to the budget.
   - A roll that contradicts a **hard** brief constraint (e.g. a11y needs → stark contrast allowed, but "dense" for a first-time elderly audience is not) may be moved one step; log the reason. Taste is not a reason.
 - Write the final 3×6 table into each spec and into `compare.html` chips.

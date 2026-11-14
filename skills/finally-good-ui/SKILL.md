@@ -19,7 +19,7 @@ Arguments: `$ARGUMENTS`
 ### Running outside Claude Code (Cursor, Codex, other agents)
 - `${CLAUDE_SKILL_DIR}` means the folder that holds this file. If your agent leaves it as literal text, substitute that folder's path.
 - If the stack profile above shows a command instead of JSON, run that command yourself first.
-- No subagents: build the three directions one after another, following `agents/direction-builder.md` (in this folder). Review with `agents/ui-reviewer.md` yourself, and tell the user the review isn't independent.
+- No subagents: in an interactive run, build the three directions one after another (in an autonomous run, see below), following `agents/direction-builder.md` (in this folder). Review with `agents/ui-reviewer.md` yourself, and tell the user the review isn't independent.
 - No edit hook: after each UI edit, run `node "${CLAUDE_SKILL_DIR}/scripts/check-static.mjs" --files <changed files>` yourself.
 
 ## Non-negotiables
@@ -65,6 +65,15 @@ When nobody has said what they want yet, don't start the interview cold. Show th
 3. **Make an existing screen look premium**: the `polish` skill, one verified step at a time.
 
 Add: "Every path ends the same way: the result is checked in a real browser, and every choice is written to `.design/decisions.md` with its reason." Then route: 1 → full pipeline, 2 → `review`, 3 → `polish`. If the stack profile shows no app code, recommend path 1.
+
+### Autonomous runs (no one to answer)
+
+Applies when `.design/config.json` has `"mode": "autonomous"`, or when the request says no person will answer (a headless or CI run, a parent agent's brief). The pipeline is the same; who decides changes:
+- **Interview:** answer each question from the request and the code only. Mark every answer in `brief.md` as `brief`, `inferred (<source>)` or `default`. If the recommended option needs a person (references: "I'll name some"), take the next option ("pick a finish") and choose the finish from the brief. If no option is recommended for this product, decide by the card the question cites and log it.
+- **Approvals** (brief, blueprint, direction): record `self-approved (autonomous)` in `decisions.md` and continue.
+- **Directions:** write all three specs. With subagents, build all three; without, build only the one you pick and record why, as "chosen by agent: <reason>". The delivery gate's fidelity check compares the build with that spec.
+- **Dependencies:** never install anything. Take the fallback and say so in the report.
+- **Hand-off:** list every self-answered decision first, so the person can overrule them later.
 
 ## Full pipeline
 

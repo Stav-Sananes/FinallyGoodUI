@@ -1,7 +1,17 @@
 {
+  "mode": "interactive",
   "directions": "on",
   "verify": "full",
-  "viewports": [[375, 812], [1440, 900]],
+  "viewports": [
+    [
+      375,
+      812
+    ],
+    [
+      1440,
+      900
+    ]
+  ],
   "interviewDepth": "auto",
   "hook": "on",
   "theme": "media"

@@ -17,9 +17,10 @@ If `config.verify` is `"static"`, do Layer 1 + static review only (§7b) and say
 
 1. Reuse a running server: try `http://localhost:<port>` for the port in the dev script / framework default (Next/Nuxt/Astro/SvelteKit 3000/3000/4321/5173, Vite 5173, Angular 4200). A 2xx/3xx/404 response means it is up.
 2. Otherwise start it **in the background**: `<packageManager> run <devScript>` (from the stack profile). Watch its output for the local URL; poll it up to 60 s.
-3. **No `devScript` but plain files** (an `index.html` at the root or in `public/`/`dist/`/`build/`, no bundler): serve that folder with a static server in the background and use its URL: `npx --yes serve -l 4173 <dir>` or `python3 -m http.server 4173 --directory <dir>`. Not `file://` (fetch, ES modules and routing break). This is a full browser verify, not §7b.
+3. **No `devScript` but plain files** (an `index.html` at the root or in `public/`/`dist/`/`build/`, no bundler): serve that folder with a static server in the background and use its URL: `python3 -m http.server <port> --directory <dir>` or `npx --yes serve -l <port> <dir>`, on a **free port** (pick a random one in 4100–4999; other agents may be serving on the usual ones). Not `file://` (fetch, ES modules and routing break). This is a full browser verify, not §7b.
 4. If the server crashes, nothing can serve the app, or it needs secrets/services you do not have: go to §7b and tell the user what blocked it.
-5. Stop only servers you started, when verify ends.
+5. **Check you have the right page:** after the first load, compare the page `<title>` (or a heading you wrote) with your app. Another process on the same port, or a stale cache, shows someone else's page. Static servers cache: reload with a query string (`?v=<n>`) after each edit.
+6. Stop only servers you started, when verify ends.
 
 ## 3. Author `.design/flows.json`
 
@@ -59,7 +60,7 @@ Matrix: every `config.viewports` entry × the theme's schemes (default light and
 
 ## 5. Layer 3 — independent review
 
-Spawn the `ui-reviewer` subagent (`agents/ui-reviewer.md`; may be listed as `finally-good-ui:ui-reviewer`). Give it **paths, not your opinions**:
+Spawn the `ui-reviewer` subagent (`agents/ui-reviewer.md`; may be listed as `finally-good-ui:ui-reviewer`). Without subagents, follow that file yourself and mark the report `review: self` (not independent). Give it **paths, not your opinions**:
 - screenshots: per screen, `375-light` and `1440-dark` of the base flow + every forced-state shot at 375. At most ~12 images per call; split by flow if more (see **Merging** below).
 - `.design/reports/<run>.json` (it reads findings, `animations`, `metrics`), the static-check JSON.
 - `brief.md`, `blueprint.md`, `decisions.md`, `rubric/rubric.md`, `rubric/ai-default-fingerprints.md`, and the canon files for cards it cites.
@@ -98,8 +99,9 @@ Do not tell it what you changed or what you think is wrong. It scores dimensions
 
 ## 7. Fallbacks — always tell the user which one applied
 
-**a) Playwright missing.** Ask first: "Verification needs Playwright (dev dependency, ~10 MB + ~150 MB browser download). Install with `<pm> add -D playwright @axe-core/playwright && npx playwright install chromium`?" Do not install without a yes. If they decline, or while waiting, use any available browser tool (Claude Browser pane, Playwright MCP, Chrome extension):
-- For each screen × viewport (resize) × scheme (the tool's colour-scheme emulation, or toggle the app's theme class): navigate, then run via the JS-exec tool the full text of `SR/scripts/browser/probe.js` followed by `window.__fguProbe({touch: <width < 768>, focus: true})`. Take a screenshot.
+**a) Playwright missing.** In an autonomous run, don't install: use the fallbacks below. Otherwise ask first: "Verification needs Playwright (dev dependency, ~10 MB + ~150 MB browser download). Install with `<pm> add -D playwright @axe-core/playwright && npx playwright install chromium`?" Do not install without a yes. If they decline, or while waiting, use any available browser tool (Claude Browser pane, Playwright MCP, Chrome extension):
+- For each screen × viewport (resize) × scheme (the tool's colour-scheme emulation, or toggle the app's theme class): navigate, then run via the JS-exec tool the full text of `SR/scripts/browser/probe.js` followed by `await window.__fguProbe({touch: <width < 768>, focus: true})` (it returns a Promise; without `await` you get `{}`). Take a screenshot.
+- **Parallel runs:** a browser tool such as Playwright MCP is one browser shared by every agent in the session, so another agent can navigate your tab away mid-run, and it may only save files inside its own workspace. When several builds verify at once, prefer a private browser: a short Node script that launches Playwright's already-downloaded Chromium (`~/Library/Caches/ms-playwright` on macOS, `~/.cache/ms-playwright` on Linux) through any `playwright` or `playwright-core` package already on the machine. Check the page title after every navigation.
 - Late injection misses animations that already finished: reload after injecting if the tool supports init scripts, or trigger the transition again (open the dialog, navigate) before probing.
 - States: force only what the tool can (Playwright MCP code execution can use `page.route`). List the rest as unverified.
 - Save results in the `check-flows` report shape to `.design/reports/<run>.json`, then continue at §5.
