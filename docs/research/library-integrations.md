@@ -74,7 +74,7 @@ Tiers: **Full** = detect + emit format + extract where sensible + recipe/build n
 Chosen 2026-11-14: reach work first (0.1 first because it is a shipped accessibility bug). Gallery built by the loop; the npm CLI is built and dry-run packed, the user publishes. Commits stay local.
 
 - [x] 0.1
-- [ ] 6.3
+- [x] 6.3
 - [ ] 6.1
 - [ ] 6.2
 - [ ] 6.4

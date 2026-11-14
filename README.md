@@ -1,6 +1,41 @@
 # finally-good-ui
 
-A Claude Code plugin that designs and builds **complete applications** the way a senior product designer would. That means multi-screen apps with navigation, flows, every empty, loading and error state, and a coherent motion language.
+Your coding agent designs and builds **whole apps** the way a senior product designer would: every screen, the navigation between them, every empty, loading and error state, and one coherent motion language. Then it opens the result in a real browser and checks it.
+
+You don't need to be a designer. You answer plain questions, approve a plan, and pick from three working versions of your main screen. The agent does the rest and writes down why it made each choice.
+
+## How a first run goes
+
+1. **Install** (two commands, below) and run `/finally-good-ui` in your project.
+2. **Pick a path:** design a new app, review the UI you already have, or make a screen look premium.
+3. **Answer a few questions,** one at a time. Each says why it matters. "You decide" always works.
+4. **Approve a blueprint:** the screens, how people move between them, and what each one shows when it's empty, loading or broken.
+5. **Pick a direction:** your key screen built three different ways, animated, side by side.
+
+Every path ends the same way: the result is checked in a browser at phone and desktop sizes, in light and dark, and every decision is in `.design/decisions.md` with its reason.
+
+## Install
+
+```bash
+claude plugin marketplace add Stav-Sananes/FinallyGoodUI
+claude plugin install finally-good-ui@finally-good-ui-market
+```
+
+For full browser checks, add Playwright to the project you're working on (the skill asks before installing anything):
+`npm i -D playwright @axe-core/playwright && npx playwright install chromium`.
+Without it, the skill uses any browser tool it has or falls back to static checks, and tells you which.
+
+## Ask it like this
+
+Mention what you're building, who it's for, and what matters most. For example:
+
+- `/finally-good-ui` "A booking app for a dog-grooming salon. Owners book on their phone; staff manage the day on a tablet."
+- `/finally-good-ui review` "Our dashboard feels cluttered. Tell me what to fix first."
+- `/finally-good-ui:polish elevate` "The settings page works but looks unfinished."
+- `/finally-good-ui:slop-check src/app` "Does this look AI-made?"
+- `/finally-good-ui extract` "Turn our existing styles into a design system before we add features."
+
+## Why it doesn't look AI-made
 
 Most AI design skills hand the model *answers*: presets, style catalogues and ban lists. That is why their output looks AI-generated. finally-good-ui hands the model **judgment**:
 - a canon of design principles distilled from the classic books and standards;
@@ -54,26 +89,7 @@ Generated UI fails in two directions. One is the **noisy template**: glass, glow
 /finally-good-ui:polish [preserve|elevate|overhaul]      upgrade a working UI to premium, one verified rung at a time
 ```
 
-## Install
-
-See the [repository README](../README.md) and [INSTALL.md](../INSTALL.md) for all options.
-
-```bash
-claude plugin marketplace add Stav-Sananes/finally-good-ui
-claude plugin install finally-good-ui@finally-good-ui-market
-```
-
-### Develop from a clone
-
-Opening the repo in Claude Code does **not** load it as a plugin. The skills may still be readable, but `hooks/hooks.json` runs `${CLAUDE_PLUGIN_ROOT}/…/hook-check.mjs`, and that variable is only set for a loaded plugin, so the Layer-1 edit hook never fires. Load the clone for the session instead:
-
-```bash
-claude --plugin-dir /path/to/finally-good-ui   # the folder that holds .claude-plugin/plugin.json
-```
-
-Run it from the project you are testing on; restart the session to pick up edits to `hooks.json` or agents. Disable a marketplace copy first (`claude plugin disable finally-good-ui@finally-good-ui-market`) so two copies don't both run. `claude plugin validate .` checks the manifest. `--bare` skips plugin hooks, so don't combine it with `--plugin-dir` when testing the hook. The hook still only acts in projects that have a `.design/` folder.
-
-## Use
+## All commands
 
 ```
 /finally-good-ui                         full pipeline for a new app or big feature
@@ -86,15 +102,21 @@ Run it from the project you are testing on; restart the session to pick up edits
 /finally-good-ui export                  rules for Cursor, Windsurf, Copilot, AGENTS.md
 ```
 
-For full browser verification, the project needs Playwright:
-`npm i -D playwright @axe-core/playwright && npx playwright install chromium`.
-Without it, the skill uses any available browser tool or falls back to static checks, and tells you so.
-
 ## What it writes in your project
 
 `.design/`: `config.json` · `brief.md` · `blueprint.md` · `brand.md` · `tokens.json` · `decisions.md` · `flows.json` · `directions/` · `reports/`
 
 Set `"directions": "off"` or `"hook": "off"` in `.design/config.json` to skip those steps.
+
+## Develop from a clone
+
+Opening the repo in Claude Code does **not** load it as a plugin. The skills may still be readable, but `hooks/hooks.json` runs `${CLAUDE_PLUGIN_ROOT}/…/hook-check.mjs`, and that variable is only set for a loaded plugin, so the Layer-1 edit hook never fires. Load the clone for the session instead:
+
+```bash
+claude --plugin-dir /path/to/finally-good-ui   # the folder that holds .claude-plugin/plugin.json
+```
+
+Run it from the project you are testing on; restart the session to pick up edits to `hooks.json` or agents. Disable a marketplace copy first (`claude plugin disable finally-good-ui@finally-good-ui-market`) so two copies don't both run. `claude plugin validate .` checks the manifest. `--bare` skips plugin hooks, so don't combine it with `--plugin-dir` when testing the hook. The hook still only acts in projects that have a `.design/` folder.
 
 ## Sources
 

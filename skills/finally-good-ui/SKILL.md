@@ -37,6 +37,7 @@ Read `.design/` first if it exists: `brief.md`, `blueprint.md`, `brand.md`, `tok
 
 | Argument / situation | Do |
 |---|---|
+| none, no `.design/` and the request doesn't say what it wants | First run: show **Pick your path** (below), then route by the answer |
 | none, new app or big feature | Full pipeline below |
 | `interview` | Step 2 only |
 | `blueprint` | Steps 2–3 (reuse the brief if it exists) |
@@ -48,6 +49,16 @@ Read `.design/` first if it exists: `brief.md`, `blueprint.md`, `brand.md`, `tok
 | a small component or a tweak inside an existing app | Short version: read `.design/`, check the relevant canon cards, build, run Layer 1 + a targeted verify. Still record decisions. |
 | existing UI works but looks plain / not premium | Sibling skill `polish` (upgrade ladder, verified rung by rung) |
 | "does this look AI-made?", or a pre-hand-off check | Sibling skill `slop-check` (pass/fail ledger; `--fix` for blockers) |
+
+### Pick your path (first run)
+
+When nobody has said what they want yet, don't start the interview cold. Show this in your own words, keep it to these three lines plus one sentence, and ask with `AskUserQuestion` when it is available:
+
+1. **Design a new app or a big feature**: a short interview, a blueprint you approve, three animated directions, then the build. Takes the longest and gives the most.
+2. **Review the UI you already have**: a scored report with screenshots and fixes ranked by impact; nothing changes unless you ask.
+3. **Make an existing screen look premium**: the `polish` skill, one verified step at a time.
+
+Add: "Every path ends the same way: the result is checked in a real browser, and every choice is written to `.design/decisions.md` with its reason." Then route: 1 → full pipeline, 2 → `review`, 3 → `polish`. If the stack profile shows no app code, recommend path 1.
 
 ## Full pipeline
 

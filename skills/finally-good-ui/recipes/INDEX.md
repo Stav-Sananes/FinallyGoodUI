@@ -37,7 +37,21 @@ Rules that apply to all recipes:
 | [settings-page](patterns/settings-page.md) | grouped options, one save model per group | layout.proximity-grouping, usability.user-control-undo, states.optimistic-feedback | No |
 
 ## Pick by situation
-- Something opens → popover-from-trigger (anchored) or dialog-enter-exit (modal).
-- Something changes place → list-reorder-flip; changes page → route-transition; becomes something else → shared-element-view-transition.
-- Something is waiting → skeleton-to-content (regions) or button loading state (button-press).
-- Something succeeded quietly → toast-stack (with Undo) or inline "Saved" (settings-page).
+
+| The person needs to… | Use |
+|---|---|
+| see what a press did, instantly | button-press |
+| open choices or details next to a control | popover-from-trigger (a panel of controls; an action menu comes from the component library, see its A11y notes) |
+| stop and confirm, or finish a short focused task | dialog-enter-exit (modal) |
+| know a background action worked, and undo it | toast-stack, or an inline "Saved" (settings-page) |
+| reveal more without leaving the page | accordion-auto-height |
+| see a list arrive without a jolt | list-stagger-enter (first load only) |
+| keep track of items when a list is sorted or filtered | list-reorder-flip |
+| follow a list item into its detail page | shared-element-view-transition |
+| know where they went when the page changes | route-transition |
+| wait for a region without the layout jumping | skeleton-to-content |
+| find their way around the app | app-shell-nav |
+| understand why a screen is empty and what to do | empty-state |
+| catch a form mistake as soon as they leave the field | form-validation |
+| scan, sort and compare many rows | data-table |
+| change preferences and trust they stuck | settings-page |
