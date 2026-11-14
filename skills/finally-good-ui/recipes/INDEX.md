@@ -24,6 +24,24 @@ Rules that apply to all recipes:
 - Start from the CSS baseline. Use the stack's built-ins next (Vue `<Transition>`/`<TransitionGroup>`, Svelte `transition:`/`animate:flip`, Angular `animate.enter`/`animate.leave`).
 - **Angular:** put the recipe's CSS in a class and bind it with `animate.enter="pop-in"` / `animate.leave="pop-out"`; Angular adds the class, waits for the CSS transition or animation, then removes the element. Don't use `@angular/animations` (`trigger()`, `state()`): it is deprecated with removal planned for v23, and it can't be mixed with `animate.enter`. The stack profile flags it as `angular-animations-legacy`. Reach for a library only at the recipe's upgrade trigger, and ask first with the reason and size cost.
 - Motion (`motion/react`): wrap in `LazyMotion` + `m` (`domAnimation` ≈ 4.6kb initial); `domMax` only for layout/`layoutId` recipes.
+- **Libraries the project already has** (stack profile `animation[]` and `interaction[]`): feed them our tokens in the unit each one expects. The units differ, and a wrong unit is the usual bug.
+
+  | Profile name | Timing input | Ours | Reduced motion |
+  |---|---|---|---|
+  | `animejs` | `duration` ms, `ease: cubicBezier(…)` | `ms("standard")`, `cubicBezier(...ease("move"))` | not built in: `msMotion()` |
+  | `number-flow` | `transformTiming`/`opacityTiming` `{duration: ms, easing: CSS}` | `{ duration: ms("long"), easing: cssEase("move") }` | built in (`respectMotionPreference`) |
+  | `lenis` | `duration` **seconds**, `easing` function | `lenis.scrollTo(t, { duration: sec("long"), easing: easeFn("move") })` | built in |
+  | `lottie`, `dotlottie`, `rive` | own timeline; only speed | for empty and success states only; prefer dotLottie (lottie-web is barely maintained) | not built in: show a static final frame |
+  | `sonner` | hard-coded `400ms` in its CSS | `[data-sonner-toast] { transition-duration: var(--duration-medium); transition-timing-function: var(--ease-move); }` | built in (removes fades too) |
+  | `vaul-unmaintained` | hard-coded `0.5s` | don't add it to new code: use the primitive library's Drawer (Base UI, Reka) or native `<dialog>` | – |
+  | `cmdk` | `--cmdk-list-height` | `.cmdk-list { height: var(--cmdk-list-height); transition: height var(--duration-short) var(--ease-move); }`; open instantly (used many times a day) | no animation to reduce |
+  | `floating-ui` | `useTransitionStyles({ duration: ms or {open, close} })` | `{ open: ms("standard"), close: ms("short") }` | not built in: `msMotion()` |
+  | `dnd-kit-next` | `transition: {duration: ms, easing: CSS}` | `{ duration: ms("standard"), easing: cssEase("snappy") }` | built in |
+  | `dnd-kit` (classic), `sortablejs` | ms + CSS easing string | `msMotion("standard")`, `cssEase("move")` | not built in: `msMotion()` |
+  | `pragmatic-dnd` | no motion in core | its post-move flash, not a slide, for big boards | – |
+  | `embla` | `duration` is a physics value (20–60), **not ms** | leave the default; don't map tokens | `breakpoints: { "(prefers-reduced-motion: reduce)": { duration: 0 } }` |
+  | `react-day-picker` | `--rdp-animation_duration`, `--rdp-animation_timing` | `.rdp-root { --rdp-animation_duration: var(--duration-medium); --rdp-animation_timing: var(--ease-move); }` | not built in: set the duration to `0s` under reduce |
+  | `tanstack-virtual` | none | never FLIP or stagger virtualised rows | – |
 
 ## Motion
 | Recipe | Intent | Cards | Needs library? |

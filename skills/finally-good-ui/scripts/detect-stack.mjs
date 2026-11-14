@@ -10,7 +10,8 @@ Usage: detect-stack.mjs [--root <dir>]
 Detects framework, router, styling (Tailwind v3/v4, CSS modules, Sass, CSS-in-JS, Panda,
 UnoCSS, StyleX, vanilla-extract),
 component kit (for shadcn: its primitive base, style, CSS entry and port), unstyled primitive
-libraries (Radix, Base UI, React Aria, Reka, Bits UI, Ark UI, Kobalte, Headless UI, UI SDK), animation and icon libraries, TypeScript, package manager, dev script,
+libraries (Radix, Base UI, React Aria, Reka, Bits UI, Ark UI, Kobalte, Headless UI, UI SDK), animation,
+interaction (toasts, drawers, command menus, positioning, drag and drop, carousels, virtual lists) and icon libraries, TypeScript, package manager, dev script,
 testing tools, design files and whether .design/ exists. Prints the stack profile as JSON.
 
 Options:
@@ -51,6 +52,40 @@ const PRIMITIVES = [
   ["kobalte", (has) => has("@kobalte/core")],
   ["headlessui", (has, hasPrefix) => hasPrefix("@headlessui/")],
   ["ui-sdk", (has, hasPrefix) => hasPrefix("@ui-sdk/")],
+];
+
+const isDotLottie = (d) => d.startsWith("@lottiefiles/dotlottie");
+
+/** [name, present?]: libraries that animate. dotLottie is a separate player from lottie-web. */
+const ANIMATION = [
+  ["motion", (has) => has("motion") || has("framer-motion") || has("motion-v") || has("@vueuse/motion")],
+  ["gsap", (has) => has("gsap")],
+  ["react-spring", (has, hasPrefix) => hasPrefix("@react-spring/") || has("react-spring")],
+  ["auto-animate", (has) => has("@formkit/auto-animate")],
+  ["lottie", (has, hasPrefix, deps) => has("lottie-web") || has("lottie-react") || deps.some((d) => d.startsWith("@lottiefiles/") && !isDotLottie(d))],
+  ["dotlottie", (has, hasPrefix, deps) => deps.some(isDotLottie)],
+  ["animejs", (has) => has("animejs")],
+  ["rive", (has, hasPrefix) => hasPrefix("@rive-app/")],
+  ["lenis", (has) => has("lenis") || has("@studio-freight/lenis")],
+  ["number-flow", (has, hasPrefix) => has("number-flow") || hasPrefix("@number-flow/")],
+  ["angular-animations-legacy", (has) => has("@angular/animations")], // deprecated: use animate.enter / animate.leave
+];
+
+/** [name, present?]: interaction libraries, one name per family across its framework ports. */
+const INTERACTION = [
+  ["sonner", (has) => has("sonner") || has("vue-sonner") || has("svelte-sonner")],
+  ["vaul-unmaintained", (has) => has("vaul") || has("vaul-vue") || has("vaul-svelte")], // use the primitive library's Drawer
+  ["cmdk", (has) => has("cmdk") || has("cmdk-sv")],
+  ["floating-ui", (has, hasPrefix) => hasPrefix("@floating-ui/")],
+  ["dnd-kit", (has) => has("@dnd-kit/core")], // classic API
+  ["dnd-kit-next", (has) => ["react", "vue", "svelte", "solid", "dom"].some((f) => has(`@dnd-kit/${f}`))],
+  ["pragmatic-dnd", (has) => has("@atlaskit/pragmatic-drag-and-drop")],
+  ["sortablejs", (has) => has("sortablejs") || has("vuedraggable")],
+  ["embla", (has, hasPrefix) => hasPrefix("embla-carousel")],
+  ["tanstack-virtual", (has, hasPrefix, deps) => deps.some((d) => /^@tanstack\/[\w-]*virtual$/.test(d))],
+  ["react-day-picker", (has) => has("react-day-picker")],
+  ["input-otp", (has) => has("input-otp")],
+  ["react-resizable-panels", (has) => has("react-resizable-panels")],
 ];
 
 /**
@@ -159,15 +194,11 @@ export function detectStack(rootArg = ".") {
 
   const shadcn = file("components.json") ? shadcnProfile(readJson(join(root, "components.json")), has) : null;
 
-  // ---- animation
-  const animation = [];
-  const add = (x) => { if (!animation.includes(x)) animation.push(x); };
-  if (has("motion") || has("framer-motion") || has("motion-v") || has("@vueuse/motion")) add("motion");
-  if (has("gsap")) add("gsap");
-  if (hasPrefix("@react-spring/") || has("react-spring")) add("react-spring");
-  if (has("@formkit/auto-animate")) add("auto-animate");
-  if (has("lottie-web") || has("lottie-react") || hasPrefix("@lottiefiles/")) add("lottie");
-  if (has("@angular/animations")) add("angular-animations-legacy"); // deprecated: use animate.enter / animate.leave
+  // ---- animation and interaction libraries (recipes map our motion tokens onto each one's timing options)
+  const depNames = Object.keys(deps);
+  const found = (list) => list.filter(([, test]) => test(has, hasPrefix, depNames)).map(([name]) => name);
+  const animation = found(ANIMATION);
+  const interaction = found(INTERACTION);
 
   // ---- icons
   let icons = null;
@@ -203,6 +234,7 @@ export function detectStack(rootArg = ".") {
     shadcn,
     primitives,
     animation,
+    interaction,
     icons,
     typescript: has("typescript") || file("tsconfig.json"),
     packageManager,

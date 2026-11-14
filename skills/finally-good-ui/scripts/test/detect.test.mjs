@@ -254,3 +254,30 @@ test("compile-time styling engines detected: UnoCSS (package or uno.config), Sty
   const none = detect(fx("next")).styling;
   assert.deepEqual([none.unocss, none.stylex, none.vanillaExtract], [false, false, false]);
 });
+
+test("more motion libraries: anime.js, Rive, Lenis, Number Flow; dotLottie reported apart from Lottie", () => {
+  const d = tmp();
+  writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: {
+    animejs: "4.5.0", "@rive-app/react-canvas": "4.20.0", lenis: "1.3.0", "@number-flow/react": "0.5.10",
+    "@lottiefiles/dotlottie-react": "0.15.0", "lottie-web": "5.13.0",
+  } }));
+  assert.deepEqual([...detect(d).animation].sort(), ["animejs", "dotlottie", "lenis", "lottie", "number-flow", "rive"]);
+  const only = tmp();
+  writeFileSync(join(only, "package.json"), JSON.stringify({ dependencies: { "@lottiefiles/dotlottie-web": "0.50.0", "number-flow": "0.5.8" } }));
+  assert.deepEqual([...detect(only).animation].sort(), ["dotlottie", "number-flow"]);
+});
+
+test("interaction libraries reported in interaction[], one name per family; Vaul flagged as unmaintained", () => {
+  const d = tmp();
+  writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: {
+    "vue-sonner": "2.0.0", "vaul-vue": "0.4.1", "cmdk-sv": "0.0.18", "@floating-ui/vue": "1.1.0",
+    "@dnd-kit/core": "6.3.1", "@dnd-kit/react": "0.5.0", "@atlaskit/pragmatic-drag-and-drop": "1.7.0",
+    vuedraggable: "4.1.0", "embla-carousel-vue": "8.6.0", "@tanstack/vue-virtual": "3.13.0",
+    "react-day-picker": "10.0.2", "input-otp": "1.4.2", "react-resizable-panels": "3.0.0",
+  } }));
+  assert.deepEqual([...detect(d).interaction].sort(), [
+    "cmdk", "dnd-kit", "dnd-kit-next", "embla", "floating-ui", "input-otp", "pragmatic-dnd",
+    "react-day-picker", "react-resizable-panels", "sonner", "sortablejs", "tanstack-virtual", "vaul-unmaintained",
+  ]);
+  assert.deepEqual(detect(fx("next")).interaction, []);
+});
