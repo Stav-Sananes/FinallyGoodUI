@@ -38,6 +38,7 @@ function block(selector, decls, indent = "") {
 function darkBlocks(rows) {
   const dark = rows.filter((r) => r.dark != null).map((r) => `${r.varName}: ${r.dark};`);
   if (!dark.length) return "";
+  dark.push("color-scheme: dark;"); // native controls and scrollbars follow the dark palette
   return "\n\n" + block('.dark, [data-theme="dark"]', dark) + "\n\n@media (prefers-color-scheme: dark) {\n" +
     block(':root:not(.light):not([data-theme="light"])', dark, "  ") + "\n}";
 }

@@ -14,6 +14,8 @@ Goal: turn the chosen direction (or the confirmed existing brand) into **one sou
 - **Colour**
   - Semantic pairs, never raw hues in components: `background/foreground`, `card/card-foreground`, `primary/primary-foreground`, `muted/muted-foreground`, `accent/accent-foreground`, `destructive/destructive-foreground`, `border`, `input`, `ring`.
   - Add `success`, `warning` and `info` pairs if the blueprint has status UI (`data.status-encoding`).
+  - `overlay` is the scrim behind dialogs and sheets (translucent in both themes); recipes use `var(--color-overlay)`, never a literal.
+  - **Custom roles are allowed.** Any colour name you add is emitted as `--color-<name>` in every format. Name it by role, not hue. The common one: when actions are ink on a near-neutral canvas (`craft.ink-and-accent`), `primary` is the ink and the identity colour that marks meaning (new, selected, the motif) gets its own role such as `mark` + `mark-foreground`. `accent` stays the hover/selected-row tint (shadcn sense), not a brand colour.
   - Generate from 3 inputs: **base** (neutral hue and temperature), **accent**, **contrast level** (`color.role-scale`, `color.contrast-by-construction`).
   - Neutrals take a slight tint of the accent hue.
   - Dark values go in `$extensions.fgu.dark`, designed rather than inverted (`color.dark-mode-not-inverted`).

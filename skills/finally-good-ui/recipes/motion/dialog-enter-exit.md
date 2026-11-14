@@ -6,7 +6,7 @@
 
 **When NOT to use:** for content the user should compare with the page behind (use a side panel or inline expansion); for confirmations that could be an undo toast instead (usability.user-control-undo); on mobile for long forms — use a full page or bottom sheet.
 
-**Tokens:** `--duration-standard` (250, enter) · `--duration-short` (150, exit) · `--duration-medium` (300, backdrop) · `--ease-enter` · `--ease-exit`
+**Tokens:** `--color-overlay` (scrim) · `--duration-standard` (250, enter) · `--duration-short` (150, exit) · `--duration-medium` (300, backdrop) · `--ease-enter` · `--ease-exit`
 
 ## CSS baseline (`<dialog>` + `@starting-style`)
 ```html
@@ -35,7 +35,7 @@
 @starting-style { .dialog[open] { opacity: 0; transform: translateY(8px) scale(0.97); } }
 
 .dialog::backdrop {
-  background: oklch(0 0 0 / 0.45);
+  background: var(--color-overlay);
   opacity: 0;
   transition:
     opacity var(--duration-medium) var(--ease-exit),

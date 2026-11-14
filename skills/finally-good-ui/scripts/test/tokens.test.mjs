@@ -117,6 +117,20 @@ test("emit css: names + dark blocks", () => {
     "--duration-standard: 250ms", "--ease-enter: cubic-bezier(0, 0, 0, 1)", "--ease-linear: linear"]) assert.ok(s.includes(v), v);
   assert.match(s, /\.dark, \[data-theme="dark"\] \{[^}]*--color-background:/);
   assert.match(s, /@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\.light\):not\(\[data-theme="light"\]\) \{[^}]*--color-background:/);
+  // native controls and scrollbars follow the theme only when color-scheme says so
+  assert.match(s, /\.dark, \[data-theme="dark"\] \{[^}]*color-scheme: dark;/);
+  assert.match(s, /:root:not\(\.light\):not\(\[data-theme="light"\]\) \{[^}]*color-scheme: dark;/);
+  assert.doesNotMatch(s.split(".dark,")[0], /color-scheme/, "the light :root block leaves the browser default");
+});
+
+test("default tokens: an overlay scrim role for dialogs and sheets, translucent in both themes", () => {
+  const c = JSON.parse(readFileSync(DEF, "utf8")).color;
+  assert.ok(c.overlay, "overlay");
+  assert.match(c.overlay.$value, /^oklch\([^)]*\/\s*0?\.\d+\)$/);
+  assert.match(c.overlay.$extensions.fgu.dark, /^oklch\([^)]*\/\s*0?\.\d+\)$/);
+  assert.match(emit("css").stdout, /--color-overlay: oklch\(/);
+  const recipe = readFileSync(join(SR, "recipes", "motion", "dialog-enter-exit.md"), "utf8");
+  assert.match(recipe, /::backdrop \{\s*background: var\(--color-overlay\)/);
 });
 
 test("emit tailwind4", () => {
