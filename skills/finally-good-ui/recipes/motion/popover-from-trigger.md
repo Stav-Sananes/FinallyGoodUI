@@ -10,7 +10,8 @@
 
 ## CSS baseline (Popover API + `@starting-style`, Baseline)
 ```html
-<button popovertarget="filters" id="filters-btn">Filters</button>
+<button commandfor="filters" command="toggle-popover" id="filters-btn">Filters</button>
+<!-- invoker command (Baseline 2025-12); `popovertarget="filters"` is the older equivalent -->
 <div id="filters" popover class="popover" data-side="bottom-start" aria-labelledby="filters-btn">
   <!-- form controls; Tab moves through them natively -->
   <label><input type="checkbox" autofocus> Unpaid only</label> …

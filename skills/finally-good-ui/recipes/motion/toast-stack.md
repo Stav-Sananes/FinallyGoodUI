@@ -69,7 +69,7 @@ function dismiss(el) {
 ```
 
 ## React + Motion
-Hand-rolling a stack in React is rarely worth it: use **Sonner** (shadcn's toast). Tune it rather than rebuild: `position`, `duration`, `visibleToasts={3}`, `closeButton`, action for Undo. If Motion is already present and you need a custom one, use `<AnimatePresence initial={false}>` inside the persistent `role="status"` div, with `m.div layout`, `exit={{ opacity: 0, x: 40 }}` and durations from `sec()` (recipes/INDEX.md), never literals.
+Hand-rolling a stack in React is rarely worth it: use **Sonner** (shadcn's toast). Tune it rather than rebuild: `position`, `duration`, `visibleToasts={3}`, `closeButton`, action for Undo; its hard-coded 400ms motion follows our tokens through `emit-tokens --format adapters --libs sonner`. If Motion is already present and you need a custom one, use `<AnimatePresence initial={false}>` inside the persistent `role="status"` div, with `m.div layout`, `exit={{ opacity: 0, x: 40 }}` and durations from `sec()` (recipes/INDEX.md), never literals.
 
 ## Vue / Svelte
 - Vue: `<TransitionGroup tag="div" name="toast">` inside the persistent `role="status"` div gives enter/leave + `.toast-move { transition: transform var(--duration-standard) var(--ease-move) }` for restacking. Or `vue-sonner`.

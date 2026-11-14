@@ -11,13 +11,13 @@
 ## CSS baseline
 ```html
 <ul class="stagger" style="--stagger: 40ms">
-  <li style="--i: 0">…</li><li style="--i: 1">…</li> <!-- set --i server-side or in the template loop -->
+  <li>…</li><li>…</li>   <!-- no per-item index: sibling-index() counts for you -->
 </ul>
 ```
 ```css
 .stagger > * {
   animation: stagger-in var(--duration-medium) var(--ease-enter) both;
-  animation-delay: calc(min(var(--i, 0), 7) * var(--stagger, 40ms)); /* items past 8 arrive together */
+  animation-delay: calc(min(sibling-index() - 1, 7) * var(--stagger, 40ms)); /* items past 8 arrive together */
 }
 @keyframes stagger-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -38,7 +38,7 @@ Promise.all(list.getAnimations({ subtree: true }).map(a => a.finished))
 ```
 - Keyframes here (not transitions) because there is no prior state to transition from; `both` holds the start frame during the delay.
 - 8px travel, not 20+: the goal is order, not spectacle. Parent/container appears first (no delay), children follow.
-- Newer browsers: `sibling-index()` can replace `--i`; not Baseline yet — keep `--i`.
+- `sibling-index()` is Baseline since 2026-08. Older browsers drop the delay and show every item together, which is fine. A list with other elements between the items (headings) needs a per-item `--i` instead: `calc(min(var(--i), 7) * var(--stagger))`.
 
 ## React + Motion
 Worth it when items mount dynamically and you want variants to orchestrate parent → children.

@@ -4,12 +4,13 @@ import { resolve, join } from "node:path";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
 import { loadTokens, dtcgFiles, formatJson } from "./lib/token-files.mjs";
+import { emitAdapters, MissingTokenError } from "./lib/adapters.mjs";
 import { colorScale } from "./lib/ramp.mjs";
 import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssValue, darkOf, textMetrics } from "./lib/tokens.mjs";
 import { toHex } from "./lib/contrast.mjs";
 
 const HELP = `
-Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|prime|angular-material|tailwind3|mui|json|js] [--root <dir>]
+Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|prime|angular-material|tailwind3|mui|json|js|adapters] [--root <dir>]
        emit-tokens.mjs --in <tokens.json> --format dtcg --out-dir <dir> [--name tokens] [--force]
 
 --in takes a tokens file in either shape (CSS-string values with dark in $extensions.fgu.dark, or
@@ -42,6 +43,8 @@ Prints the tokens in the requested format to stdout:
   json       {"light": {"--var": value}, "dark": {...}}
   dtcg       writes tokens.json (DTCG 2025.10 colour/shadow objects), tokens.dark.json and
              tokens.resolver.json into --out-dir; refuses to overwrite without --force
+  adapters   override CSS so libraries with hard-coded motion (sonner, cmdk, react-day-picker, vaul)
+             use our --duration-*/--ease-* variables; --libs picks them by stack-profile name
   js         motion-tokens ES module for JS animation (Motion, WAAPI, transition props, timers):
              ms, sec, ease, cssEase, easeFn, bezierString, spring, reduced, msMotion, secMotion,
              durations, easings. Reads the live --duration-*/--ease-*
@@ -55,13 +58,15 @@ Options:
   --root <dir>     base dir for --in and --out-dir (default: cwd)
   --mui-scheme <s> mui only: how dark mode is selected. media (default, follows the OS), class (.dark),
                    data ([data-dark]) or a selector such as "[data-theme=%s]"; match the app's theme toggle
+  --libs <a,b>     adapters only: stack-profile interaction names (default: every adapter);
+                   names without an adapter are skipped
   --out-dir <dir>  dtcg only: where to write the three files
   --name <stem>    dtcg only: file stem (default tokens: tokens.json, tokens.dark.json, tokens.resolver.json)
   --force          dtcg only: overwrite existing files
   --help
 `;
 
-const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "dtcg"];
+const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "dtcg"];
 
 function block(selector, decls, indent = "") {
   return `${indent}${selector} {\n${decls.map((d) => `${indent}  ${d}`).join("\n")}\n${indent}}`;
@@ -627,7 +632,7 @@ export function emitMui(tokens, { scheme = "media" } = {}) {
   };
 }
 
-export function emit(tokens, format, { muiScheme } = {}) {
+export function emit(tokens, format, { muiScheme, libs } = {}) {
   switch (format) {
     case "css": return emitCss(tokens);
     case "tailwind4": return emitTailwind4(tokens);
@@ -644,7 +649,15 @@ export function emit(tokens, format, { muiScheme } = {}) {
     case "mui": return emitMui(tokens, { scheme: muiScheme });
     case "json": return emitJson(tokens);
     case "js": return emitJs(tokens);
+    case "adapters": return emitAdaptersOrUsageError(tokens, libs);
     default: throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
+  }
+}
+
+function emitAdaptersOrUsageError(tokens, libs) {
+  try { return emitAdapters(tokens, libs); } catch (e) {
+    if (e instanceof MissingTokenError) throw new UsageError(e.message);
+    throw e;
   }
 }
 
@@ -660,14 +673,14 @@ export function writeDtcg(tokens, outDir, { force = false, name = "tokens" } = {
 if (isMain(import.meta.url)) {
   runCli({
     help: HELP,
-    spec: { string: ["root", "in", "format", "out-dir", "name", "mui-scheme"], boolean: ["force"] },
+    spec: { string: ["root", "in", "format", "out-dir", "name", "mui-scheme", "libs"], boolean: ["force"] },
     main: ({ flags }) => {
       const format = flags.format || "css";
       if (!FORMATS.includes(format)) throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
       if (!flags.in) throw new UsageError("--in <tokens.json> is required");
       let tokens;
       try { tokens = loadTokens(resolve(flags.root || ".", flags.in)); } catch (e) { throw new UsageError(e.message); }
-      if (format !== "dtcg") return emit(tokens, format, { muiScheme: flags["mui-scheme"] || "media" });
+      if (format !== "dtcg") return emit(tokens, format, { muiScheme: flags["mui-scheme"] || "media", libs: flags.libs?.split(",").map((x) => x.trim()).filter(Boolean) });
       if (!flags["out-dir"]) throw new UsageError("--format dtcg needs --out-dir <dir>");
       return writeDtcg(tokens, resolve(flags.root || ".", flags["out-dir"]), { force: flags.force, name: flags.name || "tokens" });
     },

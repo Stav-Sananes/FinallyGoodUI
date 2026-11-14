@@ -14,7 +14,7 @@
   <h2 id="confirm-title">Archive 3 projects?</h2>
   <form method="dialog"><button value="cancel">Cancel</button><button value="ok">Archive</button></form>
 </dialog>
-<script>document.querySelector('#open').onclick = () => confirm.showModal();</script>
+<button commandfor="confirm" command="show-modal">Archive…</button>  <!-- invoker command: no script -->
 ```
 ```css
 .dialog {
@@ -52,8 +52,8 @@
 ```
 - Exit ≈ 60% of enter and uses `--ease-exit`; the user already decided, don't make them wait.
 - Where `overlay` transitions are unsupported (non-Chromium) the exit may be cut short; acceptable.
-- Backdrop colour belongs in tokens (`--color-overlay`) in real code; the literal is shown for clarity.
-- Bottom sheet on mobile: swap the transform for `translateY(100%)` → `none`, enter `--duration-medium`.
+- Opening needs no script: `command="show-modal"` / `command="close"` / `command="request-close"` with `commandfor` (invoker commands, Baseline 2025-12). Older browsers: keep a click handler calling `showModal()` as the fallback. Add `closedby="any"` for light dismiss where it's appropriate (a form-free dialog); browsers without it simply keep Escape and the buttons.
+- Bottom sheet on mobile: see bottom-sheet (drag, snap points, keyboard handle).
 
 ## React + Motion
 Use when dialog content changes height/steps inside (layout animation) or the project already uses Motion. Radix/shadcn `Dialog` + `forceMount` pattern:

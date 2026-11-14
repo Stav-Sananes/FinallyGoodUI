@@ -24,7 +24,7 @@ Rules that apply to all recipes:
 - Start from the CSS baseline. Use the stack's built-ins next (Vue `<Transition>`/`<TransitionGroup>`, Svelte `transition:`/`animate:flip`, Angular `animate.enter`/`animate.leave`).
 - **Angular:** put the recipe's CSS in a class and bind it with `animate.enter="pop-in"` / `animate.leave="pop-out"`; Angular adds the class, waits for the CSS transition or animation, then removes the element. Don't use `@angular/animations` (`trigger()`, `state()`): it is deprecated with removal planned for v23, and it can't be mixed with `animate.enter`. The stack profile flags it as `angular-animations-legacy`. Reach for a library only at the recipe's upgrade trigger, and ask first with the reason and size cost.
 - Motion (`motion/react`): wrap in `LazyMotion` + `m` (`domAnimation` ≈ 4.6kb initial); `domMax` only for layout/`layoutId` recipes.
-- **Libraries the project already has** (stack profile `animation[]` and `interaction[]`): feed them our tokens in the unit each one expects. The units differ, and a wrong unit is the usual bug.
+- **Libraries the project already has** (stack profile `animation[]` and `interaction[]`): feed them our tokens in the unit each one expects. The units differ, and a wrong unit is the usual bug. For the ones that hard-code motion in their own CSS (Sonner, cmdk, react-day-picker, Vaul), generate the override CSS instead of writing it: `emit-tokens.mjs --in .design/tokens.json --format adapters --libs <the profile's interaction names, comma-separated> > src/styles/motion-adapters.css`, imported once (any order).
 
   | Profile name | Timing input | Ours | Reduced motion |
   |---|---|---|---|

@@ -67,6 +67,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/emit-tokens.mjs" --in .design/tokens.json --fo
 | shadcn on Tailwind v3 | `css` + `tailwind3` | merge into the existing `:root` / `.dark` variables, keeping shadcn's names |
 | MUI (`components: "mui"`; `joy` is on hold upstream, so build Joy projects the same way) | `mui` with `--mui-scheme` matching the app's theme toggle (`media` default, `class`, `data`, or a selector) | `theme.ts` via `createTheme`. The output turns on CSS theme variables (`cssVariables`), so light and dark both come from the same theme. From v9 (`componentsVersion` ≥ 9) Box, Stack, Grid and Typography no longer take system props: style with `sx` |
 | Anything else / plain | `css` | `tokens.css`, imported first |
+| Stack profile `interaction` lists `sonner`, `cmdk`, `react-day-picker` or `vaul-unmaintained` | `adapters --libs <those names>` (in addition) | `motion-adapters.css`, imported once: those libraries hard-code their motion, and this makes them use `--duration-*`/`--ease-*` |
 | Any stack that animates from JS (Motion, WAAPI, Svelte/Vue transitions) | `js` (in addition) | `motion-tokens.js` next to the components; re-emit whenever `tokens.json` changes |
 
 **Kits and engines detected but with no format of their own yet.** Emit `css` (our `--color-*` variables on `:root`/`.dark`), then point the kit's own variables at ours in its theme file, so `tokens.json` stays the one source. Use `json` when the kit needs literal values, and `color-scale.mjs` when it needs a tonal scale.

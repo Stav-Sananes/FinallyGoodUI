@@ -11,7 +11,7 @@
 Height is a layout property. This is the one sanctioned exception to motion.compositor-only: keep it short, on small panels, and never on many elements at once. Mark it `/* fgu-allow: animate-layout-prop */` so the static check knows it's deliberate.
 
 ## CSS baseline A — native `<details>` (progressive)
-Works everywhere; animates in Chromium (`interpolate-size`), opens instantly elsewhere.
+Works everywhere: `::details-content` is Baseline (2025-09), so the fade runs in every current browser; the height also animates where `interpolate-size` is supported (Chromium), and opens instantly elsewhere.
 ```css
 details.acc::details-content {
   opacity: 0;
