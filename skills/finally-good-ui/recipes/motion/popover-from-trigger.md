@@ -4,7 +4,7 @@
 
 **Cards:** motion.spatial-continuity · motion.duration-by-distance · motion.easing-roles · motion.compositor-only · motion.reduced-motion · usability.user-control-undo
 
-**When NOT to use:** tooltips on keyboard-heavy expert UIs shown on every hover (use opacity only, ≤100ms, and a delay); full dialogs (see dialog-enter-exit); anything opened hundreds of times a day — consider instant.
+**When NOT to use:** tooltips (use tooltip-group: delay, then instant neighbours, opacity only); full dialogs (see dialog-enter-exit); anything opened hundreds of times a day — consider instant.
 
 **Tokens:** `--duration-short` (150, enter) · `--duration-micro` (100, exit) · `--ease-snappy` (enter) · `--ease-exit`
 
@@ -95,8 +95,8 @@ Without Motion, shadcn's `data-[state=open]:animate-in zoom-in-95` utilities are
 ## A11y
 - What the Popover API gives you: light dismiss, `Escape` to close, focus back to the trigger on close, and `aria-expanded` on a `popovertarget` button. What it does **not** give you: moving focus in on open (put `autofocus` on the first control, as above, or focus it in script), arrow keys, Home/End or typeahead.
 - So the CSS baseline is for **panels of ordinary controls** (filters, a date field, a share box), where Tab is the whole keyboard model. Leave `role` off, or use `role="dialog"` for a labelled panel.
-- An **action menu** (`role="menu"`, a list of commands) needs the full menu-button keyboard model: focus the first item on open, arrow keys move between items, Home/End, typeahead, Enter/Space activate, Escape returns to the trigger ([WAI-ARIA APG menu button](https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/)). Use the installed component library's Menu/DropdownMenu (Radix, Base UI, React Aria, Reka, Bits, Headless UI, Ark); animate it with this recipe's motion. Don't put `role="menu"` on a plain popover: `check-static` flags it as `role-no-keyboard`.
-- Tooltips: show on focus too, not only hover; never hold essential info.
+- An **action menu** (`role="menu"`, a list of commands) needs the full menu-button keyboard model: focus the first item on open, arrow keys move between items, Home/End, typeahead, Enter/Space activate, Escape returns to the trigger ([WAI-ARIA APG menu button](https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/)). Use the installed component library's Menu/DropdownMenu (Radix, Base UI, React Aria, Reka, Bits, Headless UI, Ark), or with none installed the menu in patterns/menu-select-combobox; animate it with this recipe's motion. Don't put `role="menu"` on a plain popover: `check-static` flags it as `role-no-keyboard`.
+- Tooltips: timing, grouping and focus behaviour are in tooltip-group; never hold essential info.
 
 ## Upgrade trigger
 Suggest `@floating-ui/dom` (a few kb gzipped) only if popovers must flip/shift in scroll containers and the stack has no component library doing it.

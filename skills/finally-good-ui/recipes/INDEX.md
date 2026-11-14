@@ -58,6 +58,7 @@ Rules that apply to all recipes:
 | [react-view-transition](motion/react-view-transition.md) | React 19.3+ / Next App Router: shared element, Suspense reveal, directional route and crossfade through `<ViewTransition>` and transition types | motion.spatial-continuity, motion.frequency-budget, motion.reduced-motion | No (React built-in) |
 | [scroll-linked](motion/scroll-linked.md) | reading progress, condensing sticky header, reveal-on-view on a CSS scroll timeline | motion.purpose-only, motion.compositor-only, motion.reduced-motion | No (GSAP ScrollTrigger only for pinned storytelling) |
 | [headless-primitive-motion](motion/headless-primitive-motion.md) | overlays from Radix, Base UI, React Aria, Reka, Bits, Ark, Kobalte, Headless UI, UI SDK animate on each library's own state hooks | motion.easing-roles, motion.compositor-only, motion.reduced-motion | Uses the installed one |
+| [tooltip-group](motion/tooltip-group.md) | first tooltip waits, neighbours open instantly, focus opens at once, one at a time | motion.frequency-budget, a11y.keyboard-complete, ia-nav.progressive-disclosure | No (sets the installed library's provider delays) |
 | [skeleton-to-content](motion/skeleton-to-content.md) | real-shape placeholder, fade in, no shift | states.loading-perceived, usability.system-status, layout.intrinsic-responsive | No |
 
 ## Patterns
@@ -67,6 +68,8 @@ Rules that apply to all recipes:
 | [empty-state](patterns/empty-state.md) | explain the emptiness by cause + one next step | states.empty-state-teaches, writing.action-labels, flows-forms.primary-action-clarity | No |
 | [form-validation](patterns/form-validation.md) | validate on blur, clear on fix, summary on submit | flows-forms.inline-validation-timing, writing.error-messages, usability.error-prevention | Optional (form lib + schema for large/multi-step forms) |
 | [data-table](patterns/data-table.md) | dense, sortable, fully-stated tables | data.dense-tables, data.tension-density-clarity, typography.tabular-numbers | Optional (TanStack Table/Virtual at scale) |
+| [menu-select-combobox](patterns/menu-select-combobox.md) | pick from a list: menu of commands, select one value, filter-as-you-type, full keyboard contract | a11y.keyboard-complete, a11y.semantic-first, usability.recognition-over-recall | Uses the installed primitive library; otherwise native or hand-rolled menu |
+| [command-palette](patterns/command-palette.md) | ⌘K search-and-run for pages, records and actions, ranked, near-instant | usability.recognition-over-recall, ia-nav.search-vs-browse, motion.frequency-budget | Optional (cmdk in React, Bits UI Command in Svelte) |
 | [settings-page](patterns/settings-page.md) | grouped options, one save model per group | layout.proximity-grouping, usability.user-control-undo, states.optimistic-feedback | No |
 
 ## Pick by situation
@@ -85,6 +88,9 @@ Rules that apply to all recipes:
 | see how far through a long page they are, or keep the header out of the way while reading | scroll-linked |
 | wait for a region without the layout jumping | skeleton-to-content |
 | find their way around the app | app-shell-nav |
+| run a command, choose a value, or narrow a long list from the keyboard | menu-select-combobox |
+| jump to anything or run any action without the mouse | command-palette |
+| learn what an icon-only control does without clutter | tooltip-group |
 | understand why a screen is empty and what to do | empty-state |
 | catch a form mistake as soon as they leave the field | form-validation |
 | scan, sort and compare many rows | data-table |
