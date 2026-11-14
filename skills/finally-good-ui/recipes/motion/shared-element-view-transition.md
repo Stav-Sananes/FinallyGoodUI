@@ -8,6 +8,8 @@
 
 **Tokens:** `--duration-medium` (300, group) · `--duration-standard` (250, page in) · `--duration-short` (150, page out) · `--ease-move` · `--ease-enter` · `--ease-exit`
 
+**React 19.3+** (stack profile `viewTransitions: "react"`): use react-view-transition instead. React drives `startViewTransition` itself, so the hook below would run a second one.
+
 ## CSS/JS baseline (same-document View Transitions — Baseline since Oct 2025)
 ```js
 import { reduced } from './motion-tokens.js'; // recipes/INDEX.md

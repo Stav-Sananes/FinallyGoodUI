@@ -55,6 +55,8 @@ Rules that apply to all recipes:
 | [list-reorder-flip](motion/list-reorder-flip.md) | items glide to new positions on sort/filter | motion.spatial-continuity, usability.system-status, data.dense-tables | No (Motion `layout` if present; drag → dnd-kit/SortableJS) |
 | [shared-element-view-transition](motion/shared-element-view-transition.md) | list item becomes the detail header | motion.spatial-continuity, motion.one-signature-moment, ia-nav.wayfinding-location | No (Motion `layoutId` for interruptible SPA) |
 | [route-transition](motion/route-transition.md) | forward/back/lateral page motion, shell still | motion.spatial-continuity, ia-nav.wayfinding-location, motion.frequency-budget | No |
+| [react-view-transition](motion/react-view-transition.md) | React 19.3+ / Next App Router: shared element, Suspense reveal, directional route and crossfade through `<ViewTransition>` and transition types | motion.spatial-continuity, motion.frequency-budget, motion.reduced-motion | No (React built-in) |
+| [scroll-linked](motion/scroll-linked.md) | reading progress, condensing sticky header, reveal-on-view on a CSS scroll timeline | motion.purpose-only, motion.compositor-only, motion.reduced-motion | No (GSAP ScrollTrigger only for pinned storytelling) |
 | [headless-primitive-motion](motion/headless-primitive-motion.md) | overlays from Radix, Base UI, React Aria, Reka, Bits, Ark, Kobalte, Headless UI, UI SDK animate on each library's own state hooks | motion.easing-roles, motion.compositor-only, motion.reduced-motion | Uses the installed one |
 | [skeleton-to-content](motion/skeleton-to-content.md) | real-shape placeholder, fade in, no shift | states.loading-perceived, usability.system-status, layout.intrinsic-responsive | No |
 
@@ -78,8 +80,9 @@ Rules that apply to all recipes:
 | reveal more without leaving the page | accordion-auto-height |
 | see a list arrive without a jolt | list-stagger-enter (first load only) |
 | keep track of items when a list is sorted or filtered | list-reorder-flip |
-| follow a list item into its detail page | shared-element-view-transition |
-| know where they went when the page changes | route-transition |
+| follow a list item into its detail page | shared-element-view-transition; in React 19.3+ (`viewTransitions: "react"`), react-view-transition |
+| know where they went when the page changes | route-transition; in React 19.3+, react-view-transition |
+| see how far through a long page they are, or keep the header out of the way while reading | scroll-linked |
 | wait for a region without the layout jumping | skeleton-to-content |
 | find their way around the app | app-shell-nav |
 | understand why a screen is empty and what to do | empty-state |

@@ -11,7 +11,8 @@ Detects framework, router, styling (Tailwind v3/v4, CSS modules, Sass, CSS-in-JS
 UnoCSS, StyleX, vanilla-extract),
 component kit (for shadcn: its primitive base, style, CSS entry and port), unstyled primitive
 libraries (Radix, Base UI, React Aria, Reka, Bits UI, Ark UI, Kobalte, Headless UI, UI SDK), animation,
-interaction (toasts, drawers, command menus, positioning, drag and drop, carousels, virtual lists) and icon libraries, TypeScript, package manager, dev script,
+interaction (toasts, drawers, command menus, positioning, drag and drop, carousels, virtual lists) and icon libraries,
+the view-transition integration, TypeScript, package manager, dev script,
 testing tools, design files and whether .design/ exists. Prints the stack profile as JSON.
 
 Options:
@@ -21,6 +22,11 @@ Options:
 
 const cleanVersion = (v) => (typeof v === "string" ? (v.match(/\d+(\.\d+){0,2}/) || [null])[0] : null);
 const major = (v) => { const c = cleanVersion(v); return c ? parseInt(c, 10) : null; };
+/** Is version range `v` at least major.minor? Reads the lowest version the range names. */
+const atLeast = (v, [maj, min]) => {
+  const [a, b = 0] = (cleanVersion(v) || "").split(".").map(Number);
+  return Number.isFinite(a) && a > 0 && (a > maj || (a === maj && b >= min));
+};
 
 const DESIGN_NAMES = new Set(["globals.css", "global.css", "app.css", "index.css", "main.css", "style.css", "styles.css", "tokens.json"]);
 const isDesignFile = (rel) => {
@@ -200,6 +206,12 @@ export function detectStack(rootArg = ".") {
   const animation = found(ANIMATION);
   const interaction = found(INTERACTION);
 
+  // ---- view transitions: which integration the route and shared-element recipes should use
+  const viewTransitions = has("react") && atLeast(deps.react, [19, 3]) ? "react" // <ViewTransition>, stable in 19.3
+    : framework === "astro" ? "astro" // <ClientRouter />
+    : framework === "sveltekit" ? "sveltekit" // onNavigate + document.startViewTransition
+    : "native";
+
   // ---- icons
   let icons = null;
   if (has("lucide-react")) icons = "lucide-react";
@@ -235,6 +247,7 @@ export function detectStack(rootArg = ".") {
     primitives,
     animation,
     interaction,
+    viewTransitions,
     icons,
     typescript: has("typescript") || file("tsconfig.json"),
     packageManager,

@@ -8,6 +8,8 @@
 
 **Tokens:** `--duration-standard` (250, in) · `--duration-short` (150, out) · `--ease-enter` · `--ease-exit`
 
+**React 19.3+** (stack profile `viewTransitions: "react"`): use react-view-transition instead. React drives `startViewTransition` itself, so the hook below would run a second one.
+
 ## CSS/JS baseline (View Transitions, directional)
 Name only the content region so the shell (nav, header) is excluded from motion.
 ```css

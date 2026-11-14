@@ -281,3 +281,13 @@ test("interaction libraries reported in interaction[], one name per family; Vaul
   ]);
   assert.deepEqual(detect(fx("next")).interaction, []);
 });
+
+test("viewTransitions names the integration the route recipes should use", () => {
+  const vt = (deps) => { const d = tmp(); writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: deps })); return detect(d).viewTransitions; };
+  assert.equal(vt({ next: "16.1.0", react: "^19.3.1" }), "react");
+  assert.equal(vt({ react: "19.2.4" }), "native", "<ViewTransition> ships stable in React 19.3");
+  assert.equal(vt({ react: "20.0.0" }), "react");
+  assert.equal(vt({ astro: "6.0.0" }), "astro");
+  assert.equal(vt({ "@sveltejs/kit": "2.40.0", svelte: "5.0.0" }), "sveltekit");
+  assert.equal(vt({ vue: "3.5.0" }), "native");
+});
