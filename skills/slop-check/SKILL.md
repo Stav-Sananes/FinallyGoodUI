@@ -8,7 +8,7 @@ argument-hint: "[path | url | diff ref] [--fix]"
 
 A fast pass/fail audit of interface work for the patterns that make UI read as machine-made, in **both** directions: the noisy template (glass, glow, gradients, fake proof, buzzwords) and the sterile default (clean, correct, nothing to remember). It does not redesign. It produces a ledger, and with `--fix` it fixes only what the ledger proves.
 
-Shared knowledge lives in the main skill. `FGU` = `${CLAUDE_SKILL_DIR}/../finally-good-ui`.
+Shared knowledge lives in the main skill. `FGU` = `${CLAUDE_SKILL_DIR}/../finally-good-ui` (`${CLAUDE_SKILL_DIR}` is the folder holding this file; outside Claude Code, substitute its path. Install the `finally-good-ui` skill next to this one).
 - Detector catalogue: `FGU/rubric/ai-default-fingerprints.md`
 - Craft cards: `FGU/canon/craft.md`; copy card: `writing.plain-claims` in `FGU/canon/writing.md`
 

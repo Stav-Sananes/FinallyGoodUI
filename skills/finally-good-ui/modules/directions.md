@@ -101,7 +101,7 @@ Record the result in the spec's `Fingerprint check` line.
 - Then compare the three specs side by side: if two share the same composition sentence, or all three share one material, re-roll per §2 (two directions may share a material).
 
 ## 5. Dispatch builders (parallel)
-Send **one message with three Agent tool calls** (`subagent_type: "direction-builder"`), one per direction. If the Agent tool is unavailable, build A/B/C yourself sequentially following `agents/direction-builder.md`.
+Send **one message with three Agent tool calls** (`subagent_type: "direction-builder"`), one per direction. If the Agent tool is unavailable, build A/B/C yourself sequentially following `agents/direction-builder.md` in the skill folder.
 
 Each prompt must contain, inline (the subagent does not share your context):
 1. The full spec text for that direction.

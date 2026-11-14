@@ -16,6 +16,12 @@ Stack profile:
 
 Arguments: `$ARGUMENTS`
 
+### Running outside Claude Code (Cursor, Codex, other agents)
+- `${CLAUDE_SKILL_DIR}` means the folder that holds this file. If your agent leaves it as literal text, substitute that folder's path.
+- If the stack profile above shows a command instead of JSON, run that command yourself first.
+- No subagents: build the three directions one after another, following `agents/direction-builder.md` (in this folder). Review with `agents/ui-reviewer.md` yourself, and tell the user the review isn't independent.
+- No edit hook: after each UI edit, run `node "${CLAUDE_SKILL_DIR}/scripts/check-static.mjs" --files <changed files>` yourself.
+
 ## Non-negotiables
 
 1. **Reason, cite, record.** Every significant decision (navigation model, layout, palette, type, motion level, component choice) gets a one-line reason that cites canon card ids, and is appended to `.design/decisions.md`.

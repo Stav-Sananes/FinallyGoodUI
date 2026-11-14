@@ -137,3 +137,14 @@ test("export-rules --dry-run writes nothing", () => {
   assert.equal(r.json.files.length, 4);
   assert.ok(!existsSync(join(out, ".cursor")));
 });
+
+// Agents installed through `npx skills add` get only the skill folder, so the subagent prompts
+// ship inside it too. The plugin loads them from the repo root; the two copies must not drift.
+test("subagent prompts inside the skill match the plugin's agents/", () => {
+  const repo = join(SR, "..", "..");
+  for (const name of ["direction-builder.md", "ui-reviewer.md"]) {
+    const plugin = readFileSync(join(repo, "agents", name), "utf8");
+    const bundled = readFileSync(join(SR, "agents", name), "utf8");
+    assert.equal(bundled, plugin, `skills/finally-good-ui/agents/${name} differs from agents/${name}; copy agents/${name} over it`);
+  }
+});

@@ -8,7 +8,7 @@ argument-hint: "[preserve | elevate | overhaul] [screen, route or path]"
 
 Turns a correct interface into a premium one by a sequence of small, verified upgrades, ordered by impact against risk. It changes how things are made (type setting, surfaces, edges, imagery, motif, copy), not what the product is (routes, flows, data, labels people rely on).
 
-`FGU` = `${CLAUDE_SKILL_DIR}/../finally-good-ui`. The values come from `FGU/canon/craft.md`, `FGU/canon/personality.md`, `FGU/canon/typography.md` and `FGU/canon/color.md`. Read `craft.md` in full before step 3; open the others for the cards you apply.
+`FGU` = `${CLAUDE_SKILL_DIR}/../finally-good-ui` (`${CLAUDE_SKILL_DIR}` is the folder holding this file; outside Claude Code, substitute its path. Install the `finally-good-ui` skill next to this one). The values come from `FGU/canon/craft.md`, `FGU/canon/personality.md`, `FGU/canon/typography.md` and `FGU/canon/color.md`. Read `craft.md` in full before step 3; open the others for the cards you apply.
 
 ## Modes
 

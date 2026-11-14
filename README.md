@@ -21,6 +21,14 @@ claude plugin marketplace add Stav-Sananes/FinallyGoodUI
 claude plugin install finally-good-ui@finally-good-ui-market
 ```
 
+**Cursor, Codex, Copilot and other agents** install the same three skills with the [skills CLI](https://github.com/vercel-labs/skills):
+
+```bash
+npx skills add Stav-Sananes/FinallyGoodUI --skill '*'
+```
+
+Outside Claude Code the reasoning, canon, recipes and scripts all work. What you give up: the three directions are built one after another instead of in parallel, the final review is done by the same agent rather than an independent one, and the static check runs when the agent remembers to run it, not after every edit.
+
 For full browser checks, add Playwright to the project you're working on (the skill asks before installing anything):
 `npm i -D playwright @axe-core/playwright && npx playwright install chromium`.
 Without it, the skill uses any browser tool it has or falls back to static checks, and tells you which.
