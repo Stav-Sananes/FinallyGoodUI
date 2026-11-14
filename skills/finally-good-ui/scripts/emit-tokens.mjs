@@ -9,13 +9,13 @@ import { emitChartTheme } from "./lib/chart-theme.mjs";
 import { emitFonts, LOADERS } from "./lib/fonts.mjs";
 import { emitAgGrid } from "./lib/ag-grid.mjs";
 import { pipelineFiles, PIPELINES } from "./lib/pipelines.mjs";
-import { emitUniwind, emitNativewind, emitRnMotion } from "./lib/react-native.mjs";
+import { emitUniwind, emitNativewind, emitRnMotion, emitTamagui, emitUnistyles } from "./lib/react-native.mjs";
 import { colorScale } from "./lib/ramp.mjs";
 import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssValue, darkOf, textMetrics, fontValue } from "./lib/tokens.mjs";
 import { toHex } from "./lib/contrast.mjs";
 
 const HELP = `
-Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|prime|angular-material|tailwind3|mui|json|js|adapters|chart-theme|fonts|ag-grid|uniwind|nativewind|rn-motion] [--root <dir>]
+Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|prime|angular-material|tailwind3|mui|json|js|adapters|chart-theme|fonts|ag-grid|uniwind|nativewind|tamagui|unistyles|rn-motion] [--root <dir>]
        emit-tokens.mjs --in <tokens.json> --format dtcg --out-dir <dir> [--name tokens] [--force]
        emit-tokens.mjs --in <tokens.json> --format terrazzo|style-dictionary [--out-dir tokens] [--tailwind] [--force]
 
@@ -65,6 +65,10 @@ Prints the tokens in the requested format to stdout:
              light/dark colour variants, all literal (hex/rgba, px; line-height and letter-spacing in px)
   nativewind React Native with NativeWind v4 (and react-native-reusables on it): global.css variables
              (:root, .dark:root) and theme.extend for tailwind.config.js
+  tamagui    tamagui.config.ts for Tamagui 3: @tamagui/config/v6 with our space/radius tokens and light/dark
+             themes under Tamagui's keys (background, border-color, color…) and our role names
+  unistyles  unistyles.ts for Unistyles 3: light/dark themes (colors, shadow, space, radius, text, duration),
+             adaptiveThemes on, plus the TypeScript theme declaration
   rn-motion  motion-tokens module for Reanimated 4: duration (ms), ease (cubicBezier, CSS transitions),
              easing (Easing.bezier, withTiming), timing(), transition() with reduced-motion handling
   js         motion-tokens ES module for JS animation (Motion, WAAPI, transition props, timers):
@@ -93,7 +97,7 @@ Options:
   --help
 `;
 
-const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "chart-theme", "fonts", "ag-grid", "uniwind", "nativewind", "rn-motion", "dtcg", ...PIPELINES];
+const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "chart-theme", "fonts", "ag-grid", "uniwind", "nativewind", "tamagui", "unistyles", "rn-motion", "dtcg", ...PIPELINES];
 const FILE_FORMATS = ["dtcg", ...PIPELINES];
 
 function block(selector, decls, indent = "") {
@@ -683,6 +687,8 @@ export function emit(tokens, format, { muiScheme, libs, loader } = {}) {
     case "ag-grid": return missingTokenAsUsage(() => emitAgGrid(tokens));
     case "uniwind": return emitUniwind(tokens);
     case "nativewind": return emitNativewind(tokens);
+    case "tamagui": return emitTamagui(tokens);
+    case "unistyles": return emitUnistyles(tokens);
     case "rn-motion": return emitRnMotion(tokens);
     default: throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
   }

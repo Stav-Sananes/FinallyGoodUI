@@ -109,3 +109,34 @@ test("nativeColor: sRGB hex, rgba for translucent colours", () => {
   assert.equal(nativeColor("oklch(0.21 0.012 265 / 0.45)"), "rgba(22, 24, 30, 0.45)");
   assert.throws(() => nativeColor("var(--x)"), /cannot convert/);
 });
+
+// Tamagui 3.3's createTamagui ran on this output (light/dark themes and tokens resolved to our values);
+// the Unistyles 3.8 output type-checked with a StyleSheet.create that reads every theme group.
+test("tamagui: v6 defaults plus our tokens and colours under Tamagui's keys and our role names", () => {
+  const ts = emit("tamagui");
+  assert.match(ts, /import \{ defaultConfig \} from "@tamagui\/config\/v6";/);
+  assert.match(ts, /space: \{ \.\.\.defaultConfig\.tokens\.space, \.\.\.\{\n {4}"0": 0,\n {4}"1": 4,/);
+  assert.match(ts, /radius: \{ \.\.\.defaultConfig\.tokens\.radius, \.\.\.\{\n {4}"sm": 4,/);
+  assert.doesNotMatch(ts, /"none": 0/, "Tamagui rejects token names that are CSS keywords");
+  const light = ts.split("light: {")[1].split("dark: {")[0];
+  assert.match(light, /"background": "#fbfcfd",/);
+  assert.match(light, /"border-color": "#e0e1e4",/);
+  assert.match(light, /"color": "#16181e",/);
+  assert.match(light, /"accent-background": "#345fb2",/);
+  assert.match(light, /"primary": "#345fb2",/);
+  assert.match(ts.split("dark: {")[1], /"background": "#0e0f13",/);
+  assert.match(ts, /interface TamaguiCustomConfig extends AppConfig \{\}/);
+});
+
+test("unistyles: adaptive light/dark themes with camelCase colours and numeric sizes", () => {
+  const ts = emit("unistyles");
+  assert.match(ts, /settings: \{ adaptiveThemes: true \},\n {2}themes: \{ light: lightTheme, dark: darkTheme \},/);
+  assert.match(ts, /"mutedForeground": "#60636a",/);
+  assert.match(ts, /"base": \{ fontSize: 16, lineHeight: 24, letterSpacing: 0 \},/);
+  assert.match(ts, /const space = \{\n {4}"0": 0,\n {4}"1": 4,/);
+  assert.match(ts, /const duration = \{[^}]*"standard": 250,/);
+  const dark = ts.split("const darkTheme = ")[1];
+  assert.match(dark, /"background": "#0e0f13",/);
+  assert.match(dark, /"sm": "0 1px 2px 0 rgba\(0, 0, 0, 0\.4\)",/, "dark shadows are the dark values");
+  assert.match(ts, /export interface UnistylesThemes extends AppThemes \{\}/);
+});
