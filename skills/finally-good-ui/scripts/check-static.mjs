@@ -318,6 +318,7 @@ export function checkFile(rel, text, ctx) {
       if (role && tab) return;
       add("div-onclick", m.index, "high", `Clickable <${m[1]}> is not keyboard or screen-reader accessible; use <button>/<a> (or add role, tabIndex and key handlers).`);
     });
+    checkWidgetKeyboard(markup, clean, add);
     each(/<(input|select|textarea|Input|Select|Textarea)\b/g, markup, (m) => {
       const tag = tagText(markup, m.index);
       const cls = (tag.match(/\s(?:className|class)\s*=\s*(?:\{?\s*)?(["'`])([^"'`]*)\1/) || [])[2] || "";
@@ -388,6 +389,27 @@ function literalTextNodes(clean) {
     else out.push([value, index]);
   }
   return out;
+}
+
+// Composite ARIA widgets promise a keyboard model (arrow keys, typeahead, Home/End) that only
+// script provides; native controls already have one.
+const WIDGET_ROLE = /\srole\s*=\s*\{?\s*["'`](menu|menubar|listbox|tablist|tree|treegrid|grid|slider|spinbutton|radiogroup|combobox|switch)["'`]/g;
+const NATIVE_CONTROL = /^(button|input|select|textarea|summary)$/i;
+const TAG_KEY_HANDLER = /\s(?:onKeyDown|onKeyUp|onkeydown|onkeyup|@keydown|@keyup|v-on:keydown|v-on:keyup|on:keydown|on:keyup|\(keydown\)|\(keyup\))\b/;
+const SCRIPT_KEY_LISTENER = /addEventListener\(\s*["'`]key(?:down|up)["'`]/;
+
+function checkWidgetKeyboard(markup, clean, add) {
+  if (SCRIPT_KEY_LISTENER.test(clean)) return;
+  WIDGET_ROLE.lastIndex = 0;
+  let m;
+  while ((m = WIDGET_ROLE.exec(markup))) {
+    const start = markup.lastIndexOf("<", m.index);
+    const tagName = (markup.slice(start + 1).match(/^[\w.-]+/) || [""])[0];
+    if (start < 0 || NATIVE_CONTROL.test(tagName) || TAG_KEY_HANDLER.test(tagText(markup, start))) continue;
+    add("role-no-keyboard", start, "high",
+      `role="${m[1]}" promises a keyboard model (arrow keys, Home/End, typeahead, focus on open) that this element doesn't implement. ` +
+      "Use the installed component library's widget, a native control, or add the key handling; otherwise drop the role.");
+  }
 }
 
 function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, each, ctx, line }) {

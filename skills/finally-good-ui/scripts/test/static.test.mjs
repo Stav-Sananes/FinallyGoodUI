@@ -11,6 +11,7 @@ const RULES = {
   "ease-in-entrance": "motion.easing-roles", "scale-from-zero": "motion.easing-roles",
   "outline-none-no-focus": "a11y.focus-visible", "img-no-alt": "a11y.semantic-first",
   "div-onclick": "a11y.semantic-first", "user-scalable-no": "a11y.target-size", "small-input-font": "a11y.target-size",
+  "role-no-keyboard": "a11y.keyboard-complete",
 };
 
 const check = (dir, extra = []) => {
@@ -41,7 +42,7 @@ test("output shape", () => {
   }
 });
 
-test("every one of the 13 rules fires somewhere in the fixtures", () => {
+test("every one of the 14 rules fires somewhere in the fixtures", () => {
   const fired = new Set(all.flatMap((o) => o.findings.map((f) => f.rule)));
   assert.deepEqual([...fired].sort(), Object.keys(RULES).sort());
 });
@@ -98,6 +99,7 @@ test("html fixture: root files scanned", () => {
   assert.ok(has(o, "user-scalable-no", "index.html", 5));
   assert.ok(has(o, "img-no-alt", "index.html", 9));
   assert.ok(has(o, "div-onclick", "index.html", 10));
+  assert.ok(has(o, "role-no-keyboard", "index.html", 12));
   assert.ok(has(o, "long-duration", "styles.css", 2));
   assert.ok(has(o, "animate-layout-prop", "styles.css", 4));
   assert.ok(has(o, "scale-from-zero", "styles.css", 4));
@@ -204,4 +206,28 @@ test("long-duration resolves var(--x) from custom properties in scanned CSS", ()
   // single-file run still resolves tokens defined in another file
   const one = check(d, ["--files", "css/app.css"]);
   assert.ok(has(one, "long-duration", C, 2));
+});
+
+// ---------- composite-widget roles need a keyboard model ----------
+test("role-no-keyboard: a widget role on a custom element needs key handling", () => {
+  const d = tmp();
+  mkdirSync(join(d, "src"), { recursive: true });
+  writeFileSync(join(d, "src", "Menus.tsx"), [
+    '<div popover role="menu">Rename</div>',                     // 1: flagged
+    '<ul role="listbox" onKeyDown={onKey}>…</ul>',              // 2: has a key handler
+    '<button role="switch" aria-checked="true">Wi-Fi</button>', // 3: native button is keyboard-operable
+    '<div role="tablist" aria-label="Views">…</div>',           // 4: flagged
+    '<nav role="navigation">…</nav>',                           // 5: not a composite widget role
+  ].join("\n") + "\n");
+  writeFileSync(join(d, "src", "Slider.vue"), '<template><div role="slider" @keydown="move" tabindex="0"></div></template>\n');
+  writeFileSync(join(d, "src", "Picker.svelte"), '<div role="radiogroup" on:keydown={move}></div>\n');
+  writeFileSync(join(d, "widget.html"),
+    '<div id="m" role="menu"><button>One</button></div>\n' +
+    '<script>m.addEventListener("keydown", onKey);</script>\n');
+  const o = check(d);
+  const hits = o.findings.filter((f) => f.rule === "role-no-keyboard").map((f) => `${f.file}:${f.line}`).sort();
+  assert.deepEqual(hits, ["src/Menus.tsx:1", "src/Menus.tsx:4"]);
+  const f = o.findings.find((x) => x.rule === "role-no-keyboard");
+  assert.equal(f.severity, "high");
+  assert.match(f.message, /menu/);
 });

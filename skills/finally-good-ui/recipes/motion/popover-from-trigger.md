@@ -10,8 +10,11 @@
 
 ## CSS baseline (Popover API + `@starting-style`, Baseline)
 ```html
-<button popovertarget="menu" id="menu-btn">Sort</button>
-<div id="menu" popover class="popover" data-side="bottom-start" role="menu">…</div>
+<button popovertarget="filters" id="filters-btn">Filters</button>
+<div id="filters" popover class="popover" data-side="bottom-start" aria-labelledby="filters-btn">
+  <!-- form controls; Tab moves through them natively -->
+  <label><input type="checkbox" autofocus> Unpaid only</label> …
+</div>
 ```
 ```css
 .popover {
@@ -90,8 +93,9 @@ Without Motion, shadcn's `data-[state=open]:animate-in zoom-in-95` utilities are
 - Svelte: `transition:scale={{ start: 0.95, opacity: 0, duration: ms('short'), easing: cubicOut }}`; set `transform-origin` via a style bound to the placement. Use `in:`/`out:` separately for a faster exit.
 
 ## A11y
-- Focus moves into menus on open and back to the trigger on close; `Escape` closes (the Popover API and Radix handle this).
-- `aria-expanded` on the trigger; `role="menu"` only for true action menus, otherwise `dialog` or none.
+- What the Popover API gives you: light dismiss, `Escape` to close, focus back to the trigger on close, and `aria-expanded` on a `popovertarget` button. What it does **not** give you: moving focus in on open (put `autofocus` on the first control, as above, or focus it in script), arrow keys, Home/End or typeahead.
+- So the CSS baseline is for **panels of ordinary controls** (filters, a date field, a share box), where Tab is the whole keyboard model. Leave `role` off, or use `role="dialog"` for a labelled panel.
+- An **action menu** (`role="menu"`, a list of commands) needs the full menu-button keyboard model: focus the first item on open, arrow keys move between items, Home/End, typeahead, Enter/Space activate, Escape returns to the trigger ([WAI-ARIA APG menu button](https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/)). Use the installed component library's Menu/DropdownMenu (Radix, Base UI, React Aria, Reka, Bits, Headless UI, Ark); animate it with this recipe's motion. Don't put `role="menu"` on a plain popover: `check-static` flags it as `role-no-keyboard`.
 - Tooltips: show on focus too, not only hover; never hold essential info.
 
 ## Upgrade trigger

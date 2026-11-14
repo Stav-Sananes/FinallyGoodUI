@@ -14,6 +14,7 @@ export const RULE_CARDS = {
   "div-onclick": "a11y.semantic-first",
   "user-scalable-no": "a11y.target-size",
   "small-input-font": "a11y.target-size",
+  "role-no-keyboard": "a11y.keyboard-complete",
   // Slop detectors: the mechanical half of rubric/ai-default-fingerprints.md.
   "dead-control": "craft.nothing-dead",
   "placeholder-code": "craft.nothing-dead",
