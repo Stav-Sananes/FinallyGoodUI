@@ -70,6 +70,48 @@ Tiers: **Full** = detect + emit format + extract where sensible + recipe/build n
 | 6.3 | First-run onboarding (three paths) + README rewrite | Full | P5 |
 | 6.4 | README visual showcase (before/after gallery from real runs) | Full | P4 |
 
+### Loop order and progress
+Chosen 2026-11-14: reach work first (0.1 first because it is a shipped accessibility bug). Gallery built by the loop; the npm CLI is built and dry-run packed, the user publishes. Commits stay local.
+
+- [ ] 0.1
+- [ ] 6.3
+- [ ] 6.1
+- [ ] 6.2
+- [ ] 6.4
+- [ ] 0.2
+- [ ] 0.3
+- [ ] 0.4
+- [ ] 1.1
+- [ ] 1.2
+- [ ] 1.3
+- [ ] 1.4
+- [ ] 1.5
+- [ ] 1.6
+- [ ] 1.7
+- [ ] 1.8
+- [ ] 1.9
+- [ ] 1.10
+- [ ] 2.1
+- [ ] 2.2
+- [ ] 2.3
+- [ ] 2.4
+- [ ] 2.5
+- [ ] 2.6
+- [ ] 3.1
+- [ ] 3.2
+- [ ] 3.3
+- [ ] 3.4
+- [ ] 3.5
+- [ ] 4.1
+- [ ] 4.2
+- [ ] 4.3
+- [ ] 5.1
+- [ ] 5.2
+- [ ] 5.3
+- [ ] 5.4
+- [ ] 5.5
+- [ ] 5.6
+
 Avoid (Part 4): "N stacks supported" tables without emit/verify behind them, and theme/style catalogs (contradict the no-presets canon).
 
 ---
