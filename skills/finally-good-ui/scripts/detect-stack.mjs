@@ -120,12 +120,13 @@ export function detectStack(rootArg = ".") {
   else if (has("@mui/material")) components = "mui";
   else if (has("@mui/joy")) components = "joy"; // on hold upstream: build with Material UI patterns
   else if (has("daisyui")) components = "daisyui";
+  else if (has("antd")) components = "antd";
   else if (has("@chakra-ui/react")) components = "chakra";
   else if (has("@mantine/core")) components = "mantine";
   else if (hasPrefix("@radix-ui/")) components = "radix";
   else if (hasPrefix("@headlessui/")) components = "headlessui";
 
-  const KIT_PACKAGE = { mui: "@mui/material", joy: "@mui/joy", daisyui: "daisyui", chakra: "@chakra-ui/react", mantine: "@mantine/core" };
+  const KIT_PACKAGE = { mui: "@mui/material", joy: "@mui/joy", daisyui: "daisyui", antd: "antd", chakra: "@chakra-ui/react", mantine: "@mantine/core" };
   const componentsVersion = KIT_PACKAGE[components] ? major(deps[KIT_PACKAGE[components]]) : null;
 
   // ---- unstyled primitives (no theme to emit; each animates through its own state attributes)

@@ -543,3 +543,20 @@ test("emit mantine: createTheme with a 10-shade brand palette and a light/dark C
   assert.equal(v.dark["--color-primary"], "oklch(0.72 0.12 262)", "our own roles too, per scheme");
   assert.equal(v.variables["--ease-move"], "cubic-bezier(0.2, 0, 0, 1)");
 });
+
+// ---------- Ant Design v6 ----------
+test("emit antd: light and dark token sets (designed dark values, not just the algorithm)", () => {
+  const r = emit("antd");
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stdout, /export function themeFor\(isDark, antdTheme\)/);
+  const { light, dark } = constObject(r.stdout, "tokens");
+  assert.match(light.colorPrimary, /^#[0-9a-f]{6}$/, "antd derives palettes from hex seeds");
+  assert.equal(light.colorBgBase, "#fbfcfd");
+  assert.notEqual(dark.colorBgBase, light.colorBgBase);
+  assert.equal(light.borderRadius, 8, "antd sizes are numbers in px");
+  assert.equal(light.fontSize, 16);
+  assert.equal(light.motionDurationMid, "0.25s");
+  assert.equal(light.motionEaseInOut, "cubic-bezier(0.2, 0, 0, 1)");
+  assert.match(light.fontFamily, /ui-sans-serif|system-ui|Inter/);
+  assert.ok(light.colorBgContainer && light.colorBorder && light.colorTextSecondary);
+});

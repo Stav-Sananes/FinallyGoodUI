@@ -190,3 +190,11 @@ test("Panda CSS detected as a styling engine", () => {
   assert.equal(detect(d).styling.panda, true);
   assert.equal(detect(fx("next")).styling.panda, false);
 });
+
+test("Ant Design detected as the component kit", () => {
+  const d = tmp();
+  writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: { react: "19.2.0", antd: "6.7.0" } }));
+  const p = detect(d);
+  assert.equal(p.components, "antd");
+  assert.equal(p.componentsVersion, 6);
+});
