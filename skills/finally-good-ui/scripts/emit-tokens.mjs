@@ -6,12 +6,13 @@ import { runCli, isMain, UsageError } from "./lib/cli.mjs";
 import { loadTokens, dtcgFiles, formatJson } from "./lib/token-files.mjs";
 import { emitAdapters, MissingTokenError } from "./lib/adapters.mjs";
 import { emitChartTheme } from "./lib/chart-theme.mjs";
+import { emitFonts, LOADERS } from "./lib/fonts.mjs";
 import { colorScale } from "./lib/ramp.mjs";
-import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssValue, darkOf, textMetrics } from "./lib/tokens.mjs";
+import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssValue, darkOf, textMetrics, fontValue } from "./lib/tokens.mjs";
 import { toHex } from "./lib/contrast.mjs";
 
 const HELP = `
-Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|prime|angular-material|tailwind3|mui|json|js|adapters|chart-theme] [--root <dir>]
+Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|prime|angular-material|tailwind3|mui|json|js|adapters|chart-theme|fonts] [--root <dir>]
        emit-tokens.mjs --in <tokens.json> --format dtcg --out-dir <dir> [--name tokens] [--force]
 
 --in takes a tokens file in either shape (CSS-string values with dark in $extensions.fgu.dark, or
@@ -46,6 +47,8 @@ Prints the tokens in the requested format to stdout:
              tokens.resolver.json into --out-dir; refuses to overwrite without --force
   adapters   override CSS so libraries with hard-coded motion (sonner, cmdk, react-day-picker, vaul)
              use our --duration-*/--ease-* variables; --libs picks them by stack-profile name
+  fonts      loader code for the faces font tokens name ($extensions.fgu.load): --loader next (next/font),
+             nuxt (@nuxt/fonts), fontsource (self-hosted npm packages) or google (default, <link>)
   chart-theme  chart-theme.js for canvas chart libraries: chartColors(), echartsTheme(),
              applyChartJsTheme(Chart), onThemeChange(cb); reads the live variables, resolves any colour
   js         motion-tokens ES module for JS animation (Motion, WAAPI, transition props, timers):
@@ -61,6 +64,7 @@ Options:
   --root <dir>     base dir for --in and --out-dir (default: cwd)
   --mui-scheme <s> mui only: how dark mode is selected. media (default, follows the OS), class (.dark),
                    data ([data-dark]) or a selector such as "[data-theme=%s]"; match the app's theme toggle
+  --loader <name>  fonts only: next, nuxt, fontsource or google (default); the stack profile's fonts.loader
   --libs <a,b>     adapters only: stack-profile interaction names (default: every adapter);
                    names without an adapter are skipped
   --out-dir <dir>  dtcg only: where to write the three files
@@ -69,7 +73,7 @@ Options:
   --help
 `;
 
-const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "chart-theme", "dtcg"];
+const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "chart-theme", "fonts", "dtcg"];
 
 function block(selector, decls, indent = "") {
   return `${indent}${selector} {\n${decls.map((d) => `${indent}  ${d}`).join("\n")}\n${indent}}`;
@@ -589,12 +593,12 @@ export function emitMui(tokens, { scheme = "media" } = {}) {
   const light = palette("light"), dark = palette("dark");
 
   const fonts = Object.fromEntries(groupTokens(tokens?.font));
-  const fontTok = fonts.sans ?? fonts.body ?? Object.values(fonts)[0];
+  const fontName = ["sans", "body"].find((n) => fonts[n]) ?? Object.keys(fonts)[0];
   const texts = Object.fromEntries(groupTokens(tokens?.text));
   const px = (d) => (d ? (d.unit === "rem" ? d.value * 16 : d.value) : undefined);
   const typography = {};
-  if (fontTok) typography.fontFamily = cssValue("font", fontTok.$value);
-  if (fonts.mono) typography.fontFamilyMonospace = cssValue("font", fonts.mono.$value);
+  if (fontName) typography.fontFamily = fontValue(fontName, fonts[fontName]);
+  if (fonts.mono) typography.fontFamilyMonospace = fontValue("mono", fonts.mono);
   const base = texts.base ?? texts.md;
   if (base) typography.fontSize = px(parseDimension(base.$value));
   // Variants carry the per-step metrics (craft.tracking-by-size). Mapped by the default step names.
@@ -635,7 +639,7 @@ export function emitMui(tokens, { scheme = "media" } = {}) {
   };
 }
 
-export function emit(tokens, format, { muiScheme, libs } = {}) {
+export function emit(tokens, format, { muiScheme, libs, loader } = {}) {
   switch (format) {
     case "css": return emitCss(tokens);
     case "tailwind4": return emitTailwind4(tokens);
@@ -654,8 +658,14 @@ export function emit(tokens, format, { muiScheme, libs } = {}) {
     case "js": return emitJs(tokens);
     case "adapters": return emitAdaptersOrUsageError(tokens, libs);
     case "chart-theme": return emitChartThemeOrUsageError(tokens);
+    case "fonts": return emitFonts(tokens, loader);
     default: throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
   }
+}
+
+function fontLoader(name = "google") {
+  if (!LOADERS.includes(name)) throw new UsageError(`unknown --loader ${name} (use ${LOADERS.join("|")})`);
+  return name;
 }
 
 function emitChartThemeOrUsageError(tokens) {
@@ -681,14 +691,14 @@ export function writeDtcg(tokens, outDir, { force = false, name = "tokens" } = {
 if (isMain(import.meta.url)) {
   runCli({
     help: HELP,
-    spec: { string: ["root", "in", "format", "out-dir", "name", "mui-scheme", "libs"], boolean: ["force"] },
+    spec: { string: ["root", "in", "format", "out-dir", "name", "mui-scheme", "libs", "loader"], boolean: ["force"] },
     main: ({ flags }) => {
       const format = flags.format || "css";
       if (!FORMATS.includes(format)) throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
       if (!flags.in) throw new UsageError("--in <tokens.json> is required");
       let tokens;
       try { tokens = loadTokens(resolve(flags.root || ".", flags.in)); } catch (e) { throw new UsageError(e.message); }
-      if (format !== "dtcg") return emit(tokens, format, { muiScheme: flags["mui-scheme"] || "media", libs: flags.libs?.split(",").map((x) => x.trim()).filter(Boolean) });
+      if (format !== "dtcg") return emit(tokens, format, { muiScheme: flags["mui-scheme"] || "media", libs: flags.libs?.split(",").map((x) => x.trim()).filter(Boolean), loader: fontLoader(flags.loader) });
       if (!flags["out-dir"]) throw new UsageError("--format dtcg needs --out-dir <dir>");
       return writeDtcg(tokens, resolve(flags.root || ".", flags["out-dir"]), { force: flags.force, name: flags.name || "tokens" });
     },

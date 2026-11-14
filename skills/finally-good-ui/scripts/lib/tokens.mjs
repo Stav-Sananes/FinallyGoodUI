@@ -107,6 +107,22 @@ export function fontCss(list) {
 
 export const darkOf = (tok) => tok?.$extensions?.fgu?.dark;
 
+/** How a font token's face loads ($extensions.fgu.load), or null for a system stack. */
+export const fontLoad = (tok) => tok?.$extensions?.fgu?.load ?? null;
+/** A weight range ("100 900") means a variable font. */
+export const isVariableFont = (load) => typeof load?.weights === "string" && /^\d+\s+\d+$/.test(load.weights.trim());
+
+/**
+ * CSS for a font token whose face is loaded: next/font publishes its hashed family as
+ * --font-<name>-loaded; other loaders register the face under its own name (Fontsource adds
+ * " Variable" for variable fonts), so both names follow as the var() fallback.
+ */
+export function loadedFontCss(name, tok) {
+  const [face, ...rest] = Array.isArray(tok.$value) ? tok.$value : [tok.$value];
+  const names = isVariableFont(fontLoad(tok)) ? [`${face} Variable`, face] : [face];
+  return [`var(--font-${name}-loaded, ${fontCss(names)})`, ...(rest.length ? [fontCss(rest)] : [])].join(", ");
+}
+
 /**
  * Per-step type metrics carried on text tokens ($extensions.fgu): line-height (unitless) and
  * letter-spacing (dimension, em). Returns [{suffix, prop, value}] as CSS strings, emitted as
@@ -120,13 +136,17 @@ export function textMetrics(tok) {
   return out;
 }
 
+/** The CSS font-family list for a font token, loaded face first when it has one. */
+export const fontValue = (name, tok) => (fontLoad(tok) ? loadedFontCss(name, tok) : cssValue("font", tok.$value));
+
 /** Flatten to [{group, name, varName, light, dark, token}] in group order. */
 export function flatten(tokens) {
   const out = [];
   for (const group of GROUPS) {
     for (const [name, tok] of groupTokens(tokens?.[group])) {
       const d = darkOf(tok);
-      out.push({ group, name, varName: `--${VAR_PREFIX[group]}-${name}`, light: cssValue(group, tok.$value),
+      const light = group === "font" ? fontValue(name, tok) : cssValue(group, tok.$value);
+      out.push({ group, name, varName: `--${VAR_PREFIX[group]}-${name}`, light,
         dark: d == null ? null : cssValue(group, d), token: tok });
     }
   }

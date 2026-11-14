@@ -27,6 +27,7 @@ Goal: turn the chosen direction (or the confirmed existing brand) into **one sou
   Body text needs at least 4.5:1, large text and UI at least 3:1 (`a11y.contrast-minimums`). Fix the value, not the rule.
 - **Type**
   - Families: at most 2 plus mono (`typography.limited-families-weights`).
+  - **A chosen face must load.** Put it first in the font token's list, keep the system fallbacks after it, and say how it loads: `"$extensions": {"fgu": {"load": {"source": "google", "weights": "100 900"}}}` (a weight range = variable font; a list such as `[400, 600]` = static weights; `"source": "local"` with `"files": [{"path": "fonts/x.woff2", "weight": "100 900"}]` for licensed files). Prefer variable fonts. The emitted variable becomes `var(--font-<name>-loaded, "<Face> Variable", <Face>), <fallbacks>`, which works with every loader.
   - Scale: from the direction, or 12/14/16/18/20/24/30/36/48/60.
   - Body size follows density and audience: **16px** by default (consumer, mixed or beginner audiences, reading-heavy screens, phone-first, AAA/low-vision needs); **13–14px** only when the brief resolves to dense expert daily use (`personality.dense-expert`, `data.tension-density-clarity` → density). Either way, form inputs stay ≥ 16px on mobile (`a11y.target-size`) and no readable text goes below 12px.
   - Line-height 1.4–1.6 for body, tighter for display.
@@ -70,6 +71,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/emit-tokens.mjs" --in .design/tokens.json --fo
 | Anything else / plain | `css` | `tokens.css`, imported first |
 | Stack profile `interaction` lists `sonner`, `cmdk`, `react-day-picker` or `vaul-unmaintained` | `adapters --libs <those names>` (in addition) | `motion-adapters.css`, imported once: those libraries hard-code their motion, and this makes them use `--duration-*`/`--ease-*` |
 | Stack profile `charts` lists a canvas library (`echarts`, `chartjs`, `ag-charts`, `uplot`, Nivo canvas components) | `chart-theme` (in addition) | `src/lib/chart-theme.js`; see recipes/patterns/chart.md. SVG chart libraries use `var(--color-chart-N)` directly |
+| Any font token has `$extensions.fgu.load` | `fonts --loader <stack profile fonts.loader>` (in addition) | `next`: `app/fonts.ts` + the classes on `<html>` (next/font self-hosts and sizes the fallback); `nuxt`: the `fonts` block in `nuxt.config.ts`; `fontsource`: the `npm install` line and imports in the app entry (self-hosted, no third-party request); `google`: the `<link>` tags in `<head>` (plain HTML only; it sends visitors' IPs to Google) |
 | Any stack that animates from JS (Motion, WAAPI, Svelte/Vue transitions) | `js` (in addition) | `motion-tokens.js` next to the components; re-emit whenever `tokens.json` changes |
 
 **Kits and engines detected but with no format of their own yet.** Emit `css` (our `--color-*` variables on `:root`/`.dark`), then point the kit's own variables at ours in its theme file, so `tokens.json` stays the one source. Use `json` when the kit needs literal values, and `color-scale.mjs` when it needs a tonal scale.

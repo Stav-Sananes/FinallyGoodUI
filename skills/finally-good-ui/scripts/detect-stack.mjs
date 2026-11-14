@@ -12,7 +12,7 @@ UnoCSS, StyleX, vanilla-extract),
 component kit (for shadcn: its primitive base, style, CSS entry and port), unstyled primitive
 libraries (Radix, Base UI, React Aria, Reka, Bits UI, Ark UI, Kobalte, Headless UI, UI SDK), animation,
 interaction (toasts, drawers, command menus, positioning, drag and drop, carousels, virtual lists), chart and icon libraries,
-the view-transition integration, TypeScript, package manager, dev script,
+the view-transition integration, font loading, TypeScript, package manager, dev script,
 testing tools, design files and whether .design/ exists. Prints the stack profile as JSON.
 
 Options:
@@ -231,6 +231,17 @@ export function detectStack(rootArg = ".") {
     : framework === "sveltekit" ? "sveltekit" // onNavigate + document.startViewTransition
     : "native";
 
+  // ---- fonts: loaders already in use, and the one the fonts emitter should target
+  const readsGoogleFonts = (rel) => /fonts\.googleapis\.com/.test(readText(join(root, rel)) || "");
+  const fontsInUse = [];
+  if (has("next") && files.some((f) => /\.(t|j)sx?$/.test(f) && /from\s+["']next\/font\//.test(readText(join(root, f)) || ""))) fontsInUse.push("next-font");
+  if (has("@nuxt/fonts")) fontsInUse.push("nuxt-fonts");
+  if (hasPrefix("@fontsource/") || hasPrefix("@fontsource-variable/")) fontsInUse.push("fontsource");
+  if (has("unplugin-fonts")) fontsInUse.push("unplugin-fonts");
+  if (["index.html", "public/index.html", "src/app.html"].some((f) => file(f) && readsGoogleFonts(f)) || cssFiles.some(readsGoogleFonts)) fontsInUse.push("google-fonts");
+  const fontLoader = framework === "next" ? "next" : framework === "nuxt" ? "nuxt"
+    : pkg && framework !== "unknown" && framework !== "html" ? "fontsource" : "google";
+
   // ---- icons
   let icons = null;
   if (has("lucide-react")) icons = "lucide-react";
@@ -268,6 +279,7 @@ export function detectStack(rootArg = ".") {
     interaction,
     charts,
     viewTransitions,
+    fonts: { loader: fontLoader, inUse: fontsInUse },
     icons,
     typescript: has("typescript") || file("tsconfig.json"),
     packageManager,
