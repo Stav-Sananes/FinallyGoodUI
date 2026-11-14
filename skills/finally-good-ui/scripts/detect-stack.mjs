@@ -8,7 +8,8 @@ const HELP = `
 Usage: detect-stack.mjs [--root <dir>]
 
 Detects framework, router, styling (Tailwind v3/v4, CSS modules, Sass, CSS-in-JS),
-component kit (for shadcn: its primitive base, style, CSS entry and port), animation and icon libraries, TypeScript, package manager, dev script,
+component kit (for shadcn: its primitive base, style, CSS entry and port), unstyled primitive
+libraries (Radix, Base UI, React Aria, Reka, Bits UI, Ark UI, Kobalte, Headless UI, UI SDK), animation and icon libraries, TypeScript, package manager, dev script,
 testing tools, design files and whether .design/ exists. Prints the stack profile as JSON.
 
 Options:
@@ -37,6 +38,19 @@ export function resolvable(root, name) {
     if (dirname(d) === d) return false;
   }
 }
+
+/** [name, present?] in report order; the motion recipe headless-primitive-motion keys on these names. */
+const PRIMITIVES = [
+  ["radix", (has, hasPrefix) => hasPrefix("@radix-ui/react-") || has("radix-ui")],
+  ["base-ui", (has) => has("@base-ui/react") || has("@base-ui-components/react")],
+  ["react-aria", (has) => has("react-aria-components") || has("react-aria")],
+  ["reka", (has) => has("reka-ui") || has("radix-vue")],
+  ["bits", (has) => has("bits-ui")],
+  ["ark", (has, hasPrefix) => hasPrefix("@ark-ui/")],
+  ["kobalte", (has) => has("@kobalte/core")],
+  ["headlessui", (has, hasPrefix) => hasPrefix("@headlessui/")],
+  ["ui-sdk", (has, hasPrefix) => hasPrefix("@ui-sdk/")],
+];
 
 /**
  * shadcn/ui and its ports share components.json. Its style prefix names the primitive base
@@ -108,6 +122,9 @@ export function detectStack(rootArg = ".") {
   else if (hasPrefix("@radix-ui/")) components = "radix";
   else if (hasPrefix("@headlessui/")) components = "headlessui";
 
+  // ---- unstyled primitives (no theme to emit; each animates through its own state attributes)
+  const primitives = PRIMITIVES.filter(([, test]) => test(has, hasPrefix)).map(([name]) => name);
+
   const shadcn = file("components.json") ? shadcnProfile(readJson(join(root, "components.json")), has) : null;
 
   // ---- animation
@@ -150,6 +167,7 @@ export function detectStack(rootArg = ".") {
     styling,
     components,
     shadcn,
+    primitives,
     animation,
     icons,
     typescript: has("typescript") || file("tsconfig.json"),

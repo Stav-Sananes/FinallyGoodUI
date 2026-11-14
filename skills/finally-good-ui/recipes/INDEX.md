@@ -36,6 +36,7 @@ Rules that apply to all recipes:
 | [list-reorder-flip](motion/list-reorder-flip.md) | items glide to new positions on sort/filter | motion.spatial-continuity, usability.system-status, data.dense-tables | No (Motion `layout` if present; drag → dnd-kit/SortableJS) |
 | [shared-element-view-transition](motion/shared-element-view-transition.md) | list item becomes the detail header | motion.spatial-continuity, motion.one-signature-moment, ia-nav.wayfinding-location | No (Motion `layoutId` for interruptible SPA) |
 | [route-transition](motion/route-transition.md) | forward/back/lateral page motion, shell still | motion.spatial-continuity, ia-nav.wayfinding-location, motion.frequency-budget | No |
+| [headless-primitive-motion](motion/headless-primitive-motion.md) | overlays from Radix, Base UI, React Aria, Reka, Bits, Ark, Kobalte, Headless UI, UI SDK animate on each library's own state hooks | motion.easing-roles, motion.compositor-only, motion.reduced-motion | Uses the installed one |
 | [skeleton-to-content](motion/skeleton-to-content.md) | real-shape placeholder, fade in, no shift | states.loading-perceived, usability.system-status, layout.intrinsic-responsive | No |
 
 ## Patterns
@@ -52,7 +53,7 @@ Rules that apply to all recipes:
 | The person needs to… | Use |
 |---|---|
 | see what a press did, instantly | button-press |
-| open choices or details next to a control | popover-from-trigger (a panel of controls; an action menu comes from the component library, see its A11y notes) |
+| open choices or details next to a control | popover-from-trigger (a panel of controls; an action menu comes from the component library, see its A11y notes); with a primitive library installed, headless-primitive-motion |
 | stop and confirm, or finish a short focused task | dialog-enter-exit (modal) |
 | know a background action worked, and undo it | toast-stack, or an inline "Saved" (settings-page) |
 | reveal more without leaving the page | accordion-auto-height |

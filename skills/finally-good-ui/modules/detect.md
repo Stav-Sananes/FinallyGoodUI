@@ -7,7 +7,7 @@ The profile is already injected at the top of SKILL.md. If it is missing or stal
 ```
 node "${CLAUDE_SKILL_DIR}/scripts/detect-stack.mjs" --root .
 ```
-Note: `framework`, `styling.tailwind`, `components`, `animation`, `icons`, `devScript`, `testing`.
+Note: `framework`, `styling.tailwind`, `components`, `shadcn` (base, style, CSS entry, port), `primitives` (unstyled libraries; recipes/motion/headless-primitive-motion.md keys on them), `animation`, `icons`, `devScript`, `testing`.
 - `framework: unknown` with no `index.html` means a greenfield project. The stack is decided in the interview (`interview.constraints.platform-stack`).
 - Never assume an icon library, component kit or animation library that isn't listed.
 

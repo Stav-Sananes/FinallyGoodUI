@@ -149,3 +149,20 @@ test("shadcn: base from the components.json style prefix, css entry, port by fra
   writeFileSync(join(none, "package.json"), JSON.stringify({ dependencies: { react: "19.2.0" } }));
   assert.equal(detect(none).shadcn, null);
 });
+
+// Unstyled primitive libraries: no theme to emit, but each animates through different attributes.
+test("primitives: every headless library found, alongside any styled kit", () => {
+  const d = tmp();
+  writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: {
+    react: "19.2.0", "@base-ui/react": "1.9.0", "react-aria-components": "1.22.1", "@radix-ui/react-dialog": "1.3.1",
+    "@ark-ui/react": "5.40.0", "@ui-sdk/core": "0.1.0-beta.2", "@ui-sdk/react": "0.1.0-beta.2",
+  } }));
+  assert.deepEqual(detect(d).primitives, ["radix", "base-ui", "react-aria", "ark", "ui-sdk"]);
+  const v = tmp();
+  writeFileSync(join(v, "package.json"), JSON.stringify({ dependencies: { vue: "3.5.0", "reka-ui": "2.11.0" } }));
+  assert.deepEqual(detect(v).primitives, ["reka"]);
+  const s = tmp();
+  writeFileSync(join(s, "package.json"), JSON.stringify({ dependencies: { svelte: "5.0.0", "bits-ui": "2.21.0", "@kobalte/core": "0.13.14" } }));
+  assert.deepEqual(detect(s).primitives, ["bits", "kobalte"]);
+  assert.deepEqual(detect(fx("vue")).primitives, []);
+});
