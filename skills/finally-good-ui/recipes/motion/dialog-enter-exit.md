@@ -81,7 +81,7 @@ import { sec, ease } from "./motion-tokens"; // recipes/INDEX.md
 
 ## Vue / Svelte
 - Vue: `<Teleport to="body"><Transition name="dlg">` around the panel; separate `<Transition name="fade">` for the backdrop so their durations differ.
-- Svelte: `in:fly={{ y: 8, duration: ms('standard'), easing: cubicOut }} out:fade={{ duration: ms('short') }}` on the panel; `transition:fade={{ duration: ms('medium') }}` on the backdrop. Or use native `<dialog>` with the CSS above.
+- Svelte: `in:fly={{ y: 8, duration: ms('standard'), easing: easeFn('enter') }} out:fade={{ duration: ms('short') }}` on the panel; `transition:fade={{ duration: ms('medium') }}` on the backdrop. Or use native `<dialog>` with the CSS above.
 
 ## A11y
 - `showModal()` gives focus trap, `Escape`, inert background and top layer for free — prefer it over a div.

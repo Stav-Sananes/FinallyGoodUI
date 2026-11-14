@@ -10,7 +10,7 @@
 
 ## CSS/JS baseline (same-document View Transitions — Baseline since Oct 2025)
 ```js
-const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { reduced } from './motion-tokens.js'; // recipes/INDEX.md
 
 function go(update, direction = 'forward') {
   document.documentElement.dataset.nav = direction;       // read by route-transition CSS

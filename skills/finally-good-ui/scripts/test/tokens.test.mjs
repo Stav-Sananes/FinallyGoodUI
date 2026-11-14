@@ -380,3 +380,53 @@ test("the shipped defaults are DTCG 2025.10 and emit exactly what the old file d
   for (const fmt of ["css", "tailwind4", "tailwind3", "mui", "json", "js"])
     assert.equal(emit(fmt).stdout, emit(fmt, LEGACY).stdout, `${fmt} unchanged by the migration`);
 });
+
+// ---------- motion helpers for every animation library's input format ----------
+const motionModule = async () => {
+  const d = tmp();
+  writeFileSync(join(d, "motion-tokens.mjs"), emit("js").stdout);
+  return import(join(d, "motion-tokens.mjs"));
+};
+
+test("motion helpers: CSS easing strings, GSAP bezier strings, spring configs", async () => {
+  const m = await motionModule();
+  assert.equal(m.cssEase("move"), "cubic-bezier(0.2, 0, 0, 1)", "dnd-kit, SortableJS, AutoAnimate, WAAPI, Number Flow");
+  assert.equal(m.cssEase("linear"), "linear");
+  assert.equal(m.bezierString("move"), "0.2,0,0,1", "GSAP CustomEase.create(name, bezierString(…))");
+  assert.deepEqual(m.spring("short"), { type: "spring", visualDuration: 0.15, bounce: 0 });
+  assert.deepEqual(m.spring("medium", { bounce: 0.2 }), { type: "spring", visualDuration: 0.3, bounce: 0.2 });
+  assert.throws(() => m.cssEase("wobble"), /unknown easing token "wobble"/);
+});
+
+test("motion helpers: easeFn solves the cubic-bezier (Svelte, React Spring, Lenis take functions)", async () => {
+  const m = await motionModule();
+  for (const name of m.easings) {
+    const f = m.easeFn(name);
+    assert.equal(f(0), 0, name);
+    assert.ok(Math.abs(f(1) - 1) < 1e-6, name);
+  }
+  assert.ok(Math.abs(m.easeFn("linear")(0.37) - 0.37) < 1e-6);
+  assert.ok(m.easeFn("enter")(0.5) > 0.5, "decelerating curve is ahead at half time");
+  assert.ok(m.easeFn("exit")(0.5) < 0.5, "accelerating curve is behind at half time");
+  // y at the x where the curve's parameter is 0.5, computed by hand for move = (0.2,0,0,1)
+  const bx = (t) => 3 * (1 - t) ** 2 * t * 0.2 + t ** 3, by = (t) => 3 * (1 - t) * t ** 2 + t ** 3;
+  assert.ok(Math.abs(m.easeFn("move")(bx(0.5)) - by(0.5)) < 1e-4);
+});
+
+test("motion helpers: reduced motion collapses spatial durations to 0", async () => {
+  const m = await motionModule();
+  assert.equal(m.reduced(), false, "no window: motion allowed");
+  assert.equal(m.msMotion("standard"), 250);
+  globalThis.matchMedia = (q) => ({ matches: q === "(prefers-reduced-motion: reduce)" });
+  try {
+    assert.equal(m.reduced(), true);
+    assert.equal(m.msMotion("standard"), 0);
+    assert.equal(m.secMotion("standard"), 0);
+    assert.equal(m.ms("standard"), 250, "plain ms() is unchanged: opacity fades may keep their time");
+  } finally { delete globalThis.matchMedia; }
+});
+
+test("tailwind4: named duration utilities (Tailwind has no --duration-* theme namespace)", () => {
+  const s = emit("tailwind4").stdout;
+  assert.match(s, /@utility duration-\* \{\s*--tw-duration: --value\(--duration-\*\);\s*transition-duration: --value\(--duration-\*\);\s*\}/);
+});

@@ -90,7 +90,7 @@ Without Motion, shadcn's `data-[state=open]:animate-in zoom-in-95` utilities are
 
 ## Vue / Svelte
 - Vue: `<Transition name="pop">` with `.pop-enter-from, .pop-leave-to { opacity: 0; transform: scale(.95) }` and the enter/leave timings above on `.pop-enter-active` / `.pop-leave-active`.
-- Svelte: `transition:scale={{ start: 0.95, opacity: 0, duration: ms('short'), easing: cubicOut }}`; set `transform-origin` via a style bound to the placement. Use `in:`/`out:` separately for a faster exit.
+- Svelte: `transition:scale={{ start: 0.95, opacity: 0, duration: ms('short'), easing: easeFn('snappy') }}`; set `transform-origin` via a style bound to the placement. Use `in:`/`out:` separately for a faster exit.
 
 ## A11y
 - What the Popover API gives you: light dismiss, `Escape` to close, focus back to the trigger on close, and `aria-expanded` on a `popovertarget` button. What it does **not** give you: moving focus in on open (put `autofocus` on the first control, as above, or focus it in script), arrow keys, Home/End or typeahead.

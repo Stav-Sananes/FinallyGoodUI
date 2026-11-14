@@ -69,7 +69,7 @@ export function StaggerList({ items }: { items: Item[] }) {
 
 ## Vue / Svelte
 - Vue: `<TransitionGroup appear tag="ul" name="stagger">` with `:style="{ '--i': index }"` , `.stagger-enter-from { opacity: 0; transform: translateY(8px) }` and `.stagger-enter-active { transition: opacity var(--duration-medium), transform var(--duration-medium) var(--ease-enter); transition-delay: calc(min(var(--i), 7) * var(--stagger, 40ms)) }`; `appear` runs it on initial render, but later additions would also enter — bind `:css="!loaded"` and set `loaded = true` after the cascade.
-- Svelte: `in:fly={{ y: 8, duration: firstLoad ? ms('medium') : 0, delay: firstLoad ? Math.min(i, 7) * 40 : 0, easing: cubicOut }}` inside `{#each}`; set `firstLoad = false` after the cascade so later additions don't replay it.
+- Svelte: `in:fly={{ y: 8, duration: firstLoad ? ms('medium') : 0, delay: firstLoad ? Math.min(i, 7) * 40 : 0, easing: easeFn('enter') }}` inside `{#each}`; set `firstLoad = false` after the cascade so later additions don't replay it.
 
 ## A11y
 - Content must be in the DOM and readable immediately; the animation is purely visual (no delayed insertion).

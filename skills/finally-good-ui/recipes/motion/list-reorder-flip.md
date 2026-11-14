@@ -11,9 +11,7 @@
 ## CSS/JS baseline (FLIP with the Web Animations API)
 First → Last → Invert → Play: measure, change the DOM, then animate each item from its old offset back to zero with `transform` only.
 ```js
-import { ms, ease } from './motion-tokens.js'; // recipes/INDEX.md
-const bez = (name) => `cubic-bezier(${ease(name)})`;
-const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { ms, cssEase, reduced } from './motion-tokens.js'; // recipes/INDEX.md
 
 // Items need a stable data-id. `mutate` may reorder, insert or remove children (sync).
 export function flip(container, mutate, { duration = ms('standard') } = {}) {
@@ -22,22 +20,22 @@ export function flip(container, mutate, { duration = ms('standard') } = {}) {
   for (const el of container.children) {
     const f = first.get(el.dataset.id);
     if (!f) { // inserted
-      el.animate([{ opacity: 0, transform: reduce() ? 'none' : 'scale(0.97)' }, { opacity: 1, transform: 'none' }],
-                 { duration, easing: bez('move') });
+      el.animate([{ opacity: 0, transform: reduced() ? 'none' : 'scale(0.97)' }, { opacity: 1, transform: 'none' }],
+                 { duration, easing: cssEase('move') });
       continue;
     }
-    if (reduce()) continue;
+    if (reduced()) continue;
     const l = el.getBoundingClientRect();
     const dx = f.left - l.left, dy = f.top - l.top;
     if (dx || dy) el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }],
-                             { duration, easing: bez('move') });
+                             { duration, easing: cssEase('move') });
   }
 }
 
 // Removal: fade the item out first, then FLIP the rest into the gap.
 export async function removeWithFlip(container, el) {
   await el.animate([{ opacity: 1 }, { opacity: 0 }],
-                   { duration: ms('short'), easing: bez('exit'), fill: 'forwards' }).finished;
+                   { duration: ms('short'), easing: cssEase('exit'), fill: 'forwards' }).finished;
   flip(container, () => el.remove());
 }
 ```

@@ -8,7 +8,18 @@ Rules that apply to all recipes:
   ```
   node "${CLAUDE_SKILL_DIR}/scripts/emit-tokens.mjs" --in .design/tokens.json --format js > src/lib/motion-tokens.js
   ```
-  It exports `ms("standard")` → 250, `sec("standard")` → 0.25 (Motion uses seconds), `ease("move")` → `[0.2, 0, 0, 1]`, plus `durations`/`easings` name lists. Call them when animating, not at module load: the live `--duration-*`/`--ease-*` variable wins (theme overrides), the token value is the fallback on the server, and a misspelt name throws instead of silently animating at 0. Re-run the command whenever `tokens.json` changes. The recipes' `import … from "./motion-tokens"` means this file.
+  It exports `ms("standard")` → 250, `sec("standard")` → 0.25 (Motion uses seconds), `ease("move")` → `[0.2, 0, 0, 1]`, plus `durations`/`easings` name lists, and one helper per input format libraries expect:
+
+  | Library wants | Helper | Used by |
+  |---|---|---|
+  | seconds | `sec("standard")` | Motion, GSAP |
+  | a CSS easing string | `cssEase("move")` → `"cubic-bezier(0.2, 0, 0, 1)"` | WAAPI `el.animate`, dnd-kit, SortableJS, AutoAnimate, Number Flow |
+  | an easing function | `easeFn("enter")` → `(t) => y` | Svelte `transition:`, React Spring, Lenis, Vue/Solid JS hooks |
+  | a bezier string | `bezierString("move")` → `"0.2,0,0,1"` | GSAP `CustomEase.create("fgu-move", …)` |
+  | a spring | `spring("medium", { bounce: 0.2 })` | Motion `transition` |
+  | reduced motion | `reduced()`, `msMotion()`, `secMotion()` (0 under reduce) | movement only; fades may keep `ms()` |
+
+  Motion (`motion/react`): put one `<MotionConfig reducedMotion="user">` at the app root instead of branching per component. Tailwind v4: the emitted `@utility duration-*` gives `duration-standard`, `duration-short`… as classes. Call them when animating, not at module load: the live `--duration-*`/`--ease-*` variable wins (theme overrides), the token value is the fallback on the server, and a misspelt name throws instead of silently animating at 0. Re-run the command whenever `tokens.json` changes. The recipes' `import … from "./motion-tokens"` means this file.
   Under reduced motion pass `0` for spatial durations. MUI projects read `theme.transitions` (emitted by `emit-tokens --format mui`).
 - Start from the CSS baseline. Use the stack's built-ins next (Vue `<Transition>`/`<TransitionGroup>`, Svelte `transition:`/`animate:flip`). Reach for a library only at the recipe's upgrade trigger, and ask first with the reason and size cost.
 - Motion (`motion/react`): wrap in `LazyMotion` + `m` (`domAnimation` ≈ 4.6kb initial); `domMax` only for layout/`layoutId` recipes.
