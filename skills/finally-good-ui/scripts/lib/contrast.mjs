@@ -222,3 +222,10 @@ if (isMain(import.meta.url)) {
     },
   });
 }
+
+/** Is OKLCH (L 0–1, C, H degrees or "none") inside the sRGB gamut, i.e. displayable without clipping? */
+export function oklchInGamut(L, C, H) {
+  const h = H === "none" ? 0 : (H * Math.PI) / 180;
+  const EPS = 1e-4;
+  return oklabToLinear(L, C * Math.cos(h), C * Math.sin(h)).every((v) => v >= -EPS && v <= 1 + EPS);
+}
