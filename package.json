@@ -1,0 +1,37 @@
+{
+  "name": "finally-good-ui",
+  "version": "0.2.0",
+  "description": "Static UI checks for accessibility, motion, design tokens and the tells of AI-generated UI. The CLI half of the finally-good-ui Claude Code plugin.",
+  "type": "module",
+  "bin": {
+    "finally-good-ui": "bin/finally-good-ui.mjs"
+  },
+  "files": [
+    "bin/",
+    "skills/finally-good-ui/scripts/check-static.mjs",
+    "skills/finally-good-ui/scripts/lib/"
+  ],
+  "scripts": {
+    "test": "node --test 'skills/finally-good-ui/scripts/test/*.test.mjs'"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "ui",
+    "design",
+    "accessibility",
+    "a11y",
+    "lint",
+    "ai-slop",
+    "motion",
+    "design-tokens",
+    "claude-code"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Stav-Sananes/FinallyGoodUI.git"
+  },
+  "homepage": "https://github.com/Stav-Sananes/FinallyGoodUI#readme",
+  "license": "MIT"
+}

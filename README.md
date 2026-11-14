@@ -25,6 +25,28 @@ For full browser checks, add Playwright to the project you're working on (the sk
 `npm i -D playwright @axe-core/playwright && npx playwright install chromium`.
 Without it, the skill uses any browser tool it has or falls back to static checks, and tells you which.
 
+### Without Claude Code, or in CI
+
+The static checks (accessibility, motion, tokens and the AI-slop detectors) also run on their own, in any project:
+
+```bash
+npx finally-good-ui check src            # readable report; exits 1 on high-severity findings
+npx finally-good-ui check src --fail-on medium --format github   # annotations on the pull request
+```
+
+```yaml
+# .github/workflows/ui-check.yml
+on: pull_request
+jobs:
+  ui-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npx finally-good-ui check . --format github
+```
+
 ## Ask it like this
 
 Mention what you're building, who it's for, and what matters most. For example:
