@@ -90,13 +90,14 @@ function exportSkill() {
   return d;
 }
 
-test("export-rules writes the 4 targets", () => {
+test("export-rules writes every target by default, each with the full rules", () => {
   const skill = exportSkill();
   const out = tmp();
   writeFileSync(join(out, "AGENTS.md"), "# Project\n\nKeep me.\n");
   const r = run("export-rules.mjs", ["--out", out, "--skill", skill]);
   assert.equal(r.code, 0, r.stderr);
-  assert.equal(r.json.written.length, 4);
+  assert.deepEqual(r.json.written, [".cursor/rules/finally-good-ui.mdc", ".windsurf/rules/finally-good-ui.md",
+    ".github/instructions/finally-good-ui.instructions.md", ".kiro/steering/finally-good-ui.md", ".clinerules/finally-good-ui.md", "AGENTS.md"]);
   const mdc = readFileSync(join(out, ".cursor", "rules", "finally-good-ui.mdc"), "utf8");
   assert.match(mdc, /^---\ndescription: .+\nglobs: .*\*\*\/\*\.tsx.*\*\*\/\*\.css.*\nalwaysApply: false\n---\n/);
   for (const e of ["jsx", "vue", "svelte", "html"]) assert.ok(mdc.split("---")[1].includes(`*.${e}`), e);
@@ -110,6 +111,12 @@ test("export-rules writes the 4 targets", () => {
   assert.match(ws, /motion\.reduced-motion/);
   const gh = readFileSync(join(out, ".github", "instructions", "finally-good-ui.instructions.md"), "utf8");
   assert.match(gh, /^---\napplyTo: "\*\*\/\*\.\{tsx,jsx,vue,svelte,html,css\}"\n---\n/);
+  const kiro = readFileSync(join(out, ".kiro", "steering", "finally-good-ui.md"), "utf8");
+  assert.match(kiro, /^---\ninclusion: fileMatch\nfileMatchPattern: \["\*\*\/\*\.tsx", "\*\*\/\*\.jsx", .*"\*\*\/\*\.css"\]\n---\n/);
+  assert.match(kiro, /motion\.reduced-motion — Keep opacity/);
+  const cline = readFileSync(join(out, ".clinerules", "finally-good-ui.md"), "utf8");
+  assert.match(cline, /^---\npaths:\n  - "\*\*\/\*\.tsx"\n(  - ".+"\n){5}---\n/);
+  assert.match(cline, /Layout integrity/);
   const ag = readFileSync(join(out, "AGENTS.md"), "utf8");
   assert.match(ag, /Keep me\./);
   assert.match(ag, /## finally-good-ui/);
@@ -129,12 +136,32 @@ test("export-rules references .design files when present; missing inputs are war
   assert.match(mdc, /\.design\/brief\.md/);
 });
 
+test("export-rules --targets picks tools; Devin, legacy .clinerules and Junie's own AGENTS.md get their paths", () => {
+  const skill = exportSkill();
+  const out = tmp();
+  mkdirSync(join(out, ".devin"));
+  writeFileSync(join(out, ".clinerules"), "legacy single-file rules\n");
+  mkdirSync(join(out, ".junie"));
+  writeFileSync(join(out, ".junie", "AGENTS.md"), "# Junie\n");
+  const r = run("export-rules.mjs", ["--out", out, "--skill", skill, "--targets", "windsurf,cline,agents"]);
+  assert.equal(r.code, 0, r.stderr);
+  assert.deepEqual(r.json.targets, ["devin", "cline", "agents"]);
+  assert.deepEqual(r.json.written, [".devin/rules/finally-good-ui.md", ".cline/rules/finally-good-ui.md", "AGENTS.md", ".junie/AGENTS.md"]);
+  assert.match(readFileSync(join(out, ".devin", "rules", "finally-good-ui.md"), "utf8"), /^---\ntrigger: glob\n/);
+  assert.equal(readFileSync(join(out, ".clinerules"), "utf8"), "legacy single-file rules\n", "the legacy file is left alone");
+  assert.match(readFileSync(join(out, ".junie", "AGENTS.md"), "utf8"), /# Junie[\s\S]*## finally-good-ui/);
+  assert.ok(!existsSync(join(out, ".cursor")) && !existsSync(join(out, ".kiro")));
+  const bad = run("export-rules.mjs", ["--out", out, "--skill", skill, "--targets", "cursor,gemini"]);
+  assert.equal(bad.code, 2);
+  assert.match(bad.stderr, /unknown --targets gemini/);
+});
+
 test("export-rules --dry-run writes nothing", () => {
   const out = tmp();
   const r = run("export-rules.mjs", ["--out", out, "--skill", exportSkill(), "--dry-run"]);
   assert.equal(r.code, 0);
   assert.equal(r.json.written.length, 0);
-  assert.equal(r.json.files.length, 4);
+  assert.equal(r.json.files.length, 6);
   assert.ok(!existsSync(join(out, ".cursor")));
 });
 

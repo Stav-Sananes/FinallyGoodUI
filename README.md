@@ -129,7 +129,7 @@ Generated UI fails in two directions. One is the **noisy template**: glass, glow
 /finally-good-ui build                   system + build + verify
 /finally-good-ui review                  audit the current UI (changes nothing)
 /finally-good-ui extract                 codebase → .design/brand.md + tokens.json
-/finally-good-ui export                  rules for Cursor, Windsurf, Copilot, AGENTS.md
+/finally-good-ui export                  rules for Cursor, Devin/Windsurf, Copilot, Kiro, Cline, AGENTS.md
 ```
 
 ## What it writes in your project
