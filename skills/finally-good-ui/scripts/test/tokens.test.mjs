@@ -4,6 +4,8 @@ import { readFileSync, existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { run, fx, tmp, SR } from "./_h.mjs";
 import { contrastRatio } from "../lib/contrast.mjs";
+import { cssValue, toDtcg } from "../lib/tokens.mjs";
+import { loadTokens } from "../lib/token-files.mjs";
 
 const extract = (dir, extra = []) => {
   const r = run("extract-tokens.mjs", ["--root", dir, ...extra]);
@@ -57,7 +59,8 @@ test("extract --write never overwrites without --force", () => {
   const a = extract(d, ["--write"]);
   assert.equal(a.written, ".design/tokens.json");
   const saved = JSON.parse(readFileSync(join(d, ".design", "tokens.json"), "utf8"));
-  assert.ok(saved.color.primary);
+  assert.equal(saved.color.primary.$value.colorSpace, "oklch", "written in DTCG 2025.10");
+  assert.deepEqual(a.files.sort(), [".design/tokens.dark.json", ".design/tokens.json", ".design/tokens.resolver.json"]);
   writeFileSync(join(d, ".design", "tokens.json"), "{\"keep\":1}");
   const b = extract(d, ["--write"]);
   assert.equal(b.written, null);
@@ -70,9 +73,12 @@ test("extract --write never overwrites without --force", () => {
 
 // ---------- default tokens ----------
 const DEF = join(SR, "tokens", "default.tokens.json");
+const LEGACY = fx("tokens/legacy.tokens.json"); // the pre-2025.10 shape, kept to prove both are read
+const defaults = () => loadTokens(DEF);
+const css = (v) => cssValue("color", v);
 
 test("default tokens: groups, motion exactly per the duration/easing tokens", () => {
-  const t = JSON.parse(readFileSync(DEF, "utf8"));
+  const t = defaults();
   for (const g of ["color", "font", "text", "space", "radius", "shadow", "duration", "easing"]) assert.ok(t[g], g);
   const d = Object.fromEntries(Object.entries(t.duration).map(([k, v]) => [k, v.$value.value]));
   assert.deepEqual(d, { instant: 50, micro: 100, short: 150, standard: 250, medium: 300, long: 400, hero: 500 });
@@ -85,24 +91,24 @@ test("default tokens: groups, motion exactly per the duration/easing tokens", ()
 });
 
 test("default tokens: semantic pairs pass 4.5:1 in light and dark", () => {
-  const c = JSON.parse(readFileSync(DEF, "utf8")).color;
+  const c = defaults().color;
   for (const n of ["background", "foreground", "card", "card-foreground", "primary", "primary-foreground", "muted",
     "muted-foreground", "accent", "accent-foreground", "destructive", "destructive-foreground", "border", "input", "ring"]) {
     assert.ok(c[n], n);
-    assert.match(c[n].$value, /^oklch\(/);
-    assert.match(c[n].$extensions.fgu.dark, /^oklch\(/);
+    assert.match(css(c[n].$value), /^oklch\(/);
+    assert.match(css(c[n].$extensions.fgu.dark), /^oklch\(/);
   }
   const pairs = [["foreground", "background"], ["card-foreground", "card"], ["primary-foreground", "primary"],
     ["muted-foreground", "muted"], ["muted-foreground", "background"], ["accent-foreground", "accent"],
     ["destructive-foreground", "destructive"], ["success-foreground", "success"], ["warning-foreground", "warning"]];
   for (const [fg, bg] of pairs) {
-    assert.ok(contrastRatio(c[fg].$value, c[bg].$value) >= 4.5, `light ${fg}/${bg}`);
-    assert.ok(contrastRatio(c[fg].$extensions.fgu.dark, c[bg].$extensions.fgu.dark) >= 4.5, `dark ${fg}/${bg}`);
+    assert.ok(contrastRatio(css(c[fg].$value), css(c[bg].$value)) >= 4.5, `light ${fg}/${bg}`);
+    assert.ok(contrastRatio(css(c[fg].$extensions.fgu.dark), css(c[bg].$extensions.fgu.dark)) >= 4.5, `dark ${fg}/${bg}`);
   }
-  assert.ok(contrastRatio(c.ring.$value, c.background.$value) >= 3, "ring light");
-  assert.ok(contrastRatio(c.ring.$extensions.fgu.dark, c.background.$extensions.fgu.dark) >= 3, "ring dark");
-  assert.ok(contrastRatio(c.primary.$value, c.background.$value) >= 3, "primary as UI on bg light");
-  assert.ok(contrastRatio(c.primary.$extensions.fgu.dark, c.background.$extensions.fgu.dark) >= 3, "primary dark");
+  assert.ok(contrastRatio(css(c.ring.$value), css(c.background.$value)) >= 3, "ring light");
+  assert.ok(contrastRatio(css(c.ring.$extensions.fgu.dark), css(c.background.$extensions.fgu.dark)) >= 3, "ring dark");
+  assert.ok(contrastRatio(css(c.primary.$value), css(c.background.$value)) >= 3, "primary as UI on bg light");
+  assert.ok(contrastRatio(css(c.primary.$extensions.fgu.dark), css(c.background.$extensions.fgu.dark)) >= 3, "primary dark");
 });
 
 // ---------- emit ----------
@@ -124,10 +130,10 @@ test("emit css: names + dark blocks", () => {
 });
 
 test("default tokens: an overlay scrim role for dialogs and sheets, translucent in both themes", () => {
-  const c = JSON.parse(readFileSync(DEF, "utf8")).color;
+  const c = defaults().color;
   assert.ok(c.overlay, "overlay");
-  assert.match(c.overlay.$value, /^oklch\([^)]*\/\s*0?\.\d+\)$/);
-  assert.match(c.overlay.$extensions.fgu.dark, /^oklch\([^)]*\/\s*0?\.\d+\)$/);
+  assert.match(css(c.overlay.$value), /^oklch\([^)]*\/\s*0?\.\d+\)$/);
+  assert.match(css(c.overlay.$extensions.fgu.dark), /^oklch\([^)]*\/\s*0?\.\d+\)$/);
   assert.match(emit("css").stdout, /--color-overlay: oklch\(/);
   const recipe = readFileSync(join(SR, "recipes", "motion", "dialog-enter-exit.md"), "utf8");
   assert.match(recipe, /::backdrop \{\s*background: var\(--color-overlay\)/);
@@ -182,13 +188,14 @@ test("emit handles extracted tokens round trip", () => {
 
 // ---------- tracking (canon craft.tracking-by-size) ----------
 test("default tokens: letter-spacing per text step, tightening with size; caps tracking positive", () => {
-  const t = JSON.parse(readFileSync(DEF, "utf8"));
+  const t = defaults();
   const ls = Object.fromEntries(Object.entries(t.text).map(([k, v]) => [k, v.$extensions.fgu.letterSpacing]));
   for (const [k, v] of Object.entries(ls)) { assert.ok(v, `text.${k} has letterSpacing`); assert.equal(v.unit, "em"); }
   for (const k of ["xs", "sm", "base", "lg"]) assert.equal(ls[k].value, 0, `body step ${k} untracked`);
   for (const k of ["5xl", "6xl"]) assert.ok(ls[k].value <= -0.02 && ls[k].value >= -0.04, `display ${k}`);
   for (const k of ["2xl", "3xl", "4xl"]) assert.ok(ls[k].value <= -0.01 && ls[k].value >= -0.02, `heading ${k}`);
-  assert.ok(t.tracking.caps.$value.value >= 0.04 && t.tracking.caps.$value.value <= 0.1);
+  assert.equal(t.tracking.caps.$type, "number", "letter-spacing in em is a number token in DTCG 2025.10");
+  assert.ok(t.tracking.caps.$value >= 0.04 && t.tracking.caps.$value <= 0.1);
 });
 
 test("emit: tracking reaches every format", () => {
@@ -285,9 +292,6 @@ test("emit js: motion-tokens module reads CSS vars, falls back to token values",
 });
 
 // ---------- DTCG 2025.10: read both shapes, write the standard one ----------
-import { cssValue, toDtcg } from "../lib/tokens.mjs";
-import { loadTokens } from "../lib/token-files.mjs";
-import { mkdirSync } from "node:fs";
 
 test("cssValue reads DTCG colour objects (oklch, alpha, none, srgb) and keeps CSS strings", () => {
   assert.equal(cssValue("color", "oklch(0.5 0.14 262)"), "oklch(0.5 0.14 262)");
@@ -303,7 +307,7 @@ test("cssValue reads DTCG colour objects (oklch, alpha, none, srgb) and keeps CS
 });
 
 test("toDtcg: spec-shaped base and dark trees; nothing lost", () => {
-  const legacy = JSON.parse(readFileSync(DEF, "utf8"));
+  const legacy = JSON.parse(readFileSync(LEGACY, "utf8"));
   const { base, dark } = toDtcg(legacy);
   for (const tok of Object.values(base.color)) {
     assert.equal(tok.$value.colorSpace, "oklch");
@@ -323,20 +327,20 @@ test("toDtcg: spec-shaped base and dark trees; nothing lost", () => {
 
 test("emit --format dtcg writes tokens + dark + resolver; reading them back emits the same CSS", () => {
   const d = tmp();
-  const w = run("emit-tokens.mjs", ["--in", DEF, "--format", "dtcg", "--out-dir", d]);
+  const w = run("emit-tokens.mjs", ["--in", LEGACY, "--format", "dtcg", "--out-dir", d]);
   assert.equal(w.code, 0, w.stderr);
   assert.deepEqual(w.json.written.sort(), ["tokens.dark.json", "tokens.json", "tokens.resolver.json"]);
   const resolver = JSON.parse(readFileSync(join(d, "tokens.resolver.json"), "utf8"));
   assert.equal(resolver.version, "2025.10");
   assert.deepEqual(resolver.modifiers.theme.contexts.dark, [{ $ref: "tokens.dark.json" }]);
-  const want = emit("css").stdout;
+  const want = emit("css", LEGACY).stdout;
   assert.equal(emit("css", join(d, "tokens.json")).stdout, want, "tokens.json picks up its sibling resolver");
   assert.equal(emit("css", join(d, "tokens.resolver.json")).stdout, want, "or read through the resolver directly");
   for (const fmt of ["js", "tailwind4", "tailwind3", "mui", "json"])
-    assert.equal(emit(fmt, join(d, "tokens.json")).stdout, emit(fmt).stdout, `${fmt} is the same from either shape`);
-  const again = run("emit-tokens.mjs", ["--in", DEF, "--format", "dtcg", "--out-dir", d]);
+    assert.equal(emit(fmt, join(d, "tokens.json")).stdout, emit(fmt, LEGACY).stdout, `${fmt} is the same from either shape`);
+  const again = run("emit-tokens.mjs", ["--in", LEGACY, "--format", "dtcg", "--out-dir", d]);
   assert.equal(again.code, 2, "refuses to overwrite without --force");
-  assert.equal(run("emit-tokens.mjs", ["--in", DEF, "--format", "dtcg", "--out-dir", d, "--force"]).code, 0);
+  assert.equal(run("emit-tokens.mjs", ["--in", LEGACY, "--format", "dtcg", "--out-dir", d, "--force"]).code, 0);
 });
 
 test("loadTokens resolves {aliases}, in base and dark values", () => {
@@ -367,4 +371,12 @@ test("check-static --tokens reads a DTCG token set", () => {
   const r = run("check-static.mjs", ["--root", d, "--tokens", ".design/tokens.json"]);
   assert.equal(r.code, 0, r.stderr);
   assert.deepEqual(r.json.findings.filter((f) => f.rule === "off-scale-spacing").map((f) => f.message.match(/Spacing (\S+)/)[1]), ["13px"]);
+});
+
+test("the shipped defaults are DTCG 2025.10 and emit exactly what the old file did", () => {
+  const raw = JSON.parse(readFileSync(DEF, "utf8"));
+  for (const tok of Object.values(raw.color)) assert.equal(typeof tok.$value, "object", "colour objects on disk");
+  assert.ok(!JSON.stringify(raw).includes('"dark"'), "no dark values inside the base file");
+  for (const fmt of ["css", "tailwind4", "tailwind3", "mui", "json", "js"])
+    assert.equal(emit(fmt).stdout, emit(fmt, LEGACY).stdout, `${fmt} unchanged by the migration`);
 });

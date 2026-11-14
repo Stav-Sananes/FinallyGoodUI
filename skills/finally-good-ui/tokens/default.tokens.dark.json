@@ -1,0 +1,300 @@
+{
+  "color": {
+    "background": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.17, 0.008, 265],
+        "hex": "#0e0f13"
+      }
+    },
+    "foreground": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.95, 0.004, 265],
+        "hex": "#edeef1"
+      }
+    },
+    "card": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.205, 0.009, 265],
+        "hex": "#15171b"
+      }
+    },
+    "card-foreground": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.95, 0.004, 265],
+        "hex": "#edeef1"
+      }
+    },
+    "primary": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.72, 0.12, 262],
+        "hex": "#7ba4f0"
+      }
+    },
+    "primary-foreground": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.18, 0.02, 262],
+        "hex": "#0d121b"
+      }
+    },
+    "muted": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.24, 0.009, 265],
+        "hex": "#1d1f24"
+      }
+    },
+    "muted-foreground": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.72, 0.01, 265],
+        "hex": "#a1a5ab"
+      }
+    },
+    "accent": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.27, 0.02, 262],
+        "hex": "#212730"
+      }
+    },
+    "accent-foreground": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.95, 0.01, 262],
+        "hex": "#ebeff5"
+      }
+    },
+    "destructive": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.7, 0.16, 25],
+        "hex": "#f2716a"
+      }
+    },
+    "destructive-foreground": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.17, 0.02, 25],
+        "hex": "#170c0b"
+      }
+    },
+    "success": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.74, 0.13, 150],
+        "hex": "#69c27e"
+      }
+    },
+    "success-foreground": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.18, 0.03, 150],
+        "hex": "#07150a"
+      }
+    },
+    "warning": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.8, 0.13, 80],
+        "hex": "#e9b452"
+      }
+    },
+    "warning-foreground": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.22, 0.04, 60],
+        "hex": "#281606"
+      }
+    },
+    "border": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.29, 0.01, 265],
+        "hex": "#292b30"
+      }
+    },
+    "input": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.52, 0.012, 265],
+        "hex": "#656970"
+      }
+    },
+    "overlay": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.05, 0.005, 265],
+        "alpha": 0.6,
+        "hex": "#000001"
+      }
+    },
+    "ring": {
+      "$type": "color",
+      "$value": {
+        "colorSpace": "oklch",
+        "components": [0.72, 0.12, 262],
+        "hex": "#7ba4f0"
+      }
+    }
+  },
+  "shadow": {
+    "sm": {
+      "$type": "shadow",
+      "$value": {
+        "color": {
+          "colorSpace": "oklch",
+          "components": [0, 0, 0],
+          "alpha": 0.4,
+          "hex": "#000000"
+        },
+        "offsetX": {
+          "value": 0,
+          "unit": "px"
+        },
+        "offsetY": {
+          "value": 1,
+          "unit": "px"
+        },
+        "blur": {
+          "value": 2,
+          "unit": "px"
+        },
+        "spread": {
+          "value": 0,
+          "unit": "px"
+        }
+      }
+    },
+    "md": {
+      "$type": "shadow",
+      "$value": [
+        {
+          "color": {
+            "colorSpace": "oklch",
+            "components": [0, 0, 0],
+            "alpha": 0.4,
+            "hex": "#000000"
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 2,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 4,
+            "unit": "px"
+          },
+          "spread": {
+            "value": -1,
+            "unit": "px"
+          }
+        },
+        {
+          "color": {
+            "colorSpace": "oklch",
+            "components": [0, 0, 0],
+            "alpha": 0.5,
+            "hex": "#000000"
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 4,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 12,
+            "unit": "px"
+          },
+          "spread": {
+            "value": -2,
+            "unit": "px"
+          }
+        }
+      ]
+    },
+    "lg": {
+      "$type": "shadow",
+      "$value": [
+        {
+          "color": {
+            "colorSpace": "oklch",
+            "components": [0, 0, 0],
+            "alpha": 0.5,
+            "hex": "#000000"
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 8,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 16,
+            "unit": "px"
+          },
+          "spread": {
+            "value": -4,
+            "unit": "px"
+          }
+        },
+        {
+          "color": {
+            "colorSpace": "oklch",
+            "components": [0, 0, 0],
+            "alpha": 0.6,
+            "hex": "#000000"
+          },
+          "offsetX": {
+            "value": 0,
+            "unit": "px"
+          },
+          "offsetY": {
+            "value": 16,
+            "unit": "px"
+          },
+          "blur": {
+            "value": 40,
+            "unit": "px"
+          },
+          "spread": {
+            "value": -8,
+            "unit": "px"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -101,6 +101,11 @@ function deepMerge(a, b) {
   return out;
 }
 
+/** JSON with 2-space indent, but short arrays of plain values (colour components, bezier points) on one line. */
+export function formatJson(value) {
+  return JSON.stringify(value, null, 2).replace(/\[\s+([^\[\]{}]*?)\s+\]/g, (_, inner) => `[${inner.split(/,\s*/).join(", ")}]`) + "\n";
+}
+
 /** The three files of a standard token set, as {fileName: object}. */
 export function dtcgFiles(tokens, name = "tokens") {
   const { base, dark } = toDtcg(tokens);

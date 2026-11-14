@@ -5,9 +5,10 @@ import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { runCli, isMain } from "./lib/cli.mjs";
-import { readText, readJson, isDir } from "./lib/fs.mjs";
+import { readText, isDir } from "./lib/fs.mjs";
 import { parseMdBlocks } from "./lib/md.mjs";
 import { groupTokens, cssValue } from "./lib/tokens.mjs";
+import { loadTokens } from "./lib/token-files.mjs";
 
 const HELP = `
 Usage: export-rules.mjs [--out <dir>] [--root <dir>] [--skill <dir>] [--dry-run]
@@ -68,7 +69,8 @@ function interviewSection(skill, warnings) {
 }
 
 function motionSection(skill, warnings) {
-  const t = readJson(join(skill, "tokens", "default.tokens.json"));
+  let t = null;
+  try { t = loadTokens(join(skill, "tokens", "default.tokens.json")); } catch { /* reported below */ }
   if (!t) { warnings.push("tokens/default.tokens.json missing: motion token section omitted"); return ""; }
   const d = [...groupTokens(t.duration)].map(([n, v]) => `${n} ${cssValue("duration", v.$value)}`);
   const e = [...groupTokens(t.easing)].map(([n, v]) => `- \`${n}\`: ${cssValue("easing", v.$value)}${v.$description ? ` (${v.$description})` : ""}`);

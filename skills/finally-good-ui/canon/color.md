@@ -70,7 +70,7 @@ decides: [tokens.color, tokens.shadow]
 tensions: [color.contrast-by-construction]
 asked-by: []
 checks:
-  measured: "Script: every token has a $extensions.fgu.dark value; dark background L is above 0.1; elevated surface L exceeds base surface L; all text pairs pass 4.5:1 in dark. Probe runs at dark for both viewports."
+  measured: "Script: every colour token has a dark value (tokens.dark.json via the resolver, or $extensions.fgu.dark in the older shape); dark background L is above 0.1; elevated surface L exceeds base surface L; all text pairs pass 4.5:1 in dark. Probe runs at dark for both viewports."
   judged: "In dark mode, can you tell which layer sits above which without shadows, and does any accent glare or vibrate?"
 ```
 

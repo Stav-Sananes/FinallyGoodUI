@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Extract an existing design system into DTCG-subset tokens plus usage, drift
 // and inferred roles. Never executes project code (Tailwind v3 config is read by regex).
-import { join, resolve, extname, basename, dirname } from "node:path";
+import { join, resolve, extname, basename } from "node:path";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { runCli, isMain } from "./lib/cli.mjs";
 import { readText, walk, exists } from "./lib/fs.mjs";
@@ -10,6 +10,7 @@ import { parseColor, oklchString, toHex, toOklch } from "./lib/contrast.mjs";
 import { GROUPS, TYPES, parseDimension, parseDuration, parseEasing, parseFontList, groupTokens } from "./lib/tokens.mjs";
 import { findColors, findSpacing, stripComments, SOURCE_EXTS, JS_EXTS } from "./lib/scan.mjs";
 import { detectStack } from "./detect-stack.mjs";
+import { dtcgFiles, formatJson } from "./lib/token-files.mjs";
 
 const HELP = `
 Usage: extract-tokens.mjs [--root <dir>] [--files a.css,b.js] [--write [--force]]
@@ -28,7 +29,8 @@ MUI palette mains in theme files.
 Options:
   --root <dir>    project root (default: cwd)
   --files <list>  comma-separated design files to read instead of detected ones
-  --write         write .design/tokens.json (refuses to overwrite unless --force)
+  --write         write .design/tokens.json, tokens.dark.json and tokens.resolver.json in DTCG 2025.10
+                  (refuses to overwrite unless --force)
   --force         allow overwriting .design/tokens.json
   --help
 `;
@@ -388,13 +390,16 @@ if (isMain(import.meta.url)) {
       const out = extractTokens(rootArg, { files });
       out.written = null;
       if (flags.write) {
-        const target = join(resolve(rootArg), ".design", "tokens.json");
-        if (exists(target) && !flags.force) {
-          out.warnings.push(".design/tokens.json exists; not overwritten (pass --force to replace)");
+        const dir = join(resolve(rootArg), ".design");
+        const files = dtcgFiles(out.tokens);
+        const taken = Object.keys(files).filter((f) => exists(join(dir, f)));
+        if (taken.length && !flags.force) {
+          out.warnings.push(`.design/${taken.join(", .design/")} exists; not overwritten (pass --force to replace)`);
         } else {
-          mkdirSync(dirname(target), { recursive: true });
-          writeFileSync(target, JSON.stringify(out.tokens, null, 2) + "\n");
+          mkdirSync(dir, { recursive: true });
+          for (const [name, content] of Object.entries(files)) writeFileSync(join(dir, name), formatJson(content));
           out.written = ".design/tokens.json";
+          out.files = Object.keys(files).map((f) => `.design/${f}`);
         }
       }
       return out;

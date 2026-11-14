@@ -3,13 +3,13 @@
 import { resolve, join } from "node:path";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
-import { loadTokens, dtcgFiles } from "./lib/token-files.mjs";
+import { loadTokens, dtcgFiles, formatJson } from "./lib/token-files.mjs";
 import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssValue, darkOf, textMetrics } from "./lib/tokens.mjs";
 import { toHex } from "./lib/contrast.mjs";
 
 const HELP = `
 Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|tailwind3|mui|json|js] [--root <dir>]
-       emit-tokens.mjs --in <tokens.json> --format dtcg --out-dir <dir> [--force]
+       emit-tokens.mjs --in <tokens.json> --format dtcg --out-dir <dir> [--name tokens] [--force]
 
 --in takes a tokens file in either shape (CSS-string values with dark in $extensions.fgu.dark, or
 DTCG 2025.10 objects), or a *.resolver.json. A tokens file whose sibling <name>.resolver.json
@@ -35,6 +35,7 @@ Options:
   --format <fmt>   default css
   --root <dir>     base dir for --in and --out-dir (default: cwd)
   --out-dir <dir>  dtcg only: where to write the three files
+  --name <stem>    dtcg only: file stem (default tokens: tokens.json, tokens.dark.json, tokens.resolver.json)
   --force          dtcg only: overwrite existing files
   --help
 `;
@@ -229,19 +230,19 @@ export function emit(tokens, format) {
   }
 }
 
-function writeDtcg(tokens, outDir, force) {
-  const files = dtcgFiles(tokens);
+export function writeDtcg(tokens, outDir, { force = false, name = "tokens" } = {}) {
+  const files = dtcgFiles(tokens, name);
   const taken = Object.keys(files).filter((f) => existsSync(join(outDir, f)));
   if (taken.length && !force) throw new UsageError(`${taken.join(", ")} already exist in ${outDir}; pass --force to overwrite`);
   mkdirSync(outDir, { recursive: true });
-  for (const [name, content] of Object.entries(files)) writeFileSync(join(outDir, name), JSON.stringify(content, null, 2) + "\n");
+  for (const [file, content] of Object.entries(files)) writeFileSync(join(outDir, file), formatJson(content));
   return { tool: "emit-tokens", format: "dtcg", outDir, written: Object.keys(files) };
 }
 
 if (isMain(import.meta.url)) {
   runCli({
     help: HELP,
-    spec: { string: ["root", "in", "format", "out-dir"], boolean: ["force"] },
+    spec: { string: ["root", "in", "format", "out-dir", "name"], boolean: ["force"] },
     main: ({ flags }) => {
       const format = flags.format || "css";
       if (!FORMATS.includes(format)) throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
@@ -250,7 +251,7 @@ if (isMain(import.meta.url)) {
       try { tokens = loadTokens(resolve(flags.root || ".", flags.in)); } catch (e) { throw new UsageError(e.message); }
       if (format !== "dtcg") return emit(tokens, format);
       if (!flags["out-dir"]) throw new UsageError("--format dtcg needs --out-dir <dir>");
-      return writeDtcg(tokens, resolve(flags.root || ".", flags["out-dir"]), flags.force);
+      return writeDtcg(tokens, resolve(flags.root || ".", flags["out-dir"]), { force: flags.force, name: flags.name || "tokens" });
     },
   });
 }

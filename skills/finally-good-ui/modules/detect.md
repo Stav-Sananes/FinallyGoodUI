@@ -29,7 +29,7 @@ Read the JSON:
 Then:
 1. Write `.design/brand.md` from `templates/brand.md`. Fill in only what the evidence supports and mark inferred roles `(inferred, N uses)`.
 2. Show the user a short summary: **what was found, the inferred roles to confirm, and the top 3 drift issues.** Ask them to confirm or correct the inferred roles in one reply.
-3. Once confirmed, run `extract-tokens.mjs --root . --write` to create `.design/tokens.json` (add `--force` only if the user agrees to overwrite).
+3. Once confirmed, run `extract-tokens.mjs --root . --write` to create `.design/tokens.json` with its `tokens.dark.json` and `tokens.resolver.json` (DTCG 2025.10; add `--force` only if the user agrees to overwrite).
 
 An existing brand is **binding**. Later steps extend it and never replace it, unless the user asks for a redesign.
 

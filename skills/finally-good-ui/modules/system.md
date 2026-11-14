@@ -10,7 +10,8 @@ Goal: turn the chosen direction (or the confirmed existing brand) into **one sou
 | Directions skipped, no brand | `tokens/default.tokens.json`, then adjust using the brief's personality cards |
 
 ## 2. Build the tokens (DTCG subset)
-- **Contract:** the shape of `tokens/default.tokens.json`. Groups as in that file (`color`, `font`, `text`, `tracking`, `space`, `radius`, `shadow`, `duration`, `easing`; `GROUPS` in `scripts/lib/tokens.mjs` is authoritative); each token is `{"$type","$value","$description"?}`; dark values in `$extensions.fgu.dark`. `emit-tokens.mjs --help` lists the CSS variables emitted (`--color-*` … `--ease-*`).
+- **Contract:** W3C DTCG 2025.10, as in `tokens/default.tokens.json` + `default.tokens.dark.json` + `default.tokens.resolver.json`. Groups as in that file (`color`, `font`, `text`, `tracking`, `space`, `radius`, `shadow`, `duration`, `easing`; `GROUPS` in `scripts/lib/tokens.mjs` is authoritative); each token is `{"$type","$value","$description"?}`; `{color.primary}` aliases are allowed. `emit-tokens.mjs --help` lists the CSS variables emitted (`--color-*` … `--ease-*`).
+- **Writing it:** it is easiest to draft `.design/tokens.json` with CSS strings (`"oklch(0.5 0.14 262)"`, `"0 1px 2px 0 oklch(…)"`) and each dark value in `$extensions.fgu.dark`. Then normalise once: `node "${CLAUDE_SKILL_DIR}/scripts/emit-tokens.mjs" --in .design/tokens.json --format dtcg --out-dir .design --force`. That rewrites `tokens.json` in the standard shape and adds `tokens.dark.json` and `tokens.resolver.json`. Every script keeps taking `--in .design/tokens.json` and finds the dark values through the resolver. To change a value later, edit the standard files directly (dark values live in `tokens.dark.json`).
 - **Colour**
   - Semantic pairs, never raw hues in components: `background/foreground`, `card/card-foreground`, `primary/primary-foreground`, `muted/muted-foreground`, `accent/accent-foreground`, `destructive/destructive-foreground`, `border`, `input`, `ring`.
   - Add `success`, `warning` and `info` pairs if the blueprint has status UI (`data.status-encoding`).
@@ -18,7 +19,7 @@ Goal: turn the chosen direction (or the confirmed existing brand) into **one sou
   - **Custom roles are allowed.** Any colour name you add is emitted as `--color-<name>` in every format. Name it by role, not hue. The common one: when actions are ink on a near-neutral canvas (`craft.ink-and-accent`), `primary` is the ink and the identity colour that marks meaning (new, selected, the motif) gets its own role such as `mark` + `mark-foreground`. `accent` stays the hover/selected-row tint (shadcn sense), not a brand colour.
   - Generate from 3 inputs: **base** (neutral hue and temperature), **accent**, **contrast level** (`color.role-scale`, `color.contrast-by-construction`).
   - Neutrals take a slight tint of the accent hue.
-  - Dark values go in `$extensions.fgu.dark`, designed rather than inverted (`color.dark-mode-not-inverted`).
+  - Dark values are designed rather than inverted (`color.dark-mode-not-inverted`); they end up in `tokens.dark.json`.
 - **Check every text pair on every surface level** in both themes: each text role (`foreground`, `muted-foreground`, `primary` as text, status colours) on the canvas (`background`) **and** on every raised surface the blueprint uses: `card`, popover/menu, sheet/dialog, `muted` fills, selected/hover rows (`accent`). Dark-mode surfaces get lighter as they rise (`craft.tinted-shadows`), so a pair that passes on the canvas can fail on a popover.
   `node "${CLAUDE_SKILL_DIR}/scripts/lib/contrast.mjs" <fg> <bg>`
   Body text needs at least 4.5:1, large text and UI at least 3:1 (`a11y.contrast-minimums`). Fix the value, not the rule.
