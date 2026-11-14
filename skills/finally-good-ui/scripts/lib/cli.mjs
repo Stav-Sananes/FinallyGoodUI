@@ -12,6 +12,7 @@ export class UsageError extends Error {}
 export function parseArgs(argv, spec = {}) {
   const strings = new Set(spec.string || []);
   const bools = new Set(["help", ...(spec.boolean || [])]);
+  const multiple = new Set(spec.multiple || []); // repeatable string flags collect into an array
   const flags = {};
   const positionals = [];
   for (let i = 0; i < argv.length; i++) {
@@ -26,7 +27,7 @@ export function parseArgs(argv, spec = {}) {
         value = argv[++i];
         if (value === undefined) throw new UsageError(`missing value for --${name}`);
       }
-      flags[name] = value;
+      flags[name] = multiple.has(name) ? [...(flags[name] ?? []), value] : value;
     } else {
       throw new UsageError(`unknown flag --${name}`);
     }

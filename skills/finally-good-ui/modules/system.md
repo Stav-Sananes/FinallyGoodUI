@@ -6,6 +6,7 @@ Goal: turn the chosen direction (or the confirmed existing brand) into **one sou
 | Situation | Start from |
 |---|---|
 | Existing brand confirmed in step 1 | `.design/tokens.json` from extraction; fill gaps only |
+| Design tokens exported from Figma (variables, one file per mode), Tokens Studio, Terrazzo or Style Dictionary sources | `node "${CLAUDE_SKILL_DIR}/scripts/import-tokens.mjs" --in <light.json> [--dark <dark.json>]` (a Tokens Studio file with sets, or a `*.resolver.json`, needs only `--in`). Then fix the report: add the `missingRoles` as aliases of imported colours (`"background": {"$value": "{color.neutral-50}"}`), place or drop `unmapped` tokens, and treat `filledFromDefaults` groups as defaults to adjust. Fill gaps only; the imported values are the brand |
 | Direction chosen in step 4 | The direction's spec (palette, type, motion personality) |
 | Directions skipped, no brand | `tokens/default.tokens.json`, then adjust using the brief's personality cards |
 
