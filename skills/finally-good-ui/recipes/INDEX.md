@@ -58,6 +58,9 @@ Rules that apply to all recipes:
 | [react-view-transition](motion/react-view-transition.md) | React 19.3+ / Next App Router: shared element, Suspense reveal, directional route and crossfade through `<ViewTransition>` and transition types | motion.spatial-continuity, motion.frequency-budget, motion.reduced-motion | No (React built-in) |
 | [scroll-linked](motion/scroll-linked.md) | reading progress, condensing sticky header, reveal-on-view on a CSS scroll timeline | motion.purpose-only, motion.compositor-only, motion.reduced-motion | No (GSAP ScrollTrigger only for pinned storytelling) |
 | [headless-primitive-motion](motion/headless-primitive-motion.md) | overlays from Radix, Base UI, React Aria, Reka, Bits, Ark, Kobalte, Headless UI, UI SDK animate on each library's own state hooks | motion.easing-roles, motion.compositor-only, motion.reduced-motion | Uses the installed one |
+| [drag-reorder](motion/drag-reorder.md) | put items in your own order by drag, keyboard or Move up/down; neighbours glide aside | motion.spatial-continuity, a11y.keyboard-complete, states.optimistic-feedback | Pointer drag: dnd-kit, SortableJS, Motion `Reorder` or Pragmatic DnD; keyboard: no |
+| [bottom-sheet](motion/bottom-sheet.md) | phone sheet that rises from the bottom, snaps between heights, flicks away; keyboard handle | motion.spatial-continuity, motion.easing-roles, a11y.keyboard-complete | No (native `<dialog>`; Base UI / Reka Drawer if installed) |
+| [tabs-indicator](motion/tabs-indicator.md) | tabs and segmented controls: one indicator slides to the choice, arrow keys, one tab stop | motion.spatial-continuity, motion.compositor-only, a11y.keyboard-complete | No |
 | [tooltip-group](motion/tooltip-group.md) | first tooltip waits, neighbours open instantly, focus opens at once, one at a time | motion.frequency-budget, a11y.keyboard-complete, ia-nav.progressive-disclosure | No (sets the installed library's provider delays) |
 | [skeleton-to-content](motion/skeleton-to-content.md) | real-shape placeholder, fade in, no shift | states.loading-perceived, usability.system-status, layout.intrinsic-responsive | No |
 
@@ -83,6 +86,9 @@ Rules that apply to all recipes:
 | reveal more without leaving the page | accordion-auto-height |
 | see a list arrive without a jolt | list-stagger-enter (first load only) |
 | keep track of items when a list is sorted or filtered | list-reorder-flip |
+| put items in their own order | drag-reorder |
+| pick options or do a short task on a phone without leaving the page | bottom-sheet (phones), dialog-enter-exit (wide screens) |
+| switch between views of the same thing | tabs-indicator |
 | follow a list item into its detail page | shared-element-view-transition; in React 19.3+ (`viewTransitions: "react"`), react-view-transition |
 | know where they went when the page changes | route-transition; in React 19.3+, react-view-transition |
 | see how far through a long page they are, or keep the header out of the way while reading | scroll-linked |

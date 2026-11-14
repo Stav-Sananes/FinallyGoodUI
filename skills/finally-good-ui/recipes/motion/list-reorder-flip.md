@@ -77,4 +77,4 @@ import { sec, ease } from "./motion-tokens"; // recipes/INDEX.md
 - Reduced motion: skip movement, keep the insertion fade.
 
 ## Upgrade trigger
-Drag-to-reorder → suggest a library (React: `dnd-kit` or Motion `Reorder` if Motion is present; Vue/Svelte/vanilla: SortableJS). State the size and that keyboard reordering must be supported.
+Drag-to-reorder → drag-reorder (keyboard and Move up/down need no library; pointer drag uses dnd-kit, SortableJS, Motion `Reorder` or Pragmatic DnD).
