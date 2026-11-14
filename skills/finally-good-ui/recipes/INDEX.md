@@ -61,6 +61,7 @@ Rules that apply to all recipes:
 | [drag-reorder](motion/drag-reorder.md) | put items in your own order by drag, keyboard or Move up/down; neighbours glide aside | motion.spatial-continuity, a11y.keyboard-complete, states.optimistic-feedback | Pointer drag: dnd-kit, SortableJS, Motion `Reorder` or Pragmatic DnD; keyboard: no |
 | [bottom-sheet](motion/bottom-sheet.md) | phone sheet that rises from the bottom, snaps between heights, flicks away; keyboard handle | motion.spatial-continuity, motion.easing-roles, a11y.keyboard-complete | No (native `<dialog>`; Base UI / Reka Drawer if installed) |
 | [tabs-indicator](motion/tabs-indicator.md) | tabs and segmented controls: one indicator slides to the choice, arrow keys, one tab stop | motion.spatial-continuity, motion.compositor-only, a11y.keyboard-complete | No |
+| [number-change](motion/number-change.md) | a watched figure counts or rolls to its new value, direction shown, no jitter | usability.system-status, typography.tabular-numbers, motion.frequency-budget | Optional (Number Flow) |
 | [tooltip-group](motion/tooltip-group.md) | first tooltip waits, neighbours open instantly, focus opens at once, one at a time | motion.frequency-budget, a11y.keyboard-complete, ia-nav.progressive-disclosure | No (sets the installed library's provider delays) |
 | [skeleton-to-content](motion/skeleton-to-content.md) | real-shape placeholder, fade in, no shift | states.loading-perceived, usability.system-status, layout.intrinsic-responsive | No |
 
@@ -73,6 +74,9 @@ Rules that apply to all recipes:
 | [data-table](patterns/data-table.md) | dense, sortable, fully-stated tables | data.dense-tables, data.tension-density-clarity, typography.tabular-numbers | Optional (TanStack Table/Virtual at scale) |
 | [menu-select-combobox](patterns/menu-select-combobox.md) | pick from a list: menu of commands, select one value, filter-as-you-type, full keyboard contract | a11y.keyboard-complete, a11y.semantic-first, usability.recognition-over-recall | Uses the installed primitive library; otherwise native or hand-rolled menu |
 | [command-palette](patterns/command-palette.md) | ⌘K search-and-run for pages, records and actions, ranked, near-instant | usability.recognition-over-recall, ia-nav.search-vs-browse, motion.frequency-budget | Optional (cmdk in React, Bits UI Command in Svelte) |
+| [chat-log](patterns/chat-log.md) | conversation that follows new messages only at the end, jump to latest, chat composer keys, streaming replies | usability.system-status, states.optimistic-feedback, a11y.keyboard-complete | No |
+| [inline-edit](patterns/inline-edit.md) | rename in place: Enter saves, Escape cancels, blur saves, optimistic with rollback | states.optimistic-feedback, usability.user-control-undo, a11y.keyboard-complete | No |
+| [focus-after-delete](patterns/focus-after-delete.md) | focus moves to the next, previous or empty state when the focused item goes | a11y.keyboard-complete, usability.user-control-undo, usability.system-status | No |
 | [settings-page](patterns/settings-page.md) | grouped options, one save model per group | layout.proximity-grouping, usability.user-control-undo, states.optimistic-feedback | No |
 
 ## Pick by situation
@@ -87,6 +91,10 @@ Rules that apply to all recipes:
 | see a list arrive without a jolt | list-stagger-enter (first load only) |
 | keep track of items when a list is sorted or filtered | list-reorder-flip |
 | put items in their own order | drag-reorder |
+| notice that a number they watch changed, and which way | number-change |
+| follow a conversation without losing their place | chat-log |
+| fix a name or short value where they see it | inline-edit |
+| keep their place after deleting or dismissing something | focus-after-delete |
 | pick options or do a short task on a phone without leaving the page | bottom-sheet (phones), dialog-enter-exit (wide screens) |
 | switch between views of the same thing | tabs-indicator |
 | follow a list item into its detail page | shared-element-view-transition; in React 19.3+ (`viewTransitions: "react"`), react-view-transition |

@@ -74,6 +74,7 @@ import { sec, ease } from "./motion-tokens"; // recipes/INDEX.md
 ## A11y
 - Announce the result, not the motion: "Sorted by due date, ascending" in a polite live region; sortable headers use `aria-sort`.
 - Keep focus on the moved item (same DOM node) — don't re-create nodes on sort.
+- Removing the focused item: move focus as in focus-after-delete.
 - Reduced motion: skip movement, keep the insertion fade.
 
 ## Upgrade trigger
