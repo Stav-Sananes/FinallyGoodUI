@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Emit a token set in a stack-native format, or as standard DTCG 2025.10 files.
-import { resolve, join } from "node:path";
+import { resolve, join, relative, dirname, sep } from "node:path";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
 import { loadTokens, dtcgFiles, formatJson } from "./lib/token-files.mjs";
@@ -8,6 +8,7 @@ import { emitAdapters, MissingTokenError } from "./lib/adapters.mjs";
 import { emitChartTheme } from "./lib/chart-theme.mjs";
 import { emitFonts, LOADERS } from "./lib/fonts.mjs";
 import { emitAgGrid } from "./lib/ag-grid.mjs";
+import { pipelineFiles, PIPELINES } from "./lib/pipelines.mjs";
 import { colorScale } from "./lib/ramp.mjs";
 import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssValue, darkOf, textMetrics, fontValue } from "./lib/tokens.mjs";
 import { toHex } from "./lib/contrast.mjs";
@@ -15,6 +16,7 @@ import { toHex } from "./lib/contrast.mjs";
 const HELP = `
 Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|antd|prime|angular-material|tailwind3|mui|json|js|adapters|chart-theme|fonts|ag-grid] [--root <dir>]
        emit-tokens.mjs --in <tokens.json> --format dtcg --out-dir <dir> [--name tokens] [--force]
+       emit-tokens.mjs --in <tokens.json> --format terrazzo|style-dictionary [--out-dir tokens] [--tailwind] [--force]
 
 --in takes a tokens file in either shape (CSS-string values with dark in $extensions.fgu.dark, or
 DTCG 2025.10 objects), or a *.resolver.json. A tokens file whose sibling <name>.resolver.json
@@ -46,6 +48,11 @@ Prints the tokens in the requested format to stdout:
   json       {"light": {"--var": value}, "dark": {...}}
   dtcg       writes tokens.json (DTCG 2025.10 colour/shadow objects), tokens.dark.json and
              tokens.resolver.json into --out-dir; refuses to overwrite without --force
+  terrazzo   hands the tokens to a Terrazzo pipeline: the dtcg files into --out-dir (default tokens/) and
+             terrazzo.config.mjs at --root. \`npx tz build\` then writes <out-dir>/build/tokens.css with the
+             same variables and values as --format css (--tailwind: as tailwind4)
+  style-dictionary  the same for Style Dictionary v5: sd.config.mjs; \`node sd.config.mjs\` writes
+             <out-dir>/build/tokens.css (light) and tokens.dark.css
   adapters   override CSS so libraries with hard-coded motion (sonner, cmdk, react-day-picker, vaul)
              use our --duration-*/--ease-* variables; --libs picks them by stack-profile name
   ag-grid    AG Grid Quartz theme (withParams) pointing at our variables; dark mode follows them
@@ -69,13 +76,18 @@ Options:
   --loader <name>  fonts only: next, nuxt, fontsource or google (default); the stack profile's fonts.loader
   --libs <a,b>     adapters only: stack-profile interaction names (default: every adapter);
                    names without an adapter are skipped
-  --out-dir <dir>  dtcg only: where to write the three files
-  --name <stem>    dtcg only: file stem (default tokens: tokens.json, tokens.dark.json, tokens.resolver.json)
-  --force          dtcg only: overwrite existing files
+  --out-dir <dir>  dtcg: where to write the three files; terrazzo / style-dictionary: where the token
+                   sources go, inside --root (default tokens)
+  --name <stem>    dtcg, terrazzo, style-dictionary: file stem (default tokens: tokens.json, tokens.dark.json,
+                   tokens.resolver.json)
+  --tailwind       terrazzo / style-dictionary: put the light theme in Tailwind v4's @theme (stack profile
+                   styling.tailwind "v4")
+  --force          dtcg, terrazzo, style-dictionary: overwrite existing files
   --help
 `;
 
-const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "chart-theme", "fonts", "ag-grid", "dtcg"];
+const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "chart-theme", "fonts", "ag-grid", "dtcg", ...PIPELINES];
+const FILE_FORMATS = ["dtcg", ...PIPELINES];
 
 function block(selector, decls, indent = "") {
   return `${indent}${selector} {\n${decls.map((d) => `${indent}  ${d}`).join("\n")}\n${indent}}`;
@@ -684,28 +696,48 @@ function missingTokenAsUsage(emitFn) {
 
 const emitAdaptersOrUsageError = (tokens, libs) => missingTokenAsUsage(() => emitAdapters(tokens, libs));
 
+/** Write {relativePath: text} under dir; refuses to replace existing files unless force. */
+function writeFiles(dir, files, force) {
+  const taken = Object.keys(files).filter((f) => existsSync(join(dir, f)));
+  if (taken.length && !force) throw new UsageError(`${taken.join(", ")} already exist in ${dir}; pass --force to overwrite`);
+  for (const [file, content] of Object.entries(files)) {
+    mkdirSync(dirname(join(dir, file)), { recursive: true });
+    writeFileSync(join(dir, file), content);
+  }
+  return Object.keys(files);
+}
+
 export function writeDtcg(tokens, outDir, { force = false, name = "tokens" } = {}) {
-  const files = dtcgFiles(tokens, name);
-  const taken = Object.keys(files).filter((f) => existsSync(join(outDir, f)));
-  if (taken.length && !force) throw new UsageError(`${taken.join(", ")} already exist in ${outDir}; pass --force to overwrite`);
-  mkdirSync(outDir, { recursive: true });
-  for (const [file, content] of Object.entries(files)) writeFileSync(join(outDir, file), formatJson(content));
-  return { tool: "emit-tokens", format: "dtcg", outDir, written: Object.keys(files) };
+  const files = Object.fromEntries(Object.entries(dtcgFiles(tokens, name)).map(([f, json]) => [f, formatJson(json)]));
+  return { tool: "emit-tokens", format: "dtcg", outDir, written: writeFiles(outDir, files, force) };
+}
+
+/** Token sources plus a Terrazzo or Style Dictionary config, written under the project root. */
+export function writePipeline(tokens, pipeline, root, { srcDir = "tokens", name = "tokens", tailwind = false, force = false } = {}) {
+  const rel = relative(root, resolve(root, srcDir));
+  if (rel.startsWith("..")) throw new UsageError(`--out-dir ${srcDir} must be inside --root`);
+  const out = pipelineFiles(tokens, pipeline, { srcDir: rel.split(sep).join("/") || ".", name, tailwind });
+  return { tool: "emit-tokens", format: pipeline, root, written: writeFiles(root, out.files, force),
+    install: out.install, build: out.build, css: out.css };
 }
 
 if (isMain(import.meta.url)) {
   runCli({
     help: HELP,
-    spec: { string: ["root", "in", "format", "out-dir", "name", "mui-scheme", "libs", "loader"], boolean: ["force"] },
+    spec: { string: ["root", "in", "format", "out-dir", "name", "mui-scheme", "libs", "loader"], boolean: ["force", "tailwind"] },
     main: ({ flags }) => {
       const format = flags.format || "css";
       if (!FORMATS.includes(format)) throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
       if (!flags.in) throw new UsageError("--in <tokens.json> is required");
       let tokens;
       try { tokens = loadTokens(resolve(flags.root || ".", flags.in)); } catch (e) { throw new UsageError(e.message); }
-      if (format !== "dtcg") return emit(tokens, format, { muiScheme: flags["mui-scheme"] || "media", libs: flags.libs?.split(",").map((x) => x.trim()).filter(Boolean), loader: fontLoader(flags.loader) });
+      if (!FILE_FORMATS.includes(format)) return emit(tokens, format, { muiScheme: flags["mui-scheme"] || "media", libs: flags.libs?.split(",").map((x) => x.trim()).filter(Boolean), loader: fontLoader(flags.loader) });
+      const name = flags.name || "tokens";
+      if (format !== "dtcg") {
+        return writePipeline(tokens, format, resolve(flags.root || "."), { srcDir: flags["out-dir"] || "tokens", name, tailwind: flags.tailwind, force: flags.force });
+      }
       if (!flags["out-dir"]) throw new UsageError("--format dtcg needs --out-dir <dir>");
-      return writeDtcg(tokens, resolve(flags.root || ".", flags["out-dir"]), { force: flags.force, name: flags.name || "tokens" });
+      return writeDtcg(tokens, resolve(flags.root || ".", flags["out-dir"]), { force: flags.force, name });
     },
   });
 }

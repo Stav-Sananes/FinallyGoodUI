@@ -286,6 +286,14 @@ export function detectStack(rootArg = ".") {
   const iconSet = ICONS.find(([, match]) => depNames.some(match));
   const icons = iconSet ? { lib: iconSet[0], package: depNames.find(iconSet[1]), api: iconSet[2] } : null;
 
+  // ---- token build pipeline: when one owns the CSS, build edits its token sources, not the output
+  const configFile = (re) => files.find((f) => re.test(f)) ?? null;
+  const terrazzoConfig = configFile(/^terrazzo\.config\.(ts|mts|js|mjs|cjs)$/);
+  const sdConfig = configFile(/^(sd|style-dictionary)\.config\.(ts|mts|js|mjs|cjs|json)$/) ?? (has("style-dictionary") ? configFile(/^config\.json$/) : null);
+  const tokensPipeline = has("@terrazzo/cli") || terrazzoConfig ? { tool: "terrazzo", config: terrazzoConfig }
+    : has("style-dictionary") || sdConfig ? { tool: "style-dictionary", config: sdConfig }
+    : null;
+
   // ---- package manager
   let packageManager = null;
   if (file("pnpm-lock.yaml")) packageManager = "pnpm";
@@ -318,6 +326,7 @@ export function detectStack(rootArg = ".") {
     viewTransitions,
     fonts: { loader: fontLoader, inUse: fontsInUse },
     icons,
+    tokensPipeline,
     typescript: has("typescript") || file("tsconfig.json"),
     packageManager,
     devScript,
