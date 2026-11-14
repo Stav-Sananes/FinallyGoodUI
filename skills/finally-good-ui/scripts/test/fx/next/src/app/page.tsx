@@ -7,7 +7,7 @@ export default function Page() {
       <button className="transition-all duration-700 outline-none">Save</button>
       <button className="outline-none focus-visible:ring-2">Ok</button>
       <img src="/hero.png" />
-      <img src="/logo.png" alt="Logo" />
+      <img src="/logo.png" alt="Logo" width={120} height={32} />
       <div onClick={() => alert("hi")}>Click me</div>
       <div role="button" tabIndex={0} onClick={() => alert("ok")}>Fine</div>
       <div className="bg-[#ff0000] p-[13px]">Red</div>

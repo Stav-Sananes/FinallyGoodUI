@@ -15,6 +15,13 @@ export const RULE_CARDS = {
   "user-scalable-no": "a11y.target-size",
   "small-input-font": "a11y.target-size",
   "role-no-keyboard": "a11y.keyboard-complete",
+  // Web Interface Guidelines rules
+  "ellipsis-dots": "writing.typographic-punctuation",
+  "paste-blocked": "flows-forms.input-ergonomics",
+  "autofocus": "flows-forms.input-ergonomics",
+  "spellcheck-on-codes": "flows-forms.input-ergonomics",
+  "img-no-dimensions": "states.loading-perceived",
+  "locale-format": "i18n.locale-formats",
   // Slop detectors: the mechanical half of rubric/ai-default-fingerprints.md.
   "dead-control": "craft.nothing-dead",
   "placeholder-code": "craft.nothing-dead",

@@ -91,3 +91,21 @@ checks:
   measured: "Static rules buzzword, em-dash-copy, generic-cta."
   judged: "Read each heading aloud to the user persona: would they say it that way, and does it name something real?"
 ```
+
+### writing.typographic-punctuation
+
+```yaml
+id: writing.typographic-punctuation
+domain: writing
+principle: "Set interface text with real typographic characters: the ellipsis (…) for truncation, for work in progress (Saving…) and for commands that open a further step (Rename…); curly quotes and apostrophes; an en dash for ranges (9–5, Mon–Fri); a non-breaking space between a number and its unit and inside shortcuts (10 MB, ⌘ K); numerals for counts (8 deployments)."
+why: "Three dots and straight quotes read as unfinished text. The trailing ellipsis on a command tells people another step follows before anything happens, and a unit that wraps away from its number breaks scanning."
+sources: ["Bringhurst, The Elements of Typographic Style (punctuation)", "Butterick, Practical Typography (ellipses, quotes, nonbreaking spaces)", "Apple Human Interface Guidelines, Writing and Menus (ellipsis on commands that need more input)", "Vercel, Web Interface Guidelines (content and copy)"]
+applies-when: "Every visible string: buttons, menu items, status text, headings, numbers with units, keyboard shortcuts."
+not-when: "Code, identifiers and anything the user typed; show those exactly as entered."
+decides: [copy.labels, copy.status]
+tensions: [writing.user-language]
+asked-by: []
+checks:
+  measured: "check-static ellipsis-dots: no '...' in interface text. Menu items that open a dialog end with '…'."
+  judged: "Do status and command labels use real ellipses, quotes and dashes, and do numbers stay on the same line as their units?"
+```

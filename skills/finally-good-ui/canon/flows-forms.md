@@ -86,3 +86,21 @@ checks:
   measured: "Per view (or per open dialog), count buttons using the primary style. Flag more than 1. Flag generic labels (Submit, OK, Yes, Click here) on primary buttons."
   judged: "Squinting at the screenshot, is there exactly one obvious next action, and does its label say what will happen?"
 ```
+
+### flows-forms.input-ergonomics
+
+```yaml
+id: flows-forms.input-ergonomics
+domain: flows-forms
+principle: "Make typing easy: the right type, inputmode and autocomplete on every field; spellcheck and autocorrect off for emails, usernames, codes and IDs; trim pasted whitespace; never block paste; Enter submits a one-line form and Cmd/Ctrl+Enter a textarea; autofocus only a single primary field on desktop, never on phones; accept free text and validate it instead of swallowing keystrokes."
+why: "Each of these removes a small, repeated failure: a red squiggle under an email, a password manager that can't fill, a keyboard that jumps up on page load, a code rejected for a trailing space. Together they decide whether a form feels effortless."
+sources: ["WHATWG HTML Standard, autofill and inputmode", "WCAG 2.2 SC 1.3.5 Identify Input Purpose and SC 3.3.8 Accessible Authentication (Minimum)", "UK NCSC, Let them paste passwords (2017)", "Vercel, Web Interface Guidelines (forms)"]
+applies-when: "Any form field, search box, sign-in, one-time-code or chat composer."
+not-when: "Fields where the browser's help is wrong for the data (autocomplete off on a field that names another person)."
+decides: [component.input, component.form]
+tensions: [usability.error-prevention, flows-forms.inline-validation-timing]
+asked-by: []
+checks:
+  measured: "check-static: paste-blocked, autofocus, spellcheck-on-codes. Inputs carry type, inputmode and autocomplete for their data."
+  judged: "Could someone fill this form with a password manager, on a phone, without fighting the keyboard or retyping?"
+```

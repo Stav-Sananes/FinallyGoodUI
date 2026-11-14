@@ -11,7 +11,7 @@ const RULES = {
   "ease-in-entrance": "motion.easing-roles", "scale-from-zero": "motion.easing-roles",
   "outline-none-no-focus": "a11y.focus-visible", "img-no-alt": "a11y.semantic-first",
   "div-onclick": "a11y.semantic-first", "user-scalable-no": "a11y.target-size", "small-input-font": "a11y.target-size",
-  "role-no-keyboard": "a11y.keyboard-complete",
+  "role-no-keyboard": "a11y.keyboard-complete", "img-no-dimensions": "states.loading-perceived",
 };
 
 const check = (dir, extra = []) => {
@@ -42,7 +42,7 @@ test("output shape", () => {
   }
 });
 
-test("every one of the 14 rules fires somewhere in the fixtures", () => {
+test("every one of the 15 rules fires somewhere in the fixtures", () => {
   const fired = new Set(all.flatMap((o) => o.findings.map((f) => f.rule)));
   assert.deepEqual([...fired].sort(), Object.keys(RULES).sort());
 });
@@ -53,7 +53,7 @@ test("next fixture: exact findings per line", () => {
   assert.deepEqual(at(o, P, 7), ["long-duration", "no-transition-all", "outline-none-no-focus"]);
   assert.equal(o.findings.find((f) => f.file === P && f.line === 7 && f.rule === "long-duration").severity, "high");
   assert.deepEqual(at(o, P, 8), []);
-  assert.deepEqual(at(o, P, 9), ["img-no-alt"]);
+  assert.deepEqual(at(o, P, 9), ["img-no-alt", "img-no-dimensions"]);
   assert.deepEqual(at(o, P, 10), []);
   assert.deepEqual(at(o, P, 11), ["div-onclick"]);
   assert.deepEqual(at(o, P, 12), []);

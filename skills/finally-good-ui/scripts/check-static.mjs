@@ -26,7 +26,7 @@ Options:
   --help
 `;
 
-const SCAN_EXTS = new Set([".css", ".scss", ".js", ".mjs", ".tsx", ".jsx", ".vue", ".svelte", ".html", ".astro"]);
+const SCAN_EXTS = new Set([".css", ".scss", ".js", ".mjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".html", ".astro"]);
 // Top-level directories that never hold the shipped UI (on top of fs.mjs IGNORE_DIRS).
 const SKIP_TOP = new Set(["test", "tests", "__tests__", "e2e", "cypress", "playwright", "fixtures", "__mocks__",
   "venv", "env", "target", "Pods", "android", "ios"]);
@@ -331,6 +331,8 @@ export function checkFile(rel, text, ctx) {
       add("div-onclick", m.index, "high", `Clickable <${m[1]}> is not keyboard or screen-reader accessible; use <button>/<a> (or add role, tabIndex and key handlers).`);
     });
     checkWidgetKeyboard(markup, clean, add);
+    checkInputErgonomics(markup, add, each);
+    checkImageDimensions(markup, add, each);
     each(/<(input|select|textarea|Input|Select|Textarea)\b/g, markup, (m) => {
       const tag = tagText(markup, m.index);
       const cls = (tag.match(/\s(?:className|class)\s*=\s*(?:\{?\s*)?(["'`])([^"'`]*)\1/) || [])[2] || "";
@@ -363,6 +365,8 @@ export function checkFile(rel, text, ctx) {
     each(/\bmaximumScale\s*:\s*(\d*\.?\d+)/g, clean, (m) => { if (Number(m[1]) < 2) add("user-scalable-no", m.index, "high", zoomMsg); });
   }
 
+  checkPasteBlocked(clean, add, each);
+  if (isJs || isMarkup) checkLocaleFormats(clean, add, each);
   checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, each, ctx, line });
   return findings;
 }
@@ -433,6 +437,85 @@ function checkWidgetKeyboard(markup, clean, add) {
   }
 }
 
+// ---- Web Interface Guidelines rules: input ergonomics, paste, images, locale formats
+
+/** Is idx inside an element that opens with `opener` (a dialog or popover), counting nesting? */
+function insideLayer(markup, idx) {
+  const before = markup.slice(0, idx);
+  const re = /<([A-Za-z][\w.-]*)\b(?=[^>]*(?:\spopover\b|\srole\s*=\s*["']dialog["']))|<(dialog)\b/g;
+  let m, last = null;
+  while ((m = re.exec(before))) last = { tag: m[1] || m[2], at: m.index };
+  if (!last) return false;
+  const span = before.slice(last.at);
+  const opens = (span.match(new RegExp(`<${last.tag}\\b`, "g")) || []).length;
+  const closes = (span.match(new RegExp(`</${last.tag}\\s*>`, "g")) || []).length;
+  return opens > closes;
+}
+
+/** Is idx inside a JSX conditional ({cond ? … : …} or {cond && …}), i.e. rendered after some state change? */
+function renderedOnDemand(markup, idx) {
+  let depth = 0;
+  for (let i = idx - 1; i >= 0 && i > idx - 4000; i--) {
+    const c = markup[i];
+    if (c === "}") depth++;
+    else if (c === "{" && depth-- === 0) {
+      if (/(\)|=>)\s*$/.test(markup.slice(Math.max(0, i - 40), i))) return false; // a function body, not a JSX expression
+      return /\?|&&/.test(markup.slice(i, idx));
+    }
+  }
+  return false;
+}
+
+const CODE_FIELD = /^(user(?:name)?|login|handle|otp|code|token|coupon|promo(?:code)?|sku|api[-_]?key|invite(?:code)?)$/i;
+const attr = (tag, name) => (tag.match(new RegExp(`\\s${name}\\s*=\\s*(?:\\{\\s*)?["'\`]([^"'\`]*)["'\`]`, "i")) || [])[1];
+
+function checkInputErgonomics(markup, add, each) {
+  each(/\s(autoFocus|autofocus)(?=[\s=/>])/g, markup, (m) => {
+    if (insideLayer(markup, m.index)) return; // moving focus into an opened dialog or popover is right
+    if (renderedOnDemand(markup, m.index)) return; // an inline editor that appears after a click
+    add("autofocus", m.index + 1, "low", "Autofocus on a page field opens the phone keyboard and scrolls the page; reserve it for a single primary field on desktop, a field inside an opened dialog, or an editor that appears after a click (fine to ignore then).");
+  });
+  each(/<(input|Input)\b/g, markup, (m) => {
+    const tag = tagText(markup, m.index);
+    if (/\sspell[Cc]heck\s*=/.test(tag)) return;
+    if (/^(email|password|number|tel|url|search|checkbox|radio|hidden|date|file)$/i.test(attr(tag, "type") || "")) return;
+    const auto = attr(tag, "autoComplete") || attr(tag, "autocomplete") || "";
+    const name = attr(tag, "name") || attr(tag, "id") || "";
+    if (/\b(username|one-time-code)\b/.test(auto) || CODE_FIELD.test(name)) {
+      add("spellcheck-on-codes", m.index, "low", `Field "${name || auto}" holds a username or code; add spellCheck={false} (and autoCapitalize="off") so the browser doesn't mark or change it.`);
+    }
+  });
+}
+
+function checkPasteBlocked(clean, add, each) {
+  const msg = "Paste is blocked; people paste passwords, codes and addresses (password managers, 2FA apps). Let paste through and validate the value instead.";
+  each(/\s(?:onPaste|onpaste|@paste|on:paste|\(paste\))\s*=/g, clean, (m) => {
+    const handler = clean.slice(m.index, m.index + 200).split(/\/>|[^=]>/)[0];
+    if (/preventDefault|return\s+false/.test(handler)) add("paste-blocked", m.index + 1, "high", msg);
+  });
+  each(/addEventListener\(\s*["'`]paste["'`]/g, clean, (m) => {
+    if (/preventDefault|return\s+false/.test(clean.slice(m.index, m.index + 200).split(/\)\s*;/)[0] + ")")) add("paste-blocked", m.index, "high", msg);
+  });
+}
+
+function checkImageDimensions(markup, add, each) {
+  each(/<img\b/g, markup, (m) => {
+    const tag = tagText(markup, m.index);
+    if (/\swidth\s*=/.test(tag) && /\sheight\s*=/.test(tag)) return;
+    if (/aspect-|aspect-ratio|\sfill(?=[\s=/>])|\b(?:size|h)-\d/.test(tag)) return;
+    add("img-no-dimensions", m.index, "medium", "Image without width and height (or an aspect ratio); the page jumps when it loads. Give it intrinsic dimensions, or size the box with aspect-ratio.");
+  });
+}
+
+const DAY_MONTH_PATTERN = /^(?:MM?|DD?|dd?)([\/.\- ])(?:MM?|DD?|dd?)\1(?:YYYY|yyyy|YY|yy)$/;
+function checkLocaleFormats(clean, add, each) {
+  each(/\.toLocale(?:Date|Time)String\(\s*\)/g, clean, (m) =>
+    add("locale-format", m.index + 1, "medium", "A date formatted with no locale or options follows whatever the server or browser defaults to (and mismatches on hydration); pass the user's locale and a dateStyle/timeStyle, or use one shared Intl.DateTimeFormat."));
+  for (const { index, value } of jsStringLiterals(clean)) {
+    if (DAY_MONTH_PATTERN.test(value.trim())) add("locale-format", index, "medium", `Hard-coded date pattern "${value}" is wrong for most locales; format with Intl.DateTimeFormat (dateStyle) in the user's locale.`);
+  }
+}
+
 function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, each, ctx, line }) {
   const jsx = ext === ".tsx" || ext === ".jsx";
   const hasText = isMarkup || isJs;
@@ -473,6 +556,8 @@ function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, ea
       if (bw) add("buzzword", idx + bw.index, "low", `"${bw[0]}" says nothing concrete; name what the product actually does for this user.`);
       const dash = t.match(/[\p{L}\p{N},.)]\s*—\s*[\p{L}\p{N}(]/u);
       if (dash) add("em-dash-copy", idx + dash.index, "low", "Em dash in interface copy reads as generated prose; use a period, colon, comma or parentheses. (A lone \"—\" as an empty-value marker is fine.)");
+      const dots = t.match(/\S\.\.\.(?!\.)/);
+      if (dots) add("ellipsis-dots", idx + dots.index + 1, "low", 'Three periods in interface copy; use the ellipsis character "…" (Saving…, Rename…).');
       const em = t.match(EMOJI);
       if (em) add("emoji-ui", idx + em.index, "low", `Emoji "${em[0]}" used as an icon or marker; use the project's icon set, or justify the voice in decisions.md.`);
     }

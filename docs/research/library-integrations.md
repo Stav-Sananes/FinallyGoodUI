@@ -105,7 +105,8 @@ Chosen 2026-11-14: reach work first (0.1 first because it is a shipped accessibi
 - [x] 3.2
 - [x] 3.3
 - [x] 3.4
-- [ ] 3.5
+- [x] 3.5a
+- [ ] 3.5b
 - [ ] 4.1
 - [ ] 4.2
 - [ ] 4.3
@@ -115,6 +116,8 @@ Chosen 2026-11-14: reach work first (0.1 first because it is a shipped accessibi
 - [ ] 5.4
 - [ ] 5.5
 - [ ] 5.6
+
+3.5 was split for size: **3.5a** six detectors (ellipsis-dots, paste-blocked, autofocus, spellcheck-on-codes, img-no-dimensions, locale-format) and the cards they cite, including the new `i18n` domain (4 cards); **3.5b** the remaining Web Interface Guidelines rules as new cards or amendments to existing ones.
 
 0.2 was split (user chose "read both, write standard"): **0.2a** read DTCG 2025.10 colour/shadow objects, resolvers and {aliases} everywhere, plus `emit-tokens --format dtcg`; **0.2b** write the standard shape by default (default tokens, extract --write, system module).
 
