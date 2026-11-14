@@ -9,7 +9,7 @@ import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssVa
 import { toHex } from "./lib/contrast.mjs";
 
 const HELP = `
-Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|tailwind3|mui|json|js] [--root <dir>]
+Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-registry|daisyui|chakra|panda|mantine|tailwind3|mui|json|js] [--root <dir>]
        emit-tokens.mjs --in <tokens.json> --format dtcg --out-dir <dir> [--name tokens] [--force]
 
 --in takes a tokens file in either shape (CSS-string values with dark in $extensions.fgu.dark, or
@@ -28,6 +28,8 @@ Prints the tokens in the requested format to stdout:
              spacing, radii, shadows, durations, easings), semantic colours {base, _dark} incl. bg/fg/border,
              and a brand palette (scale from primary) for colorPalette="brand"
   panda      Panda CSS v2: the same theme as a preset (definePreset)
+  mantine    Mantine v9: createTheme input (10-shade hex brand palette as primaryColor, fonts, sizes, spacing,
+             radius, shadows) and a cssVariablesResolver with Mantine's and our vars per colour scheme
   tailwind3  module.exports = { theme: { extend: {...} } } referencing the CSS vars (emit css too)
   mui        createTheme-shaped JSON (palette, colorSchemes.light/dark, typography incl. h1..caption/overline
              variants with lineHeight + letterSpacing, shape, transitions)
@@ -53,7 +55,7 @@ Options:
   --help
 `;
 
-const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "tailwind3", "mui", "json", "js", "dtcg"];
+const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "tailwind3", "mui", "json", "js", "dtcg"];
 
 function block(selector, decls, indent = "") {
   return `${indent}${selector} {\n${decls.map((d) => `${indent}  ${d}`).join("\n")}\n${indent}}`;
@@ -239,6 +241,67 @@ export function emitPanda(tokens) {
     "// panda.config: presets: [\"@pandacss/preset-base\", fguPreset]. Dark values use Panda's _dark condition.\n" +
     'import { definePreset } from "@pandacss/dev";\n\n' +
     themeModule(tokens) + '\n\nexport default definePreset({ name: "finally-good-ui", theme: { extend: theme } });\n';
+}
+
+// ---------- Mantine v9 ----------
+// Mantine's colour helpers (variants, alpha) need hex/rgb, so the 10-shade brand palette is hex.
+// Everything else stays CSS: cssVariablesResolver sets Mantine's body/text/border vars and ours per scheme.
+const MANTINE_SIZES = ["xs", "sm", "md", "lg", "xl"];
+const MANTINE_FROM = {
+  spacing: { xs: "2", sm: "3", md: "4", lg: "6", xl: "8" },
+  fontSizes: { xs: "xs", sm: "sm", md: "base", lg: "lg", xl: "xl" },
+  radius: { xs: "sm", sm: "sm", md: "md", lg: "lg", xl: "xl" },
+  shadows: { xs: "sm", sm: "sm", md: "md", lg: "lg", xl: "lg" },
+};
+const MANTINE_VARS = { "--mantine-color-body": "background", "--mantine-color-text": "foreground",
+  "--mantine-color-dimmed": "muted-foreground", "--mantine-color-default-border": "border",
+  "--mantine-color-default": "card", "--mantine-color-default-hover": "accent", "--mantine-color-error": "destructive" };
+
+const nearestStep = (steps, css) => {
+  const L = (c) => (c.match(/^oklch\(([\d.]+)/) || [])[1] * 1;
+  const target = L(cssValue("color", css)) || 0.5;
+  return steps.reduce((best, c, i) => (Math.abs(L(c) - target) < Math.abs(L(steps[best]) - target) ? i : best), 0);
+};
+
+function mantineParts(tokens) {
+  const rows = flatten(tokens);
+  const by = (g) => Object.fromEntries(rows.filter((r) => r.group === g).map((r) => [r.name, r]));
+  const colors = by("color"), fonts = by("font"), texts = by("text");
+  const pick = (group, map) => Object.fromEntries(MANTINE_SIZES.filter((k) => group[map[k]]).map((k) => [k, group[map[k]].light]));
+  const theme = {
+    fontSizes: pick(texts, MANTINE_FROM.fontSizes), spacing: pick(by("space"), MANTINE_FROM.spacing),
+    radius: pick(by("radius"), MANTINE_FROM.radius), defaultRadius: "md", shadows: pick(by("shadow"), MANTINE_FROM.shadows),
+    lineHeights: Object.fromEntries(MANTINE_SIZES.filter((k) => texts[MANTINE_FROM.fontSizes[k]])
+      .map((k) => [k, textMetrics(texts[MANTINE_FROM.fontSizes[k]].token).find((m) => m.suffix === "line-height")?.value]).filter(([, v]) => v)),
+  };
+  if (fonts.sans) theme.fontFamily = fonts.sans.light;
+  if (fonts.mono) theme.fontFamilyMonospace = fonts.mono.light;
+  const heading = fonts.heading ?? fonts.display ?? fonts.sans;
+  if (heading) theme.headings = { fontFamily: heading.light };
+  if (colors.primary) {
+    const scale = Object.values(colorScale(colors.primary.light, "mantine").steps);
+    theme.colors = { brand: scale.map((c) => toHex(c)) };
+    theme.primaryColor = "brand";
+    theme.primaryShade = { light: nearestStep(scale, colors.primary.light), dark: nearestStep(scale, colors.primary.dark ?? colors.primary.light) };
+  }
+  const scheme = (mode) => {
+    const out = {};
+    for (const [mantine, ours] of Object.entries(MANTINE_VARS)) if (colors[ours]) out[mantine] = mode === "dark" ? colors[ours].dark ?? colors[ours].light : colors[ours].light;
+    for (const r of rows.filter((x) => x.dark != null || x.group === "color")) out[r.varName] = mode === "dark" ? r.dark ?? r.light : r.light;
+    return out;
+  };
+  const variables = Object.fromEntries(rows.filter((r) => r.group === "duration" || r.group === "easing").map((r) => [r.varName, r.light]));
+  return { theme, resolver: { variables, light: scheme("light"), dark: scheme("dark") } };
+}
+
+export function emitMantine(tokens) {
+  const { theme, resolver } = mantineParts(tokens);
+  return "// generated by finally-good-ui emit-tokens.mjs (--format mantine); edit the tokens, not this file.\n" +
+    "// <MantineProvider theme={theme} cssVariablesResolver={resolver}>\n" +
+    'import { createTheme } from "@mantine/core";\n\n' +
+    `const themeInput = ${JSON.stringify(theme, null, 2)};\n\n` +
+    `const resolverInput = ${JSON.stringify(resolver, null, 2)};\n\n` +
+    "export const theme = createTheme(themeInput);\nexport const resolver = () => resolverInput;\n";
 }
 
 export function emitTailwind3(tokens) {
@@ -436,6 +499,7 @@ export function emit(tokens, format, { muiScheme } = {}) {
     case "daisyui": return emitDaisyui(tokens);
     case "chakra": return emitChakra(tokens);
     case "panda": return emitPanda(tokens);
+    case "mantine": return emitMantine(tokens);
     case "tailwind3": return emitTailwind3(tokens);
     case "mui": return emitMui(tokens, { scheme: muiScheme });
     case "json": return emitJson(tokens);

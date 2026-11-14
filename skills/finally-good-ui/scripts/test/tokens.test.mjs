@@ -517,3 +517,29 @@ test("emit panda: the same theme as a preset", () => {
   assert.match(r.stdout, /export default definePreset\(\{ name: "finally-good-ui", theme: \{ extend: theme \} \}\);/);
   assert.deepEqual(themeObject(r.stdout), themeObject(emit("chakra").stdout));
 });
+
+// ---------- Mantine v9 ----------
+const constObject = (out, name) => JSON.parse(out.match(new RegExp(`^const ${name} = (\\{[\\s\\S]*?\\n\\});$`, "m"))[1]);
+
+test("emit mantine: createTheme with a 10-shade brand palette and a light/dark CSS-variable resolver", () => {
+  const r = emit("mantine");
+  assert.equal(r.code, 0, r.stderr);
+  assert.match(r.stdout, /import \{ createTheme \} from "@mantine\/core";/);
+  assert.match(r.stdout, /export const theme = createTheme\(themeInput\);/);
+  assert.match(r.stdout, /export const resolver = \(\) => resolverInput;/);
+  const t = constObject(r.stdout, "themeInput");
+  assert.equal(t.colors.brand.length, 10);
+  for (const c of t.colors.brand) assert.match(c, /^#[0-9a-f]{6}$/, "Mantine's colour helpers need hex");
+  assert.equal(t.primaryColor, "brand");
+  assert.ok(Number.isInteger(t.primaryShade.light) && Number.isInteger(t.primaryShade.dark));
+  assert.equal(t.defaultRadius, "md");
+  assert.equal(t.radius.md, "8px");
+  assert.equal(t.spacing.md, "16px");
+  assert.equal(t.fontSizes.md, "16px", "Mantine md = our base");
+  assert.match(t.fontFamily, /ui-sans-serif|system-ui|Inter/);
+  const v = constObject(r.stdout, "resolverInput");
+  assert.equal(v.light["--mantine-color-body"], "oklch(0.99 0.002 265)");
+  assert.equal(v.dark["--mantine-color-body"], "oklch(0.17 0.008 265)");
+  assert.equal(v.dark["--color-primary"], "oklch(0.72 0.12 262)", "our own roles too, per scheme");
+  assert.equal(v.variables["--ease-move"], "cubic-bezier(0.2, 0, 0, 1)");
+});
