@@ -116,11 +116,15 @@ export function detectStack(rootArg = ".") {
   // ---- components
   let components = null;
   if (file("components.json")) components = "shadcn";
-  else if (has("@mui/material") || has("@mui/joy")) components = "mui";
+  else if (has("@mui/material")) components = "mui";
+  else if (has("@mui/joy")) components = "joy"; // on hold upstream: build with Material UI patterns
   else if (has("@chakra-ui/react")) components = "chakra";
   else if (has("@mantine/core")) components = "mantine";
   else if (hasPrefix("@radix-ui/")) components = "radix";
   else if (hasPrefix("@headlessui/")) components = "headlessui";
+
+  const KIT_PACKAGE = { mui: "@mui/material", joy: "@mui/joy", chakra: "@chakra-ui/react", mantine: "@mantine/core" };
+  const componentsVersion = KIT_PACKAGE[components] ? major(deps[KIT_PACKAGE[components]]) : null;
 
   // ---- unstyled primitives (no theme to emit; each animates through its own state attributes)
   const primitives = PRIMITIVES.filter(([, test]) => test(has, hasPrefix)).map(([name]) => name);
@@ -166,6 +170,7 @@ export function detectStack(rootArg = ".") {
     router,
     styling,
     components,
+    componentsVersion,
     shadcn,
     primitives,
     animation,

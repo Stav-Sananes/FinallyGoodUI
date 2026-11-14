@@ -166,3 +166,12 @@ test("primitives: every headless library found, alongside any styled kit", () =>
   assert.deepEqual(detect(s).primitives, ["bits", "kobalte"]);
   assert.deepEqual(detect(fx("vue")).primitives, []);
 });
+
+test("component kit major version; Joy UI (on hold) is no longer reported as Material UI", () => {
+  assert.equal(detect(fx("mui")).componentsVersion, 6);
+  const d = tmp();
+  writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: { react: "19.2.0", "@mui/joy": "5.0.0-beta.52" } }));
+  const p = detect(d);
+  assert.equal(p.components, "joy");
+  assert.equal(p.componentsVersion, 5);
+});

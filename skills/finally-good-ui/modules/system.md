@@ -58,7 +58,7 @@ node "${CLAUDE_SKILL_DIR}/scripts/emit-tokens.mjs" --in .design/tokens.json --fo
 | Tailwind v3 | `css` + `tailwind3` | CSS variables in the global CSS, and `theme.extend` in `tailwind.config` |
 | shadcn (any port: shadcn-vue, shadcn-svelte, Spartan; Tailwind v4) | `shadcn-registry`, or `shadcn` | Preferred: save the registry output as `finally-good-ui-theme.json` and run `npx shadcn add ./finally-good-ui-theme.json`; the shadcn CLI merges the variables into the file named by `components.json` `tailwind.css`. Or paste `shadcn` output there, replacing its `:root`, `.dark` and `@theme` blocks. Either way shadcn's own names stay (`--primary`, `--radius`…), and `popover`/`secondary`/`sidebar` fall back to `card`/`muted` unless you define them. The stack profile's `shadcn.base` (`radix`, `base`, `aria`) says which state attributes animate. |
 | shadcn on Tailwind v3 | `css` + `tailwind3` | merge into the existing `:root` / `.dark` variables, keeping shadcn's names |
-| MUI | `mui` | `theme.ts` via `createTheme` |
+| MUI (`components: "mui"`; `joy` is on hold upstream, so build Joy projects the same way) | `mui` with `--mui-scheme` matching the app's theme toggle (`media` default, `class`, `data`, or a selector) | `theme.ts` via `createTheme`. The output turns on CSS theme variables (`cssVariables`), so light and dark both come from the same theme. From v9 (`componentsVersion` ≥ 9) Box, Stack, Grid and Typography no longer take system props: style with `sx` |
 | Anything else / plain | `css` | `tokens.css`, imported first |
 | Any stack that animates from JS (Motion, WAAPI, Svelte/Vue transitions) | `js` (in addition) | `motion-tokens.js` next to the components; re-emit whenever `tokens.json` changes |
 

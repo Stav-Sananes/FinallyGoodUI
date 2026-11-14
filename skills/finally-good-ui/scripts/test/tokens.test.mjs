@@ -461,3 +461,11 @@ test("emit shadcn-registry: a registry:theme item the shadcn CLI merges itself",
   assert.equal(item.cssVars.theme["ease-move"], "cubic-bezier(0.2, 0, 0, 1)");
   assert.equal(item.cssVars.theme["duration-standard"], "250ms");
 });
+
+test("emit mui: CSS theme variables with the project's dark-mode selector (MUI v6+)", () => {
+  assert.equal(JSON.parse(emit("mui").stdout).cssVariables, true, "default: follow the OS, MUI's own default");
+  const cls = run("emit-tokens.mjs", ["--in", DEF, "--format", "mui", "--mui-scheme", "class"]);
+  assert.deepEqual(JSON.parse(cls.stdout).cssVariables, { colorSchemeSelector: "class" });
+  const custom = run("emit-tokens.mjs", ["--in", DEF, "--format", "mui", "--mui-scheme", "[data-theme=%s]"]);
+  assert.deepEqual(JSON.parse(custom.stdout).cssVariables, { colorSchemeSelector: "[data-theme=%s]" });
+});

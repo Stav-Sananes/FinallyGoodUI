@@ -38,6 +38,8 @@ Options:
   --in <file>      tokens file (relative to --root)
   --format <fmt>   default css
   --root <dir>     base dir for --in and --out-dir (default: cwd)
+  --mui-scheme <s> mui only: how dark mode is selected. media (default, follows the OS), class (.dark),
+                   data ([data-dark]) or a selector such as "[data-theme=%s]"; match the app's theme toggle
   --out-dir <dir>  dtcg only: where to write the three files
   --name <stem>    dtcg only: file stem (default tokens: tokens.json, tokens.dark.json, tokens.resolver.json)
   --force          dtcg only: overwrite existing files
@@ -252,7 +254,11 @@ export const secMotion = (name) => msMotion(name) / 1000;
 `;
 }
 
-export function emitMui(tokens) {
+/**
+ * MUI createTheme input. scheme sets cssVariables: "media" (follow the OS; MUI's default), "class"
+ * (.dark), "data" ([data-dark]), or a custom selector such as "[data-theme=%s]".
+ */
+export function emitMui(tokens, { scheme = "media" } = {}) {
   const colors = Object.fromEntries(groupTokens(tokens?.color));
   const hex = (name, mode) => {
     const t = colors[name];
@@ -315,6 +321,7 @@ export function emitMui(tokens) {
     if (eases[ours] != null) { const e = parseEasing(eases[ours]); easing[k] = e ? `cubic-bezier(${e.join(", ")})` : String(eases[ours]); }
   }
   return {
+    cssVariables: scheme === "media" ? true : { colorSchemeSelector: scheme },
     palette: light,
     colorSchemes: { light: { palette: light }, dark: { palette: dark } },
     typography,
@@ -323,14 +330,14 @@ export function emitMui(tokens) {
   };
 }
 
-export function emit(tokens, format) {
+export function emit(tokens, format, { muiScheme } = {}) {
   switch (format) {
     case "css": return emitCss(tokens);
     case "tailwind4": return emitTailwind4(tokens);
     case "shadcn": return emitShadcn(tokens);
     case "shadcn-registry": return emitShadcnRegistry(tokens);
     case "tailwind3": return emitTailwind3(tokens);
-    case "mui": return emitMui(tokens);
+    case "mui": return emitMui(tokens, { scheme: muiScheme });
     case "json": return emitJson(tokens);
     case "js": return emitJs(tokens);
     default: throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
@@ -349,14 +356,14 @@ export function writeDtcg(tokens, outDir, { force = false, name = "tokens" } = {
 if (isMain(import.meta.url)) {
   runCli({
     help: HELP,
-    spec: { string: ["root", "in", "format", "out-dir", "name"], boolean: ["force"] },
+    spec: { string: ["root", "in", "format", "out-dir", "name", "mui-scheme"], boolean: ["force"] },
     main: ({ flags }) => {
       const format = flags.format || "css";
       if (!FORMATS.includes(format)) throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
       if (!flags.in) throw new UsageError("--in <tokens.json> is required");
       let tokens;
       try { tokens = loadTokens(resolve(flags.root || ".", flags.in)); } catch (e) { throw new UsageError(e.message); }
-      if (format !== "dtcg") return emit(tokens, format);
+      if (format !== "dtcg") return emit(tokens, format, { muiScheme: flags["mui-scheme"] || "media" });
       if (!flags["out-dir"]) throw new UsageError("--format dtcg needs --out-dir <dir>");
       return writeDtcg(tokens, resolve(flags.root || ".", flags["out-dir"]), { force: flags.force, name: flags.name || "tokens" });
     },
