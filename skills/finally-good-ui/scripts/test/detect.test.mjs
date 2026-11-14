@@ -130,3 +130,22 @@ test("token and variable stylesheets count as design files", () => {
     assert.ok(files.includes(`src/styles/${f}`), f);
   assert.ok(!files.includes("src/styles/button.css"), "component stylesheet is not a design file");
 });
+
+// shadcn now ships on three primitive bases; the base decides which data attributes animate.
+test("shadcn: base from the components.json style prefix, css entry, port by framework", () => {
+  assert.deepEqual(detect(fx("next")).shadcn, { base: "radix", style: "new-york", css: "src/app/globals.css", port: "shadcn" });
+  const project = (style, deps) => {
+    const d = tmp();
+    writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: deps }));
+    writeFileSync(join(d, "components.json"), JSON.stringify({ style, tailwind: { css: "app/globals.css" } }));
+    return detect(d).shadcn;
+  };
+  assert.equal(project("base-vega", { react: "19.2.0", "@base-ui/react": "1.9.0" }).base, "base");
+  assert.equal(project("aria-luma", { react: "19.2.0" }).base, "aria");
+  assert.equal(project("radix-nova", { react: "19.2.0" }).base, "radix");
+  assert.equal(project("new-york", { vue: "3.5.0", "reka-ui": "2.0.0" }).port, "shadcn-vue");
+  assert.equal(project("default", { svelte: "5.0.0", "bits-ui": "2.0.0" }).port, "shadcn-svelte");
+  const none = tmp();
+  writeFileSync(join(none, "package.json"), JSON.stringify({ dependencies: { react: "19.2.0" } }));
+  assert.equal(detect(none).shadcn, null);
+});

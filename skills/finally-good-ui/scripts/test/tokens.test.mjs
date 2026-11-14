@@ -430,3 +430,34 @@ test("tailwind4: named duration utilities (Tailwind has no --duration-* theme na
   const s = emit("tailwind4").stdout;
   assert.match(s, /@utility duration-\* \{\s*--tw-duration: --value\(--duration-\*\);\s*transition-duration: --value\(--duration-\*\);\s*\}/);
 });
+
+// ---------- shadcn/ui (and shadcn-vue, shadcn-svelte, Spartan): same variable names ----------
+test("emit shadcn: unprefixed :root/.dark vars, @theme inline map, fallbacks for roles we don't define", () => {
+  const r = emit("shadcn");
+  assert.equal(r.code, 0, r.stderr);
+  const s = r.stdout;
+  const root = s.match(/:root \{([^}]*)\}/)[1];
+  assert.match(root, /--primary: oklch\(0\.5 0\.14 262\);/);
+  assert.match(root, /--radius: 8px;/, "shadcn's single radius knob = our md");
+  assert.match(root, /--popover: var\(--card\);/, "components use bg-popover; we fall back to card");
+  assert.match(root, /--secondary: var\(--muted\);/);
+  assert.match(root, /--sidebar: var\(--card\);/);
+  assert.doesNotMatch(root, /--color-/, "shadcn vars carry no --color- prefix");
+  const dark = s.match(/\.dark \{([^}]*)\}/)[1];
+  assert.match(dark, /--background: oklch\(0\.17 0\.008 265\);/);
+  assert.match(dark, /color-scheme: dark;/);
+  assert.match(s, /@theme inline \{[^}]*--color-primary: var\(--primary\);[^}]*--color-popover: var\(--popover\);/);
+  assert.match(s, /@theme \{[^}]*--ease-move: cubic-bezier\(0\.2, 0, 0, 1\);/, "motion and type stay ours");
+  assert.match(s, /@utility duration-\*/);
+});
+
+test("emit shadcn-registry: a registry:theme item the shadcn CLI merges itself", () => {
+  const item = JSON.parse(emit("shadcn-registry").stdout);
+  assert.equal(item.type, "registry:theme");
+  assert.equal(item.$schema, "https://ui.shadcn.com/schema/registry-item.json");
+  assert.equal(item.cssVars.light.primary, "oklch(0.5 0.14 262)");
+  assert.equal(item.cssVars.dark.background, "oklch(0.17 0.008 265)");
+  assert.equal(item.cssVars.light.radius, "8px");
+  assert.equal(item.cssVars.theme["ease-move"], "cubic-bezier(0.2, 0, 0, 1)");
+  assert.equal(item.cssVars.theme["duration-standard"], "250ms");
+});
