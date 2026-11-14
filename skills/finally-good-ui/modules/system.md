@@ -69,6 +69,21 @@ node "${CLAUDE_SKILL_DIR}/scripts/emit-tokens.mjs" --in .design/tokens.json --fo
 | Anything else / plain | `css` | `tokens.css`, imported first |
 | Any stack that animates from JS (Motion, WAAPI, Svelte/Vue transitions) | `js` (in addition) | `motion-tokens.js` next to the components; re-emit whenever `tokens.json` changes |
 
+**Kits and engines detected but with no format of their own yet.** Emit `css` (our `--color-*` variables on `:root`/`.dark`), then point the kit's own variables at ours in its theme file, so `tokens.json` stays the one source. Use `json` when the kit needs literal values, and `color-scale.mjs` when it needs a tonal scale.
+| Stack profile | How to wire it |
+|---|---|
+| `vuetify` | `createVuetify({ theme: { defaultTheme: 'system', themes: { fguLight: { dark: false, colors }, fguDark: { dark: true, colors } } } })`. Vuetify parses colours itself, so give it hex values (the `hex` of each colour in `tokens.json`): `background`, `surface` ← card, `primary`, `error` ← destructive, `success`, `warning`, and `on-*` from the `-foreground` pairs |
+| `nuxt-ui` | in the main CSS, `:root { --ui-primary: var(--color-primary); --ui-bg: var(--color-background); --ui-bg-elevated: var(--color-card); --ui-bg-muted: var(--color-muted); --ui-text: var(--color-foreground); --ui-text-muted: var(--color-muted-foreground); --ui-border: var(--color-border); --ui-error: var(--color-destructive); --ui-radius: var(--radius-md); }` (and the same under `.dark`), plus `@theme static { --ease-out: var(--ease-enter); }`, which drives its enter/exit animations |
+| `heroui` (v3, `componentsVersion` ≥ 3) | the shadcn mapping under HeroUI's names: `--accent` ← primary, `--surface` ← card, `--overlay` ← card, `--danger` ← destructive, `--focus` ← ring, `--field-border` ← input, `--ease-out-fluid` ← our enter easing. v2 is a Tailwind plugin (`heroui({ themes })`): pass the `json` values there |
+| `skeleton` | a theme CSS file activated by `data-theme`: `--color-primary-50…950` from `color-scale.mjs <primary> --name primary --format css` (repeat for each role it uses), `--radius-base` ← radius.md |
+| `flowbite` | after the Flowbite theme import, `@theme { --color-brand: var(--color-primary); --color-fg-brand: var(--color-primary); }`, plus the `tailwind4` output for everything else |
+| `preline` | its `theme.css` names (`--primary`, `--background`, `--foreground`, `--muted`, `--border`, `--card`, `--layer`) on `:root`/`.dark` pointed at ours |
+| `fluent` | `createLightTheme(brand)` / `createDarkTheme(brand)` with a 16-stop brand from `color-scale.mjs <primary> --preset fluent`, then spread our `durationNormal`, `curveDecelerateMid`, `borderRadiusMedium` and `fontFamilyBase` over it |
+| `carbon` | adopted for IBM's design language, so don't restyle it: keep its themes and use our tokens only for screens Carbon doesn't cover |
+| `styling.unocss` | `css`, then `theme: { colors: { primary: 'var(--color-primary)', … }, radius, ease, font }` in `uno.config` (preset-wind4 names: `radius`, `ease`, `font`, `text`) |
+| `styling.stylex` | one `tokens.stylex.ts` with `stylex.defineVars` per group, values from `json`; dark values under the `'@media (prefers-color-scheme: dark)'` key |
+| `styling.vanillaExtract` | `createGlobalTheme(':root', vars, light)` and `createGlobalTheme('.dark', vars, dark)` in `theme.css.ts`, values from `json` |
+
 If dark mode is applied by attribute, class or localStorage rather than `prefers-color-scheme`, or the app is dark by default, replace `"theme": "media"` in `.design/config.json` with an object saying how (see `check-flows.mjs --help`, e.g. `{"attribute": "data-theme", "storage": "theme", "default": "dark"}`) so the flow walk renders both schemes for real.
 
 **Merge, never clobber.** Show the diff for the existing theme files and keep any unrelated variables.

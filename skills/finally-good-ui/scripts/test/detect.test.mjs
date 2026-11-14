@@ -217,3 +217,40 @@ test("Angular Material detected; legacy @angular/animations flagged (deprecated,
   assert.equal(p.componentsVersion, 22);
   assert.ok(p.animation.includes("angular-animations-legacy"));
 });
+
+test("long-tail component kits detected, each with the major version of its own package", () => {
+  const kit = (deps) => { const d = tmp(); writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: deps })); return detect(d); };
+  const cases = [
+    [{ vue: "3.5.0", vuetify: "4.3.3" }, "vuetify", 4],
+    [{ nuxt: "4.2.0", "@nuxt/ui": "4.12.0" }, "nuxt-ui", 4],
+    [{ react: "19.2.0", "@heroui/react": "3.2.7", "@heroui/styles": "3.2.7" }, "heroui", 3],
+    [{ react: "18.3.0", "@nextui-org/react": "2.6.11" }, "heroui", 2],
+    [{ svelte: "5.0.0", "@skeletonlabs/skeleton": "5.0.4" }, "skeleton", 5],
+    [{ "flowbite-react": "0.12.17", flowbite: "4.0.2" }, "flowbite", 4],
+    [{ preline: "5.1.0" }, "preline", 5],
+    [{ react: "19.2.0", "@fluentui/react-components": "9.75.2" }, "fluent", 9],
+    [{ react: "19.2.0", "@carbon/react": "1.120.0" }, "carbon", 1],
+  ];
+  for (const [deps, name, version] of cases) {
+    const p = kit(deps);
+    assert.equal(p.components, name, JSON.stringify(deps));
+    assert.equal(p.componentsVersion, version, name);
+  }
+  assert.equal(kit({ react: "19.2.0", "flowbite-react": "0.12.17" }).componentsVersion, null, "a port's own version is not Flowbite's");
+});
+
+test("compile-time styling engines detected: UnoCSS (package or uno.config), StyleX, vanilla-extract", () => {
+  const engines = (deps, files = {}) => {
+    const d = tmp();
+    writeFileSync(join(d, "package.json"), JSON.stringify({ devDependencies: deps }));
+    for (const [f, text] of Object.entries(files)) writeFileSync(join(d, f), text);
+    return detect(d).styling;
+  };
+  assert.equal(engines({ unocss: "66.13.0" }).unocss, true);
+  assert.equal(engines({ "@unocss/preset-wind4": "66.13.0" }).unocss, true);
+  assert.equal(engines({}, { "uno.config.ts": "export default {}" }).unocss, true);
+  assert.equal(engines({ "@stylexjs/stylex": "0.19.2" }).stylex, true);
+  assert.equal(engines({ "@vanilla-extract/css": "1.21.3" }).vanillaExtract, true);
+  const none = detect(fx("next")).styling;
+  assert.deepEqual([none.unocss, none.stylex, none.vanillaExtract], [false, false, false]);
+});

@@ -7,7 +7,8 @@ import { readJson, readText, walk, isDir, isFile, exists } from "./lib/fs.mjs";
 const HELP = `
 Usage: detect-stack.mjs [--root <dir>]
 
-Detects framework, router, styling (Tailwind v3/v4, CSS modules, Sass, CSS-in-JS),
+Detects framework, router, styling (Tailwind v3/v4, CSS modules, Sass, CSS-in-JS, Panda,
+UnoCSS, StyleX, vanilla-extract),
 component kit (for shadcn: its primitive base, style, CSS entry and port), unstyled primitive
 libraries (Radix, Base UI, React Aria, Reka, Bits UI, Ark UI, Kobalte, Headless UI, UI SDK), animation and icon libraries, TypeScript, package manager, dev script,
 testing tools, design files and whether .design/ exists. Prints the stack profile as JSON.
@@ -50,6 +51,36 @@ const PRIMITIVES = [
   ["kobalte", (has) => has("@kobalte/core")],
   ["headlessui", (has, hasPrefix) => hasPrefix("@headlessui/")],
   ["ui-sdk", (has, hasPrefix) => hasPrefix("@ui-sdk/")],
+];
+
+/**
+ * Styled component kits, first match wins (shadcn is found earlier, by its components.json).
+ * versionFrom: packages whose major version is the kit's own, tried in order; a framework port
+ * with its own numbering (flowbite-react 0.x) is left out so the version is not misreported.
+ */
+const KITS = [
+  { name: "mui", test: (has) => has("@mui/material"), versionFrom: ["@mui/material"] },
+  { name: "joy", test: (has) => has("@mui/joy"), versionFrom: ["@mui/joy"] }, // on hold upstream: build with Material UI patterns
+  { name: "daisyui", test: (has) => has("daisyui"), versionFrom: ["daisyui"] },
+  { name: "antd", test: (has) => has("antd"), versionFrom: ["antd"] },
+  { name: "primevue", test: (has) => has("primevue"), versionFrom: ["primevue"] },
+  { name: "primeng", test: (has) => has("primeng"), versionFrom: ["primeng"] },
+  { name: "primereact", test: (has) => has("primereact"), versionFrom: ["primereact"] },
+  { name: "angular-material", test: (has) => has("@angular/material"), versionFrom: ["@angular/material"] },
+  { name: "chakra", test: (has) => has("@chakra-ui/react"), versionFrom: ["@chakra-ui/react"] },
+  { name: "mantine", test: (has) => has("@mantine/core"), versionFrom: ["@mantine/core"] },
+  { name: "vuetify", test: (has) => has("vuetify"), versionFrom: ["vuetify"] },
+  { name: "nuxt-ui", test: (has) => has("@nuxt/ui"), versionFrom: ["@nuxt/ui"] },
+  // NextUI was renamed HeroUI; v2 is a Tailwind plugin (@heroui/theme), v3 is CSS-first (@heroui/styles)
+  { name: "heroui", test: (has, hasPrefix) => hasPrefix("@heroui/") || has("@nextui-org/react"), versionFrom: ["@heroui/react", "@heroui/styles", "@heroui/theme", "@nextui-org/react"] },
+  { name: "skeleton", test: (has, hasPrefix) => hasPrefix("@skeletonlabs/skeleton"), versionFrom: ["@skeletonlabs/skeleton"] },
+  { name: "flowbite", test: (has, hasPrefix) => hasPrefix("flowbite"), versionFrom: ["flowbite"] },
+  { name: "preline", test: (has) => has("preline"), versionFrom: ["preline"] },
+  { name: "fluent", test: (has) => has("@fluentui/react-components"), versionFrom: ["@fluentui/react-components"] },
+  { name: "carbon", test: (has, hasPrefix) => hasPrefix("@carbon/react") || has("@carbon/styles") || has("@carbon/web-components"), versionFrom: ["@carbon/react", "@carbon/styles", "@carbon/web-components"] },
+  // unstyled libraries last: a styled kit above may depend on them
+  { name: "radix", test: (has, hasPrefix) => hasPrefix("@radix-ui/") },
+  { name: "headlessui", test: (has, hasPrefix) => hasPrefix("@headlessui/") },
 ];
 
 /**
@@ -111,27 +142,17 @@ export function detectStack(rootArg = ".") {
     cssModules: files.some((f) => /\.module\.(css|scss|sass|less)$/.test(f)),
     sass: has("sass") || has("node-sass") || files.some((f) => /\.(scss|sass)$/.test(f)),
     panda: has("@pandacss/dev") || files.some((f) => /^panda\.config\.(ts|js|mjs|cjs)$/.test(f)),
+    unocss: has("unocss") || hasPrefix("@unocss/") || files.some((f) => /^uno\.config\.(ts|js|mjs|cjs|mts)$/.test(f)),
+    stylex: has("@stylexjs/stylex"),
+    vanillaExtract: has("@vanilla-extract/css"),
     cssInJs,
   };
 
   // ---- components
-  let components = null;
-  if (file("components.json")) components = "shadcn";
-  else if (has("@mui/material")) components = "mui";
-  else if (has("@mui/joy")) components = "joy"; // on hold upstream: build with Material UI patterns
-  else if (has("daisyui")) components = "daisyui";
-  else if (has("antd")) components = "antd";
-  else if (has("primevue")) components = "primevue";
-  else if (has("primeng")) components = "primeng";
-  else if (has("primereact")) components = "primereact";
-  else if (has("@angular/material")) components = "angular-material";
-  else if (has("@chakra-ui/react")) components = "chakra";
-  else if (has("@mantine/core")) components = "mantine";
-  else if (hasPrefix("@radix-ui/")) components = "radix";
-  else if (hasPrefix("@headlessui/")) components = "headlessui";
-
-  const KIT_PACKAGE = { mui: "@mui/material", joy: "@mui/joy", daisyui: "daisyui", antd: "antd", primevue: "primevue", primeng: "primeng", primereact: "primereact", "angular-material": "@angular/material", chakra: "@chakra-ui/react", mantine: "@mantine/core" };
-  const componentsVersion = KIT_PACKAGE[components] ? major(deps[KIT_PACKAGE[components]]) : null;
+  const kit = file("components.json") ? { name: "shadcn" } : KITS.find((k) => k.test(has, hasPrefix));
+  const components = kit?.name ?? null;
+  const versionFrom = kit?.versionFrom?.find(has);
+  const componentsVersion = versionFrom ? major(deps[versionFrom]) : null;
 
   // ---- unstyled primitives (no theme to emit; each animates through its own state attributes)
   const primitives = PRIMITIVES.filter(([, test]) => test(has, hasPrefix)).map(([name]) => name);
