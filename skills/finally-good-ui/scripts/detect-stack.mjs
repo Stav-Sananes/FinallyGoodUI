@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Build the stack profile from package.json, lockfiles and project files.
 import { join, basename, resolve, dirname } from "node:path";
+import { readdirSync } from "node:fs";
 import { runCli, isMain } from "./lib/cli.mjs";
 import { readJson, readText, walk, isDir, isFile, exists } from "./lib/fs.mjs";
 
@@ -201,6 +202,16 @@ function shadcnProfile(config, has) {
   return { base: prefix || "radix", style, css: config?.tailwind?.css || null, port };
 }
 
+/** An Xcode project or Swift package whose sources import SwiftUI. */
+function importsSwiftUI(root) {
+  const appleProject = fileAt(root, "Package.swift") || (readdirSafe(root).some((n) => n.endsWith(".xcodeproj") || n.endsWith(".xcworkspace")));
+  if (!appleProject) return false;
+  return walk(root, root, { exts: new Set([".swift"]), maxDepth: 6, maxFiles: 2000 })
+    .some((f) => /^import SwiftUI\b/m.test(readText(join(root, f)) || ""));
+}
+const fileAt = (root, ...p) => isFile(join(root, ...p));
+const readdirSafe = (dir) => { try { return readdirSync(dir); } catch { return []; } };
+
 export function detectStack(rootArg = ".") {
   const root = resolve(rootArg);
   const pkg = readJson(join(root, "package.json"));
@@ -223,8 +234,9 @@ export function detectStack(rootArg = ".") {
   if (!pkg && framework === "unknown" && (file("index.html") || file("public", "index.html"))) framework = "html";
   // Flutter: pubspec.yaml depending on the Flutter SDK (a Flutter app may still carry a web package.json)
   if (framework === "unknown" && /^\s+sdk:\s*flutter\s*$/m.test(readText(join(root, "pubspec.yaml")) || "")) framework = "flutter";
+  if (framework === "unknown" && importsSwiftUI(root)) framework = "swiftui";
   const isNative = framework === "expo" || framework === "react-native";
-  const hasDom = !isNative && framework !== "flutter"; // web stacks: view transitions, web font loaders
+  const hasDom = !isNative && framework !== "flutter" && framework !== "swiftui"; // web stacks: view transitions, web font loaders
 
   // ---- files (bounded walk for design files / css flavours)
   const files = walk(root, root, { maxDepth: 6, maxFiles: 5000,
