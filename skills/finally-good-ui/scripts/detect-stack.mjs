@@ -221,7 +221,10 @@ export function detectStack(rootArg = ".") {
     if (has(dep)) { framework = name; frameworkVersion = cleanVersion(deps[dep]); break; }
   }
   if (!pkg && framework === "unknown" && (file("index.html") || file("public", "index.html"))) framework = "html";
+  // Flutter: pubspec.yaml depending on the Flutter SDK (a Flutter app may still carry a web package.json)
+  if (framework === "unknown" && /^\s+sdk:\s*flutter\s*$/m.test(readText(join(root, "pubspec.yaml")) || "")) framework = "flutter";
   const isNative = framework === "expo" || framework === "react-native";
+  const hasDom = !isNative && framework !== "flutter"; // web stacks: view transitions, web font loaders
 
   // ---- files (bounded walk for design files / css flavours)
   const files = walk(root, root, { maxDepth: 6, maxFiles: 5000,
@@ -286,7 +289,7 @@ export function detectStack(rootArg = ".") {
   const native = isNative ? { styling: nativeStyling, web: has("react-native-web") } : null;
 
   // ---- view transitions: which integration the route and shared-element recipes should use
-  const viewTransitions = isNative ? null
+  const viewTransitions = !hasDom ? null
     : has("react") && atLeast(deps.react, [19, 3]) ? "react" // <ViewTransition>, stable in 19.3
     : framework === "astro" ? "astro" // <ClientRouter />
     : framework === "sveltekit" ? "sveltekit" // onNavigate + document.startViewTransition
@@ -300,7 +303,7 @@ export function detectStack(rootArg = ".") {
   if (hasPrefix("@fontsource/") || hasPrefix("@fontsource-variable/")) fontsInUse.push("fontsource");
   if (has("unplugin-fonts")) fontsInUse.push("unplugin-fonts");
   if (["index.html", "public/index.html", "src/app.html"].some((f) => file(f) && readsGoogleFonts(f)) || cssFiles.some(readsGoogleFonts)) fontsInUse.push("google-fonts");
-  const fontLoader = isNative ? null // expo-font / useFonts: system.md step 4
+  const fontLoader = !hasDom ? null // expo-font / pubspec fonts: system.md step 4
     : framework === "next" ? "next" : framework === "nuxt" ? "nuxt"
     : pkg && framework !== "unknown" && framework !== "html" ? "fontsource" : "google";
 
