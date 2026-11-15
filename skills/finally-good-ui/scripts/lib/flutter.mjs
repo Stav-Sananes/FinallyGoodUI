@@ -2,7 +2,8 @@
 // roles, a ThemeExtension (AppColors) for the theme-dependent colours Material has no slot for, and
 // constants for what doesn't change with the theme (AppSpace, AppRadius, AppMotion). Colours are sRGB
 // (Flutter's Color), sizes logical pixels, line-height a multiplier, letter-spacing in pixels.
-import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, textMetrics, fontLoad } from "./tokens.mjs";
+import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, fontLoad } from "./tokens.mjs";
+import { materialColors, textStepMetrics, TEXT_ROLES } from "./material.mjs";
 import { parseColor } from "./contrast.mjs";
 
 /** Flutter Color literal: Color(0xAARRGGBB). */
@@ -20,53 +21,22 @@ export function dartName(name, numericPrefix = "s") {
 }
 const dbl = (n) => (Number.isInteger(n) ? `${n}.0` : `${n}`);
 
-// ColorScheme slot -> our role. surfaceTint is transparent so Material doesn't wash surfaces in primary.
-const SCHEME = [
-  ["primary", "primary"], ["onPrimary", "primary-foreground"],
-  ["secondary", "accent"], ["onSecondary", "accent-foreground"],
-  ["secondaryContainer", "accent"], ["onSecondaryContainer", "accent-foreground"],
-  ["error", "destructive"], ["onError", "destructive-foreground"],
-  ["surface", "background"], ["onSurface", "foreground"],
-  ["surfaceContainerLowest", "card"], ["surfaceContainerLow", "card"], ["surfaceContainer", "card"],
-  ["surfaceContainerHigh", "card"], ["surfaceContainerHighest", "muted"],
-  ["onSurfaceVariant", "muted-foreground"], ["outline", "input"], ["outlineVariant", "border"], ["scrim", "overlay"],
-];
-const REQUIRED_SLOTS = ["primary", "onPrimary", "secondary", "onSecondary", "error", "onError", "surface", "onSurface"];
-
-// Material text role -> our text step (sizes, line-height and letter-spacing come from the step).
-const TEXT_ROLES = [
-  ["displayLarge", "6xl"], ["displayMedium", "5xl"], ["displaySmall", "4xl"],
-  ["headlineLarge", "3xl"], ["headlineMedium", "2xl"], ["headlineSmall", "xl"],
-  ["titleLarge", "lg"], ["titleMedium", "base"], ["titleSmall", "sm"],
-  ["bodyLarge", "lg"], ["bodyMedium", "base"], ["bodySmall", "sm"],
-  ["labelLarge", "sm"], ["labelMedium", "xs"], ["labelSmall", "xs"],
-];
-
 function textStyles(rows) {
-  const steps = new Map(rows.filter((r) => r.group === "text").map((r) => {
-    const size = parseDimension(r.light)?.value;
-    const m = Object.fromEntries(textMetrics(r.token).map((x) => [x.suffix, x.value]));
-    const ls = parseDimension(m["letter-spacing"] ?? "");
-    const args = [`fontSize: ${dbl(size)}`];
-    if (m["line-height"] != null) args.push(`height: ${dbl(Number(m["line-height"]))}`);
-    if (ls) args.push(`letterSpacing: ${dbl(Math.round((ls.unit === "em" ? ls.value * size : ls.value) * 100) / 100)}`);
-    return [r.name, `TextStyle(${args.join(", ")})`];
-  }));
-  return TEXT_ROLES.filter(([, step]) => steps.has(step)).map(([role, step]) => `  ${role}: ${steps.get(step)},`);
+  const steps = textStepMetrics(rows);
+  const style = (m) => {
+    const args = [`fontSize: ${dbl(m.size)}`];
+    if (m.lineHeightRatio != null) args.push(`height: ${dbl(m.lineHeightRatio)}`);
+    args.push(`letterSpacing: ${dbl(m.letterSpacing)}`);
+    return `TextStyle(${args.join(", ")})`;
+  };
+  return TEXT_ROLES.filter(([, step]) => steps.has(step)).map(([role, step]) => `  ${role}: ${style(steps.get(step))},`);
 }
 
 export function emitFlutter(tokens) {
   const rows = flatten(tokens);
-  const colors = rows.filter((r) => r.group === "color");
-  const byName = new Map(colors.map((r) => [r.name, r]));
-  const missing = REQUIRED_SLOTS.filter((slot) => !byName.has(SCHEME.find(([s]) => s === slot)[1]));
-  if (missing.length) throw new Error(`Flutter's ColorScheme needs the roles ${missing.map((s) => SCHEME.find(([x]) => x === s)[1]).join(", ")}`);
-  const schemeSlots = SCHEME.filter(([, role]) => byName.has(role));
-  const inScheme = new Set(schemeSlots.map(([, role]) => role));
-  // Also kept here: the roles the component themes below read directly (card, border) and muted fills.
-  const extra = colors.filter((r) => !inScheme.has(r.name) || ["muted", "card", "border"].includes(r.name));
+  const { slots, extended: extra } = materialColors(rows);
   const scheme = (pick, brightness) => [`ColorScheme(`, `  brightness: Brightness.${brightness},`,
-    ...schemeSlots.map(([slot, role]) => `  ${slot}: ${dartColor(pick(byName.get(role)))},`),
+    ...slots.map(([slot, row]) => `  ${slot}: ${dartColor(pick(row))},`),
     "  surfaceTint: Color(0x00000000),", ")"].join("\n");
   const ext = (pick) => `AppColors(\n${extra.map((r) => `  ${dartName(r.name)}: ${dartColor(pick(r))},`).join("\n")}\n)`;
   const fields = extra.map((r) => dartName(r.name));

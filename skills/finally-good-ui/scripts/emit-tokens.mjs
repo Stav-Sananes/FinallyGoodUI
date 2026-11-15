@@ -11,6 +11,7 @@ import { emitAgGrid } from "./lib/ag-grid.mjs";
 import { pipelineFiles, PIPELINES } from "./lib/pipelines.mjs";
 import { emitFlutter } from "./lib/flutter.mjs";
 import { swiftuiFiles } from "./lib/swiftui.mjs";
+import { composeFiles } from "./lib/compose.mjs";
 import { emitUniwind, emitNativewind, emitRnMotion, emitTamagui, emitUnistyles } from "./lib/react-native.mjs";
 import { colorScale } from "./lib/ramp.mjs";
 import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, cssValue, darkOf, textMetrics, fontValue } from "./lib/tokens.mjs";
@@ -21,6 +22,7 @@ Usage: emit-tokens.mjs --in <tokens.json> [--format css|tailwind4|shadcn|shadcn-
        emit-tokens.mjs --in <tokens.json> --format dtcg --out-dir <dir> [--name tokens] [--force]
        emit-tokens.mjs --in <tokens.json> --format terrazzo|style-dictionary [--out-dir tokens] [--tailwind] [--force]
        emit-tokens.mjs --in <tokens.json> --format swiftui --out-dir <app target dir> [--force]
+       emit-tokens.mjs --in <tokens.json> --format compose --out-dir <ui/theme dir> --package <name> [--force]
 
 --in takes a tokens file in either shape (CSS-string values with dark in $extensions.fgu.dark, or
 DTCG 2025.10 objects), or a *.resolver.json. A tokens file whose sibling <name>.resolver.json
@@ -80,6 +82,9 @@ Prints the tokens in the requested format to stdout:
   swiftui    writes DesignTokens.xcassets (a colour set per role, light + dark appearance, sRGB) and
              DesignTokens.swift (Palette, Space, Radius, TextStep with Dynamic Type, Motion with Reduce
              Motion) into --out-dir
+  compose    writes Color.kt, Type.kt, Theme.kt (AppTheme: Material 3 light/dark ColorScheme from our roles,
+             ExtendedColors via a CompositionLocal, Shapes from radii) and Tokens.kt (Spacing, Radius,
+             Motion, rememberReducedMotion) into --out-dir, in --package
   js         motion-tokens ES module for JS animation (Motion, WAAPI, transition props, timers):
              ms, sec, ease, cssEase, easeFn, bezierString, spring, reduced, msMotion, secMotion,
              durations, easings. Reads the live --duration-*/--ease-*
@@ -102,12 +107,13 @@ Options:
                    tokens.resolver.json)
   --tailwind       terrazzo / style-dictionary: put the light theme in Tailwind v4's @theme (stack profile
                    styling.tailwind "v4")
-  --force          dtcg, terrazzo, style-dictionary: overwrite existing files
+  --package <name> compose only: the Kotlin package (default ui.theme; use the app's, e.g. com.acme.app.ui.theme)
+  --force          dtcg, terrazzo, style-dictionary, swiftui, compose: overwrite existing files
   --help
 `;
 
-const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "chart-theme", "fonts", "ag-grid", "uniwind", "nativewind", "tamagui", "unistyles", "rn-motion", "flutter", "swiftui", "dtcg", ...PIPELINES];
-const FILE_FORMATS = ["dtcg", "swiftui", ...PIPELINES];
+const FORMATS = ["css", "tailwind4", "shadcn", "shadcn-registry", "daisyui", "chakra", "panda", "mantine", "antd", "prime", "angular-material", "tailwind3", "mui", "json", "js", "adapters", "chart-theme", "fonts", "ag-grid", "uniwind", "nativewind", "tamagui", "unistyles", "rn-motion", "flutter", "swiftui", "compose", "dtcg", ...PIPELINES];
+const FILE_FORMATS = ["dtcg", "swiftui", "compose", ...PIPELINES];
 
 function block(selector, decls, indent = "") {
   return `${indent}${selector} {\n${decls.map((d) => `${indent}  ${d}`).join("\n")}\n${indent}}`;
@@ -750,7 +756,7 @@ export function writePipeline(tokens, pipeline, root, { srcDir = "tokens", name 
 if (isMain(import.meta.url)) {
   runCli({
     help: HELP,
-    spec: { string: ["root", "in", "format", "out-dir", "name", "mui-scheme", "libs", "loader"], boolean: ["force", "tailwind"] },
+    spec: { string: ["root", "in", "format", "out-dir", "name", "mui-scheme", "libs", "loader", "package"], boolean: ["force", "tailwind"] },
     main: ({ flags }) => {
       const format = flags.format || "css";
       if (!FORMATS.includes(format)) throw new UsageError(`unknown --format ${format} (use ${FORMATS.join("|")})`);
@@ -759,11 +765,11 @@ if (isMain(import.meta.url)) {
       try { tokens = loadTokens(resolve(flags.root || ".", flags.in)); } catch (e) { throw new UsageError(e.message); }
       if (!FILE_FORMATS.includes(format)) return emit(tokens, format, { muiScheme: flags["mui-scheme"] || "media", libs: flags.libs?.split(",").map((x) => x.trim()).filter(Boolean), loader: fontLoader(flags.loader) });
       const name = flags.name || "tokens";
-      if (format === "swiftui") {
-        if (!flags["out-dir"]) throw new UsageError("--format swiftui needs --out-dir <dir> (the app target's folder)");
+      if (format === "swiftui" || format === "compose") {
+        if (!flags["out-dir"]) throw new UsageError(`--format ${format} needs --out-dir <dir> (${format === "swiftui" ? "the app target's folder" : "the ui/theme source folder"})`);
         const outDir = resolve(flags.root || ".", flags["out-dir"]);
         let files;
-        try { files = swiftuiFiles(tokens); } catch (e) { throw new UsageError(e.message); }
+        try { files = format === "swiftui" ? swiftuiFiles(tokens) : composeFiles(tokens, flags.package || "ui.theme"); } catch (e) { throw new UsageError(e.message); }
         return { tool: "emit-tokens", format, outDir, written: writeFiles(outDir, files, flags.force) };
       }
       if (format !== "dtcg") {

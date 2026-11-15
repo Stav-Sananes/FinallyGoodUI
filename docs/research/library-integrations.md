@@ -114,7 +114,7 @@ Chosen 2026-11-14: reach work first (0.1 first because it is a shipped accessibi
 - [x] 5.2
 - [x] 5.3
 - [x] 5.4
-- [ ] 5.5
+- [x] 5.5
 - [ ] 5.6
 
 3.5 was split for size: **3.5a** six detectors (ellipsis-dots, paste-blocked, autofocus, spellcheck-on-codes, img-no-dimensions, locale-format) and the cards they cite, including the new `i18n` domain (4 cards); **3.5b** the remaining Web Interface Guidelines rules as new cards or amendments to existing ones.

@@ -209,6 +209,13 @@ function importsSwiftUI(root) {
   return walk(root, root, { exts: new Set([".swift"]), maxDepth: 6, maxFiles: 2000 })
     .some((f) => /^import SwiftUI\b/m.test(readText(join(root, f)) || ""));
 }
+/** A Gradle build that turns on Jetpack Compose (the compose plugin, buildFeatures, or androidx.compose deps). */
+function usesCompose(root) {
+  if (!["settings.gradle.kts", "settings.gradle"].some((f) => fileAt(root, f))) return false;
+  const gradleFiles = walk(root, root, { exts: new Set([".kts", ".gradle", ".toml"]), maxDepth: 3, maxFiles: 200 })
+    .filter((f) => /(^|\/)(build\.gradle(\.kts)?|libs\.versions\.toml)$/.test(f));
+  return gradleFiles.some((f) => /androidx\.compose|plugin\.compose|compose\s*=\s*true/.test(readText(join(root, f)) || ""));
+}
 const fileAt = (root, ...p) => isFile(join(root, ...p));
 const readdirSafe = (dir) => { try { return readdirSync(dir); } catch { return []; } };
 
@@ -235,8 +242,9 @@ export function detectStack(rootArg = ".") {
   // Flutter: pubspec.yaml depending on the Flutter SDK (a Flutter app may still carry a web package.json)
   if (framework === "unknown" && /^\s+sdk:\s*flutter\s*$/m.test(readText(join(root, "pubspec.yaml")) || "")) framework = "flutter";
   if (framework === "unknown" && importsSwiftUI(root)) framework = "swiftui";
+  if (framework === "unknown" && usesCompose(root)) framework = "compose";
   const isNative = framework === "expo" || framework === "react-native";
-  const hasDom = !isNative && framework !== "flutter" && framework !== "swiftui"; // web stacks: view transitions, web font loaders
+  const hasDom = !isNative && !["flutter", "swiftui", "compose"].includes(framework); // web stacks: view transitions, web font loaders
 
   // ---- files (bounded walk for design files / css flavours)
   const files = walk(root, root, { maxDepth: 6, maxFiles: 5000,
