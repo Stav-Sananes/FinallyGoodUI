@@ -123,6 +123,23 @@ checks:
   judged: "Does anything move after the first paint while the page settles?"
 ```
 
+### layout.desktop-window
+```yaml
+id: layout.desktop-window
+domain: layout
+principle: "A desktop app (Tauri, Electron) lives in a window, not a tab. Keep the platform's window controls where people expect them (traffic lights top-left on macOS, minimise/maximise/close top-right on Windows and Linux) and leave a drag region in any custom title bar. Put commands in the native menu bar with the standard accelerators (File, Edit with Undo/Copy/Paste, View, Window, Help). Lay out for a resizable window down to a stated minimum size, and keep hover-only affordances out, since many laptops have touch screens."
+why: "People judge a desktop app against every other app on their machine. A title bar that can't be dragged, controls on the wrong side, or a missing Edit menu (where Copy and Paste live, and where the shortcuts come from on macOS) makes the app feel like a web page in a frame, and breaks muscle memory built over years."
+sources: ["Apple Human Interface Guidelines, Windows and The menu bar", "Microsoft, Windows app design: Title bar customization", "Electron documentation, Custom title bar (app-region: drag, titleBarOverlay)", "Tauri documentation, Window customization (data-tauri-drag-region)"]
+applies-when: "The stack profile has desktop.shell (tauri or electron), or the brief describes a desktop app."
+not-when: "Web apps in a browser tab, and installable PWAs that keep the browser's own window chrome."
+decides: [blueprint.navigation, component.title-bar, component.menu, layout.breakpoints]
+tensions: [usability.keyboard-shortcuts, layout.intrinsic-responsive]
+asked-by: []
+checks:
+  measured: "With a custom title bar, the window can be dragged by its top strip and the native controls are visible on the platform's side; the app works at its minimum window size with nothing clipped; the Edit menu (or the standard shortcuts) handles undo, cut, copy, paste and select all in text fields."
+  judged: "Would someone who uses Finder or Explorer daily find the window, menus and shortcuts where they expect them?"
+```
+
 ### layout.tension-consistency-emphasis
 ```yaml
 id: layout.tension-consistency-emphasis

@@ -307,3 +307,18 @@ test("icon sets: the first one found, its package and how its weight is controll
   assert.deepEqual(icons({ "@solar-icons/react": "2.6.0" }), { lib: "solar", package: "@solar-icons/react", api: "stroke" });
   assert.equal(icons({}), null);
 });
+
+test("desktop shells: Tauri (by package or src-tauri config) and Electron stay web stacks with a desktop field", () => {
+  const make = (deps, files = {}) => {
+    const d = tmp();
+    writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: deps }));
+    for (const [f, text] of Object.entries(files)) { mkdirSync(join(d, f, ".."), { recursive: true }); writeFileSync(join(d, f), text); }
+    return detect(d);
+  };
+  const tauri = make({ react: "^19.0.0", vite: "^7.0.0", "@tauri-apps/api": "^2.9.0" });
+  assert.deepEqual(tauri.desktop, { shell: "tauri", version: 2 });
+  assert.equal(tauri.framework, "react", "the front end is still React on the web");
+  assert.deepEqual(make({ svelte: "^5.0.0" }, { "src-tauri/tauri.conf.json": "{}" }).desktop, { shell: "tauri", version: null });
+  assert.deepEqual(make({ react: "^19.0.0", electron: "^39.2.0" }).desktop, { shell: "electron", version: 39 });
+  assert.equal(make({ react: "^19.0.0" }).desktop, null);
+});

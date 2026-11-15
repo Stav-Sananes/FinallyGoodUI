@@ -308,6 +308,12 @@ export function detectStack(rootArg = ".") {
     : "stylesheet";
   const native = isNative ? { styling: nativeStyling, web: has("react-native-web") } : null;
 
+  // ---- desktop shells: still a web front end (verify and tokens as web), plus window/menu conventions
+  const tauri = has("@tauri-apps/api") || has("@tauri-apps/cli") || file("src-tauri", "tauri.conf.json");
+  const desktop = tauri ? { shell: "tauri", version: major(deps["@tauri-apps/api"] ?? deps["@tauri-apps/cli"]) ?? null }
+    : has("electron") ? { shell: "electron", version: major(deps.electron) ?? null }
+    : null;
+
   // ---- view transitions: which integration the route and shared-element recipes should use
   const viewTransitions = !hasDom ? null
     : has("react") && atLeast(deps.react, [19, 3]) ? "react" // <ViewTransition>, stable in 19.3
@@ -370,6 +376,7 @@ export function detectStack(rootArg = ".") {
     tables,
     viewTransitions,
     native,
+    desktop,
     fonts: { loader: fontLoader, inUse: fontsInUse },
     icons,
     tokensPipeline,
