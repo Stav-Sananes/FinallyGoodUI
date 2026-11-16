@@ -22,3 +22,6 @@ Thumbs.db
 # Claude Code local artifacts written into consuming projects
 .design/reports/
 .playwright-mcp/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
