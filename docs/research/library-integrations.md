@@ -77,7 +77,7 @@ Chosen 2026-11-14: reach work first (0.1 first because it is a shipped accessibi
 - [x] 6.3
 - [x] 6.1
 - [x] 6.2
-- [ ] 6.4
+- [x] 6.4
 - [x] 0.5a
 - [x] 0.5b
 - [x] 0.5c

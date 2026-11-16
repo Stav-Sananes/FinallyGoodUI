@@ -14,6 +14,35 @@ You don't need to be a designer. You answer plain questions, approve a plan, and
 
 Every path ends the same way: the result is checked in a browser at phone and desktop sizes, in light and dark, and every decision is in `.design/decisions.md` with its reason.
 
+## Blind test: with the skill vs. without
+
+Four apps, each built twice from the same one-paragraph brief by the same model: once with finally-good-ui, once from the prompt alone. The pairs were shuffled and judged blind by the maintainer before the sides were revealed. Every image is a real render at 1440 px.
+
+**Result: the skill won 1, lost 2, tied 1.** We show all four, losses included. One judge and four apps is a small sample, not a benchmark; the runs' feedback went straight into fixes (check-static false positives, unattended runs, overlay and brand-accent tokens).
+
+| App | With finally-good-ui | Prompt alone | Blind verdict |
+|---|---|---|---|
+| **Studio finance**: the owner's Monday look at cash, runway, overdue invoices and payroll | ![Finance, with the skill](docs/gallery/finance-skill-desktop-light.jpg) | ![Finance, prompt alone](docs/gallery/finance-control-desktop-light.jpg) | **Skill** |
+| **Salon booking**: dog owners pick a time for a groom, on their phone | ![Booking, with the skill](docs/gallery/booking-skill-desktop-light.jpg) | ![Booking, prompt alone](docs/gallery/booking-control-desktop-light.jpg) | Prompt alone |
+| **Meal planner**: a household of three plans the week's dinners and shops by aisle | ![Meals, with the skill](docs/gallery/meals-skill-desktop-light.jpg) | ![Meals, prompt alone](docs/gallery/meals-control-desktop-light.jpg) | Prompt alone |
+| **Issue tracker**: a six-person team triages its issue list from the keyboard | ![Tracker, with the skill](docs/gallery/tracker-skill-desktop-light.jpg) | ![Tracker, prompt alone](docs/gallery/tracker-control-desktop-light.jpg) | Tie |
+
+<details>
+<summary>Dark preference and phone (390 px) renders</summary>
+
+| App | With finally-good-ui | Prompt alone |
+|---|---|---|
+| Finance, dark | ![](docs/gallery/finance-skill-desktop-dark.jpg) | ![](docs/gallery/finance-control-desktop-dark.jpg) |
+| Finance, phone | <img src="docs/gallery/finance-skill-phone.jpg" width="240" alt=""> | <img src="docs/gallery/finance-control-phone.jpg" width="240" alt=""> |
+| Booking, dark | ![](docs/gallery/booking-skill-desktop-dark.jpg) | ![](docs/gallery/booking-control-desktop-dark.jpg) |
+| Booking, phone | <img src="docs/gallery/booking-skill-phone.jpg" width="240" alt=""> | <img src="docs/gallery/booking-control-phone.jpg" width="240" alt=""> |
+| Meals, dark | ![](docs/gallery/meals-skill-desktop-dark.jpg) | ![](docs/gallery/meals-control-desktop-dark.jpg) |
+| Meals, phone | <img src="docs/gallery/meals-skill-phone.jpg" width="240" alt=""> | <img src="docs/gallery/meals-control-phone.jpg" width="240" alt=""> |
+| Tracker, dark | ![](docs/gallery/tracker-skill-desktop-dark.jpg) | ![](docs/gallery/tracker-control-desktop-dark.jpg) |
+| Tracker, phone | <img src="docs/gallery/tracker-skill-phone.jpg" width="240" alt=""> | <img src="docs/gallery/tracker-control-phone.jpg" width="240" alt=""> |
+
+</details>
+
 ## Install
 
 ```bash
@@ -166,4 +195,4 @@ Every principle is written in our own words, with citations. Informed by these w
 
 ## Status
 
-v0.2 plus the library integrations: 101 canon cards (including `craft` and `i18n`), 22 interview questions, 29 motion and pattern recipes, 39 static-check rules, a delivery gate, and the `slop-check` and `polish` skills. Tokens are standard DTCG 2025.10 files that import from Figma, Tokens Studio and Terrazzo/Style Dictionary sources and emit to 30 targets: CSS and Tailwind, the major web kits (shadcn, daisyUI, Chakra, Panda, Mantine, Ant Design, PrimeVue/NG/React, Angular Material, MUI), library adapters (Sonner, cmdk, AG Grid, chart themes, font loaders), React Native (Uniwind, NativeWind, Tamagui, Unistyles, Reanimated), Flutter, SwiftUI, Jetpack Compose, and Terrazzo or Style Dictionary pipelines. All scripts have tests. Planned next: the full ~180-card canon and an evaluation set with a before/after gallery.
+v0.2 plus the library integrations: 101 canon cards (including `craft` and `i18n`), 22 interview questions, 29 motion and pattern recipes, 39 static-check rules, a delivery gate, and the `slop-check` and `polish` skills. Tokens are standard DTCG 2025.10 files that import from Figma, Tokens Studio and Terrazzo/Style Dictionary sources and emit to 30 targets: CSS and Tailwind, the major web kits (shadcn, daisyUI, Chakra, Panda, Mantine, Ant Design, PrimeVue/NG/React, Angular Material, MUI), library adapters (Sonner, cmdk, AG Grid, chart themes, font loaders), React Native (Uniwind, NativeWind, Tamagui, Unistyles, Reanimated), Flutter, SwiftUI, Jetpack Compose, and Terrazzo or Style Dictionary pipelines. All scripts have tests. Planned next: the full ~180-card canon and a larger blind evaluation set (the first four pairs are above).
