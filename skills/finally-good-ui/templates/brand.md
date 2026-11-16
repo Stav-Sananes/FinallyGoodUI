@@ -31,7 +31,7 @@ Spacing scale: <!-- e.g. 4 8 12 16 24 32 48 64 -->  ·  Radius: <!-- sm/md/lg va
 
 ## Motion
 - Axis position: <productive | balanced | expressive>, because <brief fact>
-- Durations: instant 50 · micro 100 · short 150 · standard 250 · medium 300 · long 400 · hero 500 (adjusted: …)
+- Durations: instant 50 · micro 100 · short 150 · standard 250 · medium 300 · long 400 · hero 600 (adjusted: …)
 - Easing roles: enter · enter-emphasized · exit · move · snappy · linear
 - Spatial map: <!-- drill-in → forward; back → reverse; peer tabs → crossfade -->
 - Budget per screen type: <!-- screen type → allowed motion -->
