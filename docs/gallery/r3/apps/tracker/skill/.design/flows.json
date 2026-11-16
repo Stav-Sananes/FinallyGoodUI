@@ -1,0 +1,47 @@
+{"flows":[
+ {"name":"issues","steps":[
+   {"goto":"/index.html?view=triage"},{"waitFor":".row"},{"screenshot":"issues"}],
+  "states":[
+   {"name":"loading","goto":"/index.html?view=triage&state=loading","waitFor":".skeleton","screenshot":"issues-loading"},
+   {"name":"error","goto":"/index.html?view=triage&state=error","waitFor":"text=Couldn't load issues","screenshot":"issues-error"},
+   {"name":"issue-error","goto":"/index.html?view=mine&issue=ING-219&state=issue-error","waitFor":"text=Couldn't load ING-219","screenshot":"panel-error"},
+   {"name":"offline","goto":"/index.html?view=all&state=offline","waitFor":"text=Offline.","screenshot":"issues-offline"},
+   {"name":"guest","goto":"/index.html?view=all&issue=ING-214&state=guest","waitFor":"text=Read-only.","screenshot":"issues-guest"},
+   {"name":"empty","goto":"/index.html?view=triage&state=empty","waitFor":"text=No issues yet","screenshot":"issues-empty"},
+   {"name":"no-results","goto":"/index.html?view=all&q=kubernetes","waitFor":"text=No issues match these filters","screenshot":"issues-no-results"}
+  ]},
+ {"name":"morning-triage","steps":[
+   {"goto":"/index.html?view=triage"},{"waitFor":".row"},{"click":".row"},
+   {"press":"1"},{"press":"i"},{"press":"s"},{"fill":["#menu-input","Todo"]},{"press":"Enter"},
+   {"waitFor":"text=moved to Todo"},{"screenshot":"triage-one-done"},
+   {"press":"2"},{"press":"s"},{"fill":["#menu-input","Todo"]},{"press":"Enter"},
+   {"press":"0"},{"press":"s"},{"fill":["#menu-input","progress"]},{"press":"Enter"},
+   {"press":"3"},{"press":"s"},{"fill":["#menu-input","Todo"]},{"press":"Enter"},
+   {"press":"2"},{"press":"s"},{"fill":["#menu-input","Todo"]},{"press":"Enter"},
+   {"press":"1"},{"press":"s"},{"fill":["#menu-input","Todo"]},{"press":"Enter"},
+   {"waitFor":"text=Triage is clear"},{"waitFor":900},{"screenshot":"triage-cleared"}
+ ]},
+ {"name":"work-list","steps":[
+   {"goto":"/index.html?view=mine"},{"waitFor":".row"},{"screenshot":"issues-mine"},
+   {"click":"role=button[name=\"Priority\"]"},{"waitFor":"#menu:not([hidden])"},{"screenshot":"filter-menu"},{"press":"Escape"},
+   {"click":".row"},{"press":"j"},{"press":"a"},{"waitFor":"#menu:not([hidden])"},{"screenshot":"assign-menu"},{"press":"Escape"},
+   {"press":"x"},{"waitFor":"text=moved to Done"},{"screenshot":"closed-undo-toast"},
+   {"press":"z"},{"waitFor":"text=Undone."},{"screenshot":"after-undo"}
+ ]},
+ {"name":"command-palette","steps":[
+   {"goto":"/index.html?view=all&issue=ING-214"},{"waitFor":".row"},{"press":"Escape"},
+   {"click":"#open-palette:visible, #m-palette:visible"},{"waitFor":"#palette[open]"},{"screenshot":"palette-empty"},
+   {"fill":["#palette-input","assign"]},{"screenshot":"palette-assign"},
+   {"fill":["#palette-input","ING-22"]},{"press":"Enter"},{"waitFor":{"selector":"#palette","state":"hidden"}},{"screenshot":"palette-jumped"}
+ ]},
+ {"name":"new-issue","steps":[
+   {"goto":"/index.html?view=triage"},{"waitFor":".row"},
+   {"click":"#new-issue:visible, #m-new:visible"},{"waitFor":"#new-dialog[open]"},
+   {"click":"#new-submit"},{"waitFor":"text=Give the issue a title"},{"screenshot":"new-issue-error"},
+   {"fill":["#new-title","Partition dashboard shows lag in the wrong time zone"]},
+   {"click":"#new-submit"},{"waitFor":"text=filed in Triage"},{"screenshot":"new-issue-created"}
+ ]},
+ {"name":"shortcuts","steps":[
+   {"goto":"/index.html?view=triage"},{"waitFor":".row"},{"press":"?"},{"waitFor":"#keys-dialog[open]"},{"screenshot":"shortcuts"}
+ ]}
+]}

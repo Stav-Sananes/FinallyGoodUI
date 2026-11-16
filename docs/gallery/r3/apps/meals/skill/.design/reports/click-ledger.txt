@@ -1,0 +1,40 @@
+Next week (segment) -> region loading then ready; title=Next week; stage=Plan next week’s dinners
+This week (segment) -> title=This week
+plate 0 -> recipe: Lemon-garlic chicken traybake
+plate 1 -> recipe: Black bean tacos with pickled red onion
+plate 2 -> picker: Dinner for Wednesday 18
+plate 3 -> recipe: Beef ragù with pappardelle
+plate 4 -> recipe: Homemade pizza night
+plate 5 -> picker: Dinner for Saturday 21
+plate 6 -> picker: Dinner for Sunday 22
+Shopping list chip -> hash=#list title=Shopping list · Sunday Table
+Start cooking -> panel=true hash=#recipe/lemon-chicken/0 focus=recipe-title
+Cook for more -> servings=4 first ing=1,200 g
+Cook for fewer -> servings=3
+Keep screen on switch -> disabled=false
+  switch click -> aria-checked=false (headless may refuse wake lock)
+Escape on recipe -> panel=false focus=Start cooking
+Swap dinner -> picker=Dinner for Monday 16
+picker search zzz -> No recipe called “zzz”Check the spelling
+Clear search -> 10 recipes
+pick Shakshuka for Mon (Noa) -> stage=Shakshuka with crusty bread; toast=Monday: Shakshuka with crusty bread (swapped). 2 things added to the list.
+Undo -> stage=Lemon-garlic chicken traybake
+Tuesday eating out -> Eating out
+Plan Wednesday dal (count roll) -> 17 -> mid 21 changed=true -> 24
+7th dinner (signature) -> {"cls":"plates plates-signature ","anims":["plate-fill-signature:300+0","plate-fill-signature:300+40","plate-fill-signature:300+80","plate-fill-signature:300+120","plate-fill-signature:300+160","plate-fill-signature:300+200","plate-fill-signature:300+240","status-rise-signature:300+300"]}
+Recipes tab -> Recipes · Sunday Table
+filter 30 min -> 4 cards
+recipe card -> Mushroom and leek risotto | planFor=Plan it for this weekEvery night this week is planned. Swap one from This week t
+List tab -> Shopping list · Sunday Table
+Add empty -> Type what you need, for example “Washing-up liquid”.
+typing clears error -> ""
+Add washing-up liquid -> 1 row
+tick item -> 30 to buy5 in the basket
+Clear ticked -> 5 bought items cleared Put back Clear ticked items Nothing is ticked yet
+Undo clear -> 30 to buy5 in the basket
+375 horizontal overflow -> false
+1440 row Thursday -> recipe (VT) -> supported=true pseudo=["::view-transition-group(root)","::view-transition-group(recipe-title)","::view-transition-new(root)","::view-transition-old(root)","::view-transition-new(recipe-title)","::view-transition-old(recipe-title)","::view-transition-new(recipe-panel)"] title=Beef ragù with pappardelle
+scrim click -> panel=false focus=night-main 
+1440 overflow -> false
+reduced motion: animations while opening recipe -> ["opacity:opacity,opacity","fade-only:opacity,opacity","fade-only:opacity,opacity","fade-only:opacity,opacity","fade-only:opacity,opacity","fade-only:opacity,opacity","fade-only:opacity,opacity","fade-only:opacity,opacity","vt-fade-in:opacity,opacity","vt-fade-out:opacity,opacity","-ua-view-transition-fade-in:opacity,opacity","-ua-mix-blend-mode-plus-lighter:mixBlendMode,mixBlendMode","-ua-view-transition-fade-out:opacity,opacity","-ua-mix-blend-mode-plus-lighter:mixBlendMode,mixBlendMode","vt-fade-in:opacity,opacity"]
+ERRORS []

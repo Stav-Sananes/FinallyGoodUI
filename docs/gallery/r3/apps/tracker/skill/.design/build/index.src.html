@@ -1,0 +1,1564 @@
+<!doctype html>
+<!-- finally-good-ui build: Docket, issue list + side panel (key screen)
+     Direction: C "Triage Tag" (.design/directions/c.spec.md)
+     Tokens: .design/tokens.json, emitted with emit-tokens --format css and inlined below.
+     Motif: triage tag strip (rows, rail Triage badge, panel header, priority field + menu, empty states).
+     Expressive moment: Triage cleared (count rolls to 0, CLEARED stamp lands), once per clearing.
+     Preview states: rail footer "Preview state" menu, palette, or ?state=loading|error|issue-error|offline|guest|empty|fail -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docket · Ingest team issues</title>
+<meta name="color-scheme" content="light dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=JetBrains+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+/*TOKENS*/
+:root {
+  --font-condensed-stretch: 70%;
+  --text-xs: 12px;
+  --text-sm: 12px; /* same step as xs: one size for meta and micro text */
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 24px; /* merged with 2xl: section and dialog titles share the title step */
+  --text-2xl: 24px;
+  --text-figure: 40px;
+  --row-h: 32px;
+  --rail-w: 216px;
+  --panel-w: clamp(360px, 34vw, 480px);
+  --icon-sm: 14px;
+  --icon-md: 16px;
+  --tag-w: 34px;
+  --tag-h: 16px;
+  --color-shimmer: oklch(1 0 0 / 0.4);
+  --color-hole: var(--color-surface);
+  --stagger: 0ms;
+}
+[data-theme="dark"] { --color-shimmer: oklch(1 0 0 / 0.05); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-shimmer: oklch(1 0 0 / 0.05); } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; block-size: 100%; }
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.45;
+  color: var(--color-foreground);
+  background: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+.visually-hidden { position: absolute !important; margin: 0; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+kbd {
+  font-family: var(--font-mono); font-size: var(--text-xs); line-height: 1;
+  display: inline-grid; place-items: center; min-inline-size: 18px; block-size: 18px; padding-inline: var(--space-1);
+  border: 1px solid var(--color-border); border-block-end-width: 2px; border-radius: var(--radius-sm);
+  background: var(--color-card); color: var(--color-muted-foreground);
+}
+.ph { font-size: var(--icon-md); inline-size: var(--icon-md); block-size: var(--icon-md); display: inline-block; line-height: 1; flex: none; }
+.skip { position: absolute; inset-inline-start: var(--space-2); inset-block-start: var(--space-2); z-index: 100; padding: var(--space-2) var(--space-3); background: var(--color-primary); color: var(--color-primary-foreground); border-radius: var(--radius-md); transform: translateY(-200%); }
+.skip:focus { transform: none; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  min-block-size: var(--space-6); padding-inline: var(--space-3);
+  border: 1px solid var(--color-input); border-radius: var(--radius-md);
+  background: var(--color-card); font-size: var(--text-base); font-weight: 400; white-space: nowrap;
+  transition: transform var(--duration-instant) var(--ease-snappy), background-color var(--duration-micro) var(--ease-move);
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--color-primary); color: var(--color-primary-foreground); border-color: var(--color-primary); font-weight: 600; }
+.btn-primary kbd { background: transparent; color: var(--color-primary-foreground); border-color: var(--color-primary-foreground); opacity: 0.8; }
+.btn-ghost { border-color: transparent; background: transparent; }
+.icon-btn { display: inline-grid; place-items: center; padding: 0; inline-size: var(--space-6); block-size: var(--space-6); border: 0; background: transparent; border-radius: var(--radius-md); color: var(--color-muted-foreground); transition: transform var(--duration-instant) var(--ease-snappy); }
+.icon-btn:active { transform: scale(0.94); }
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { background: var(--color-muted); }
+  .btn-primary:hover { background: var(--color-primary); filter: contrast(1.1); }
+  .icon-btn:hover { background: var(--color-muted); color: var(--color-foreground); }
+}
+.btn[aria-disabled="true"] { opacity: 0.6; cursor: not-allowed; }
+
+/* ---------- the motif: triage tag strip ---------- */
+.tag {
+  --tag-bg: transparent; --tag-fg: var(--color-muted-foreground);
+  position: relative; display: inline-grid; place-items: center; flex: none;
+  inline-size: var(--tag-w); block-size: var(--tag-h);
+  padding-inline-start: var(--space-2);
+  font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 400; letter-spacing: 0.02em; line-height: 1;
+  color: var(--tag-fg); background: var(--tag-bg);
+  clip-path: polygon(5px 0, 100% 0, 100% 100%, 5px 100%, 0 50%);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.tag::before { /* the punched hole the string goes through */
+  content: ""; position: absolute; inset-inline-start: 4px; inset-block-start: calc(50% - 1.5px);
+  inline-size: 3px; block-size: 3px; border-radius: 50%; background: var(--color-hole);
+}
+.tag[data-p="0"] { --tag-bg: var(--color-mark); --tag-fg: var(--color-mark-foreground); }
+.tag[data-p="1"] { --tag-bg: var(--color-warning); --tag-fg: var(--color-warning-foreground); }
+.tag[data-p="2"] { --tag-bg: var(--color-info); --tag-fg: var(--color-info-foreground); }
+.tag[data-p="3"] { --tag-bg: var(--color-routine); --tag-fg: var(--color-routine-foreground); }
+.tag[data-p="none"] { --tag-bg: var(--color-muted); --tag-fg: var(--color-muted-foreground); }
+.tag-lg { --tag-w: 44px; --tag-h: 22px; font-size: var(--text-sm); }
+
+/* ---------- shell ---------- */
+.app { display: grid; grid-template-columns: var(--rail-w) minmax(0, 1fr) auto; block-size: 100dvh; overflow-x: clip; }
+.rail {
+  background: var(--color-rail); border-inline-end: 1px solid var(--color-border);
+  display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-3); min-block-size: 0; overflow: auto;
+}
+.brand { display: flex; align-items: baseline; gap: var(--space-2); padding: var(--space-1) var(--space-2); }
+.wordmark { font-stretch: var(--font-condensed-stretch); font-weight: 800; font-size: var(--text-xl); letter-spacing: -0.01em; line-height: 1; }
+.team { color: var(--color-muted-foreground); font-size: var(--text-sm); }
+.palette-trigger { justify-content: space-between; inline-size: 100%; color: var(--color-muted-foreground); background: var(--color-surface); }
+.palette-trigger span { display: inline-flex; align-items: center; gap: var(--space-2); }
+.nav-group { display: grid; gap: 1px; }
+.nav-heading { font-size: var(--text-sm); color: var(--color-muted-foreground); padding: var(--space-2) var(--space-2) var(--space-1); margin: 0; font-weight: 400; }
+.nav-item {
+  position: relative; display: flex; align-items: center; gap: var(--space-2);
+  min-block-size: var(--space-6); padding-inline: var(--space-2); border-radius: var(--radius-md);
+  color: inherit; text-decoration: none; border: 0; background: transparent; inline-size: 100%; text-align: start;
+}
+.nav-item .count { margin-inline-start: auto; font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-muted-foreground); font-variant-numeric: tabular-nums; }
+.nav-item[aria-current="page"] { background: var(--color-card); font-weight: 600; box-shadow: var(--shadow-sm); }
+.nav-item[aria-current="page"]::before { content: ""; position: absolute; inset-inline-start: calc(-1 * var(--space-3)); inset-block: var(--space-1); inline-size: 3px; background: var(--color-mark); }
+@media (hover: hover) and (pointer: fine) { .nav-item:hover { background: var(--color-card); } }
+.nav-item .tag { margin-inline-start: auto; --tag-w: 28px; }
+.rail-foot { margin-block-start: auto; display: grid; gap: 1px; border-block-start: 1px solid var(--color-border); padding-block-start: var(--space-3); }
+.me { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2); color: var(--color-muted-foreground); font-size: var(--text-sm); }
+.avatar {
+  display: inline-grid; place-items: center; flex: none; inline-size: 24px; block-size: 24px; border-radius: 50%;
+  font-size: var(--text-xs); font-weight: 400; font-stretch: var(--font-condensed-stretch); letter-spacing: 0.02em; color: var(--color-muted-foreground);
+  background: var(--color-card); box-shadow: inset 0 0 0 1px var(--color-input);
+}
+.avatar[data-none] { background: transparent; box-shadow: inset 0 0 0 1px var(--color-input); color: var(--color-muted-foreground); }
+
+/* ---------- main list ---------- */
+.main { display: grid; grid-template-rows: auto auto minmax(0, 1fr); min-inline-size: 0; background: var(--color-surface); }
+.mobile-bar { display: none; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-3) var(--space-4); padding: var(--space-4) var(--space-5) var(--space-3); border-block-end: 1px solid var(--color-border); }
+.view-title { display: flex; align-items: baseline; gap: var(--space-3); margin: 0; min-inline-size: 0; }
+.view-title h1 { margin: 0; font-stretch: var(--font-condensed-stretch); font-size: var(--text-2xl); font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; }
+.figure { font-stretch: var(--font-condensed-stretch); font-size: var(--text-figure); font-weight: 800; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.figure-unit { color: var(--color-muted-foreground); font-size: var(--text-md); }
+.view-hint { flex-basis: 100%; margin: 0; color: var(--color-muted-foreground); font-size: var(--text-sm); text-wrap: pretty; max-inline-size: 72ch; }
+.view-hint kbd { margin-inline: 1px; }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-inline-start: auto; }
+.search { position: relative; display: flex; align-items: center; }
+.search .ph { position: absolute; inset-inline-start: var(--space-2); color: var(--color-muted-foreground); pointer-events: none; }
+.search input {
+  inline-size: 200px; min-block-size: var(--space-6); padding-inline: var(--space-6) var(--space-6);
+  border: 1px solid var(--color-input); border-radius: var(--radius-md); background: var(--color-card); font-size: var(--text-base);
+}
+.search kbd { position: absolute; inset-inline-end: var(--space-2); }
+.chip[aria-pressed="true"], .chip[data-active] { background: var(--color-accent); border-color: var(--color-ring); }
+.chip .val { color: var(--color-muted-foreground); font-weight: 400; }
+
+.banner { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-5); font-size: var(--text-sm); border-block-end: 1px solid var(--color-border); background: var(--color-muted); }
+.banner[hidden] { display: none; }
+.banner .btn { margin-inline-start: auto; min-block-size: 24px; }
+
+.list-wrap { position: relative; overflow: auto; overscroll-behavior: contain; min-block-size: 0; }
+.list { list-style: none; margin: 0; padding: 0 0 var(--space-8); }
+.group-head {
+  position: sticky; inset-block-start: 0; z-index: 2;
+  display: flex; align-items: center; gap: var(--space-2);
+  min-block-size: var(--row-h); padding-inline: var(--space-5);
+  background: var(--color-background); border-block-end: 1px solid var(--color-border);
+  font-weight: 600; font-size: var(--text-sm);
+}
+.group-head .n { font-family: var(--font-mono); font-weight: 400; color: var(--color-muted-foreground); }
+.group-head button { display: inline-flex; align-items: center; gap: var(--space-2); border: 0; background: none; padding: 0; font-weight: 600; min-block-size: 24px; }
+.st-icon { color: var(--color-muted-foreground); }
+.st-icon[data-s="progress"] { color: var(--color-foreground); }
+.st-icon[data-s="review"] { color: var(--color-ring); }
+.st-icon[data-s="done"] { color: var(--color-success); }
+.row {
+  position: relative; display: grid; align-items: center;
+  grid-template-columns: var(--tag-w) 64px minmax(0, 1fr) auto 24px 48px;
+  gap: var(--space-3); inline-size: 100%;
+  min-block-size: var(--row-h); padding-inline: var(--space-5) var(--space-5);
+  border: 0; border-block-end: 1px solid var(--color-border); background: transparent; text-align: start;
+}
+.row .key { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-muted-foreground); }
+.row .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .labels { display: flex; gap: var(--space-1); color: var(--color-muted-foreground); font-size: var(--text-sm); white-space: nowrap; }
+.row .labels span + span::before { content: "· "; }
+.row .when { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted-foreground); text-align: end; }
+.row[aria-current="true"] { background: var(--color-accent); }
+.row[aria-current="true"]::before { content: ""; position: absolute; inset-inline-start: 0; inset-block: 0; inline-size: 3px; background: var(--color-ring); }
+.row[data-closed] .title { color: var(--color-muted-foreground); text-decoration: line-through; text-decoration-color: var(--color-input); }
+.row[data-queued] .when::after { content: " ·"; color: var(--color-ring); }
+@media (hover: hover) and (pointer: fine) { .row:not([aria-current="true"]):hover { background: var(--color-card); } }
+.panel-closed .row { grid-template-columns: var(--tag-w) 64px minmax(0, 1fr) auto 24px 56px; }
+
+/* skeleton (delayed so fast loads never flash it) */
+.skeleton { list-style: none; margin: 0; padding: 0; animation: sk-appear var(--duration-short) var(--ease-enter) var(--duration-medium) both; }
+.skeleton li { display: grid; grid-template-columns: var(--tag-w) 64px minmax(0, 1fr) 24px; gap: var(--space-3); align-items: center; min-block-size: var(--row-h); padding-inline: var(--space-5); border-block-end: 1px solid var(--color-border); }
+.sk { position: relative; overflow: hidden; display: block; block-size: 10px; border-radius: var(--radius-sm); background: var(--color-muted); }
+.sk::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, var(--color-shimmer), transparent); transform: translateX(-100%); animation: sk-shimmer calc(var(--duration-long) * 3.5) var(--ease-linear) infinite; }
+@keyframes sk-shimmer { to { transform: translateX(100%); } }
+@keyframes sk-appear { from { opacity: 0; } }
+
+/* empty / error states in the list region */
+.state { display: grid; justify-items: start; gap: var(--space-3); padding: var(--space-7) var(--space-5); max-inline-size: 60ch; }
+.state h2 { margin: 0; font-stretch: var(--font-condensed-stretch); font-size: var(--text-2xl); font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; text-wrap: balance; }
+.state p { margin: 0; color: var(--color-muted-foreground); text-wrap: pretty; }
+.state .filters-used { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.state .filters-used span { font-size: var(--text-sm); padding: 0 var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-card); }
+.state-art { display: flex; align-items: center; gap: var(--space-2); }
+.state-art .string { inline-size: var(--space-6); block-size: 1px; background: var(--color-input); }
+.state .err-icon { color: var(--color-mark); font-size: var(--text-2xl); inline-size: var(--text-2xl); block-size: var(--text-2xl); }
+
+/* the expressive moment: triage cleared */
+.cleared-signature { position: relative; }
+.cleared-signature-stamp {
+  display: inline-block; padding: var(--space-1) var(--space-3);
+  font-stretch: var(--font-condensed-stretch); font-weight: 800; font-size: var(--text-2xl); letter-spacing: 0.06em; line-height: 1.1;
+  color: var(--color-mark); border: 3px solid var(--color-mark); border-radius: var(--radius-lg);
+  transform: rotate(-4deg); mix-blend-mode: multiply;
+}
+[data-theme="dark"] .cleared-signature-stamp { mix-blend-mode: normal; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cleared-signature-stamp { mix-blend-mode: normal; } }
+.cleared-signature[data-play] .cleared-signature-stamp { animation: signature-stamp var(--duration-long) var(--ease-snappy) var(--duration-short) both; }
+.cleared-signature[data-play] .cleared-signature-text { animation: signature-rise var(--duration-standard) var(--ease-enter) var(--duration-medium) both; }
+@keyframes signature-stamp {
+  0% { opacity: 0; transform: rotate(-8deg) scale(1.25); }
+  60% { opacity: 1; transform: rotate(-4deg) scale(0.97); }
+  100% { opacity: 1; transform: rotate(-4deg) scale(1); }
+}
+@keyframes signature-rise { from { opacity: 0; transform: translateY(8px); } }
+
+/* FLIP-moved rows and inserted rows are animated from JS with token durations */
+
+/* ---------- side panel ---------- */
+.panel {
+  inline-size: var(--panel-w); min-inline-size: 0; display: grid; grid-template-rows: auto minmax(0, 1fr);
+  background: var(--color-card); border-inline-start: 1px solid var(--color-border); box-shadow: var(--shadow-md);
+  position: relative; z-index: 3;
+}
+.panel[hidden] { display: none; }
+.panel[data-entering] { animation: panel-in var(--duration-short) var(--ease-enter) both; }
+@keyframes panel-in { from { opacity: 0; transform: translateX(8px); } }
+.panel-head { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-block-end: 1px solid var(--color-border); --color-hole: var(--color-card); }
+.panel-head .key { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--color-muted-foreground); }
+.panel-head .spacer { flex: 1; }
+.panel-back { display: none; }
+.panel-body { overflow: auto; overscroll-behavior: contain; padding: var(--space-4) var(--space-4) var(--space-7); --color-hole: var(--color-card); }
+.panel-title { margin: 0 0 var(--space-4); font-stretch: 72%; font-size: var(--text-2xl); font-weight: 800; letter-spacing: -0.01em; line-height: 1.15; text-wrap: balance; }
+.disposition { margin-block-end: var(--space-3); }
+.disposition .cleared-signature-stamp { font-size: var(--text-lg); border-width: 2px; padding: 0 var(--space-2); }
+.disposition[data-play] .cleared-signature-stamp { animation: stamp-settle var(--duration-short) var(--ease-snappy) both; }
+@keyframes stamp-settle { from { opacity: 0; transform: rotate(-4deg) scale(1.06); } }
+.fields { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 1px var(--space-3); margin: 0 0 var(--space-5); padding: 0; }
+.fields dt { color: var(--color-muted-foreground); font-size: var(--text-sm); align-self: center; }
+.fields dd { margin: 0; min-inline-size: 0; }
+.field-btn {
+  display: flex; align-items: center; gap: var(--space-2); inline-size: 100%; min-block-size: var(--space-6);
+  padding-inline: var(--space-2); margin-inline-start: calc(-1 * var(--space-2));
+  border: 0; border-radius: var(--radius-md); background: transparent; text-align: start;
+}
+.field-btn kbd { margin-inline-start: auto; opacity: 0; }
+.field-btn:focus-visible kbd { opacity: 1; }
+@media (hover: hover) and (pointer: fine) { .field-btn:hover { background: var(--color-muted); } .field-btn:hover kbd { opacity: 1; } }
+.field-btn[aria-disabled="true"] { cursor: not-allowed; }
+.field-static { display: flex; align-items: center; gap: var(--space-2); min-block-size: var(--space-6); }
+.label-pill { font-size: var(--text-sm); padding: 0 var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface); }
+.muted { color: var(--color-muted-foreground); }
+.section-h { margin: 0 0 var(--space-2); font-size: var(--text-sm); font-weight: 600; color: var(--color-muted-foreground); }
+.prose { font-size: var(--text-md); line-height: 1.6; max-inline-size: 68ch; margin-block-end: var(--space-5); }
+.prose p { margin: 0 0 var(--space-3); text-wrap: pretty; }
+.prose code { font-family: var(--font-mono); font-size: var(--text-sm); padding: 0 var(--space-1); background: var(--color-muted); border-radius: var(--radius-sm); }
+.activity { list-style: none; margin: 0 0 var(--space-4); padding: 0; display: grid; gap: var(--space-3); border-block-start: 1px solid var(--color-border); padding-block-start: var(--space-4); }
+.activity .ev { display: flex; gap: var(--space-2); align-items: baseline; font-size: var(--text-sm); color: var(--color-muted-foreground); }
+.activity .ev time, .activity .cm time { font-family: var(--font-mono); font-size: var(--text-xs); color: var(--color-muted-foreground); margin-inline-start: auto; white-space: nowrap; }
+.activity .cm { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: var(--space-1) var(--space-2); }
+.activity .cm .who { display: flex; gap: var(--space-2); font-weight: 600; font-size: var(--text-sm); }
+.activity .cm p { grid-column: 2; margin: 0; font-size: var(--text-md); line-height: 1.55; text-wrap: pretty; }
+.activity .cm[data-pending] p { color: var(--color-muted-foreground); }
+.comment-form { display: grid; gap: var(--space-2); }
+.comment-form textarea, .dialog-form textarea, .dialog-form input, .dialog-form select {
+  inline-size: 100%; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-input); border-radius: var(--radius-sm);
+  background: var(--color-surface); font-size: var(--text-lg); line-height: 1.45; resize: vertical;
+}
+.comment-form .row-actions { display: flex; align-items: center; gap: var(--space-2); justify-content: flex-end; color: var(--color-muted-foreground); font-size: var(--text-sm); }
+.locked-note { display: flex; gap: var(--space-2); align-items: center; padding: var(--space-2) var(--space-3); margin-block-end: var(--space-4); background: var(--color-muted); border-radius: var(--radius-sm); font-size: var(--text-sm); }
+.primer { display: grid; align-content: start; gap: var(--space-4); padding: var(--space-5) var(--space-4); }
+.primer h2 { margin: 0; font-stretch: var(--font-condensed-stretch); font-size: var(--text-xl); font-weight: 800; line-height: 1.2; }
+.primer p { margin: 0; color: var(--color-muted-foreground); }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2) var(--space-3); margin: 0; align-items: center; font-size: var(--text-sm); }
+.keys dt { display: flex; gap: var(--space-1); }
+.keys dd { margin: 0; }
+.panel-skel { display: grid; align-content: start; gap: var(--space-3); padding: var(--space-4); }
+
+/* ---------- popover menu ---------- */
+.menu {
+  position: fixed; z-index: 40; inline-size: 248px; max-block-size: 340px; display: grid; grid-template-rows: auto minmax(0, 1fr);
+  background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  transform-origin: top left; animation: menu-in var(--duration-short) var(--ease-snappy);
+  --color-hole: var(--color-card);
+}
+.menu[hidden] { display: none; }
+@keyframes menu-in { from { opacity: 0; transform: scale(0.97); } }
+.menu input { border: 0; border-block-end: 1px solid var(--color-border); padding: var(--space-2) var(--space-3); background: transparent; font-size: var(--text-lg); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.menu input:focus-visible { outline-offset: -2px; }
+.menu ul { list-style: none; margin: 0; padding: var(--space-1); overflow: auto; }
+.opt { display: flex; align-items: center; gap: var(--space-2); min-block-size: var(--space-6); padding-inline: var(--space-2); border-radius: var(--radius-md); cursor: pointer; }
+.opt[aria-selected="true"] { background: var(--color-accent); }
+.opt .check { margin-inline-start: auto; color: var(--color-ring); }
+.opt kbd { margin-inline-start: auto; }
+.opt .check + kbd { margin-inline-start: var(--space-2); }
+.menu .empty-opt { padding: var(--space-2); color: var(--color-muted-foreground); font-size: var(--text-sm); }
+
+/* ---------- dialogs: palette, new issue, shortcuts ---------- */
+dialog { border: 0; padding: 0; color: inherit; background: var(--color-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); --color-hole: var(--color-card); }
+dialog::backdrop { background: var(--color-overlay); }
+dialog[open] { animation: dialog-in var(--duration-micro) var(--ease-move); }
+@keyframes dialog-in { from { opacity: 0; } }
+.palette { inline-size: min(600px, calc(100vw - 2 * var(--space-4))); margin-block-start: 14vh; }
+.palette input { inline-size: 100%; border: 0; border-block-end: 1px solid var(--color-border); padding: var(--space-4); background: transparent; font-size: var(--text-lg); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.palette input:focus-visible { outline-offset: -2px; }
+.palette-list { list-style: none; margin: 0; padding: var(--space-2); max-block-size: min(420px, 56vh); overflow: auto; }
+.palette-list .grp { padding: var(--space-2) var(--space-2) var(--space-1); font-size: var(--text-sm); color: var(--color-muted-foreground); font-weight: 600; }
+.palette-list .opt .ctx { color: var(--color-muted-foreground); font-size: var(--text-sm); }
+.palette-list mark { background: none; color: inherit; font-weight: 800; text-decoration: underline; text-decoration-color: var(--color-ring); text-underline-offset: 2px; }
+.palette-foot { display: flex; gap: var(--space-4); padding: var(--space-2) var(--space-4); border-block-start: 1px solid var(--color-border); color: var(--color-muted-foreground); font-size: var(--text-sm); }
+.palette-foot span { display: inline-flex; gap: var(--space-1); align-items: center; }
+.dialog-form { inline-size: min(560px, calc(100vw - 2 * var(--space-4))); }
+.dialog-form form { display: grid; gap: var(--space-4); padding: var(--space-5); }
+.dialog-form h2 { margin: 0; font-stretch: var(--font-condensed-stretch); font-size: var(--text-xl); font-weight: 800; line-height: 1.2; }
+.dialog-form label { display: grid; gap: var(--space-1); font-weight: 600; font-size: var(--text-sm); }
+.dialog-form .hint { font-weight: 400; color: var(--color-muted-foreground); }
+.dialog-form .err { color: var(--color-destructive); font-weight: 400; display: flex; gap: var(--space-1); align-items: center; }
+.dialog-form .err[hidden] { display: none; }
+.dialog-form [aria-invalid="true"] { border-color: var(--color-destructive); }
+.dialog-form .two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.dialog-form .actions { display: flex; justify-content: flex-end; gap: var(--space-2); align-items: center; }
+.dialog-form .draft-note { margin-inline-end: auto; color: var(--color-muted-foreground); font-size: var(--text-sm); }
+.shortcuts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--space-5); }
+.switch-row { display: flex; align-items: center; gap: var(--space-3); padding-block-start: var(--space-3); border-block-start: 1px solid var(--color-border); font-size: var(--text-sm); }
+.switch-row input { inline-size: 24px; block-size: 24px; margin: 0; flex: none; accent-color: var(--color-ring); }
+
+/* ---------- toasts ---------- */
+.toasts { position: fixed; inset-inline-start: calc(var(--rail-w) + var(--space-4)); inset-block-end: var(--space-4); z-index: 60; display: grid; gap: var(--space-2); }
+.toast {
+  display: flex; align-items: center; gap: var(--space-3); inline-size: min(420px, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  background: var(--color-primary); color: var(--color-primary-foreground); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+  font-size: var(--text-base);
+  transition: opacity var(--duration-micro) var(--ease-exit), transform var(--duration-short) var(--ease-enter);
+}
+@starting-style { .toast { opacity: 0; transform: translateY(8px); } }
+.toast.is-leaving { opacity: 0; }
+.toast p { margin: 0; flex: 1; }
+.toast .key { font-family: var(--font-mono); font-size: var(--text-sm); }
+.toast .btn { background: transparent; color: var(--color-primary-foreground); border-color: transparent; min-block-size: 24px; font-weight: 600; }
+.toast .btn kbd { background: transparent; color: var(--color-primary-foreground); border-color: var(--color-primary-foreground); }
+.toast[data-kind="error"] { background: var(--color-destructive); color: var(--color-destructive-foreground); }
+@media (hover: hover) and (pointer: fine) { .toast .btn:hover { background: transparent; text-decoration: underline; } }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1099px) {
+  .app { grid-template-columns: 184px minmax(0, 1fr); --rail-w: 184px; }
+  .panel { position: fixed; inset-block: 0; inset-inline-end: 0; inline-size: min(440px, 64vw); }
+  .row { grid-template-columns: var(--tag-w) 64px minmax(0, 1fr) 24px 48px; }
+  .row .labels { display: none; }
+}
+@media (max-width: 767px) {
+  body { overflow: auto; }
+  .app { grid-template-columns: minmax(0, 1fr); block-size: auto; min-block-size: 100dvh; }
+  .rail { display: none; }
+  .main { grid-template-rows: auto auto auto 1fr; }
+  .mobile-bar { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); background: var(--color-rail); border-block-end: 1px solid var(--color-border); position: sticky; inset-block-start: 0; z-index: 5; }
+  .mobile-bar .wordmark { font-size: var(--text-lg); }
+  .mobile-bar select { flex: 1; min-inline-size: 0; min-block-size: 44px; font-size: var(--text-lg); padding-inline: var(--space-2); border: 1px solid var(--color-input); border-radius: var(--radius-md); background: var(--color-card); }
+  .mobile-bar .icon-btn { inline-size: 44px; block-size: 44px; }
+  .toolbar { padding: var(--space-3) var(--space-4); }
+  .tools { margin-inline-start: 0; inline-size: 100%; }
+  .search { flex: 1 1 100%; }
+  .search input { inline-size: 100%; min-block-size: 44px; font-size: var(--text-lg); }
+  .search kbd, .btn kbd, .view-hint, .tools .new-btn { display: none; }
+  .tools .btn { min-block-size: 44px; }
+  .list-wrap { overflow: visible; }
+  .group-head { padding-inline: var(--space-4); inset-block-start: 61px; }
+  .app .row { grid-template-columns: var(--tag-w) minmax(0, 1fr) 24px; grid-template-areas: "tag title who" "tag key who"; row-gap: 0; min-block-size: 52px; padding-block: var(--space-2); padding-inline: var(--space-4); }
+  .row .tag { grid-area: tag; }
+  .row .key { grid-area: key; font-size: var(--text-xs); }
+  .row .title { grid-area: title; }
+  .row .avatar { grid-area: who; }
+  .row .when, .row .labels { display: none; }
+  .panel { inset: 0; inline-size: 100%; box-shadow: none; border: 0; z-index: 20; }
+  .panel[data-entering] { animation: sheet-in var(--duration-standard) var(--ease-enter) both; }
+  @keyframes sheet-in { from { transform: translateX(24px); opacity: 0; } }
+  .panel-back { display: inline-flex; }
+  .panel-close { display: none; }
+  .field-btn { min-block-size: 44px; }
+  .btn, .toast .btn, .banner .btn, .group-head button { min-block-size: 44px; }
+  .icon-btn { inline-size: 44px; block-size: 44px; }
+  .menu input { min-block-size: 44px; }
+  .skip { min-block-size: 44px; display: inline-flex; align-items: center; }
+  .dialog-form input, .dialog-form select { min-block-size: 44px; }
+  .switch-row input { inline-size: 44px; block-size: 44px; }
+  .toasts { inset-inline: var(--space-4); }
+  .dialog-form .two { grid-template-columns: 1fr; }
+  .palette-foot { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel[data-entering] { animation-name: dialog-in; }
+  .menu { animation-name: dialog-in; }
+  .cleared-signature[data-play] .cleared-signature-stamp { animation-name: dialog-in; }
+  .cleared-signature[data-play] .cleared-signature-text { animation-name: dialog-in; }
+  .disposition[data-play] .cleared-signature-stamp { animation-name: dialog-in; }
+  .sk::after { animation: none; }
+  @starting-style { .toast { transform: none; } }
+  .btn:active, .icon-btn:active { transform: none; }
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#list">Skip to issue list</a>
+<div class="app" id="app">
+  <aside class="rail" aria-label="Views">
+    <div class="brand"><span class="wordmark">Docket</span><span class="team">Ingest team</span></div>
+    <button class="btn palette-trigger" type="button" id="open-palette" aria-keyshortcuts="Meta+K Control+K">
+      <span><i class="ph ph-magnifying-glass" aria-hidden="true"></i>Search or run…</span><kbd class="mod-k">⌘K</kbd>
+    </button>
+    <nav class="nav-group" aria-label="Views" id="nav-views"></nav>
+    <div class="nav-group" id="nav-saved" role="group" aria-labelledby="saved-h">
+      <h2 class="nav-heading" id="saved-h">Saved views</h2>
+    </div>
+    <div class="rail-foot">
+      <button class="nav-item" type="button" id="open-shortcuts"><i class="ph ph-keyboard" aria-hidden="true"></i>Keyboard shortcuts<span class="count"><kbd>?</kbd></span></button>
+      <button class="nav-item" type="button" id="theme-btn"><i class="ph ph-circle-half" aria-hidden="true"></i><span id="theme-label">Theme: system</span></button>
+      <button class="nav-item" type="button" id="preview-btn" aria-haspopup="listbox" aria-expanded="false"><i class="ph ph-sliders-horizontal" aria-hidden="true"></i><span>Preview state</span><span class="count" id="preview-label">Live</span></button>
+      <div class="me"><span class="avatar">JO</span>Jun Okada</div>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="mobile-bar">
+      <span class="wordmark">Docket</span>
+      <label class="visually-hidden" for="view-select">View</label>
+      <select id="view-select"></select>
+      <button class="icon-btn" type="button" id="m-palette" aria-label="Search or run a command"><i class="ph ph-magnifying-glass" aria-hidden="true"></i></button>
+      <button class="icon-btn" type="button" id="m-new" aria-label="New issue"><i class="ph ph-plus" aria-hidden="true"></i></button>
+    </div>
+    <header class="toolbar">
+      <div class="view-title"><h1 id="view-name">Triage</h1><span class="figure" id="view-count" aria-hidden="true">6</span><span class="visually-hidden" id="view-count-sr"></span></div>
+      <div class="tools">
+        <div class="search">
+          <i class="ph ph-funnel-simple" aria-hidden="true"></i>
+          <label class="visually-hidden" for="filter-q">Filter issues by title or key</label>
+          <input id="filter-q" type="search" placeholder="Filter by title or key" autocomplete="off" spellcheck="false">
+          <kbd>/</kbd>
+        </div>
+        <button class="btn chip" type="button" data-filter="priority" aria-haspopup="listbox" aria-expanded="false">Priority<span class="val"></span></button>
+        <button class="btn chip" type="button" data-filter="assignee" aria-haspopup="listbox" aria-expanded="false">Assignee<span class="val"></span></button>
+        <button class="btn chip" type="button" data-filter="label" aria-haspopup="listbox" aria-expanded="false">Label<span class="val"></span></button>
+        <button class="btn btn-primary new-btn" type="button" id="new-issue" aria-keyshortcuts="C">New issue <kbd>C</kbd></button>
+      </div>
+      <p class="view-hint" id="view-hint"></p>
+    </header>
+    <div class="banner" id="banner" role="status" hidden></div>
+    <div class="list-wrap" id="list-wrap">
+      <div id="list" tabindex="-1" aria-label="Issues"></div>
+    </div>
+  </main>
+
+  <section class="panel" id="panel" aria-label="Issue details" hidden></section>
+</div>
+
+<div class="menu" id="menu" hidden>
+  <input id="menu-input" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="menu-list" autocomplete="off" spellcheck="false">
+  <ul id="menu-list" role="listbox"></ul>
+</div>
+
+<dialog class="palette" id="palette" aria-label="Command menu">
+  <label class="visually-hidden" for="palette-input">Search issues or commands</label>
+  <input id="palette-input" role="combobox" aria-autocomplete="list" aria-expanded="true" aria-controls="palette-list" placeholder="Type an issue key, a title or a command…" autocomplete="off" spellcheck="false">
+  <ul class="palette-list" id="palette-list" role="listbox" aria-label="Results"></ul>
+  <div class="palette-foot"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>↵</kbd> run</span><span><kbd>esc</kbd> close</span><span id="palette-count" aria-live="polite"></span></div>
+</dialog>
+
+<dialog class="dialog-form" id="new-dialog" aria-labelledby="new-h">
+  <form id="new-form" novalidate>
+    <h2 id="new-h">New issue</h2>
+    <label for="new-title">Title
+      <span class="hint">What's broken or needed, in one line</span>
+      <input id="new-title" name="title" autocomplete="off" aria-describedby="new-title-err">
+      <span class="err" id="new-title-err" hidden><i class="ph ph-warning" aria-hidden="true"></i>Give the issue a title so the team can find it.</span>
+    </label>
+    <label for="new-desc">Description <span class="hint">(optional) Steps, logs, what you expected</span>
+      <textarea id="new-desc" name="desc" rows="4"></textarea>
+    </label>
+    <div class="two">
+      <label for="new-pri">Priority
+        <select id="new-pri" name="priority">
+          <option value="">Leave for triage</option>
+          <option value="0">P0 · drop everything</option>
+          <option value="1">P1 · this week</option>
+          <option value="2">P2 · this cycle</option>
+          <option value="3">P3 · when there's time</option>
+        </select>
+      </label>
+      <label for="new-asg">Assignee
+        <select id="new-asg" name="assignee"></select>
+      </label>
+    </div>
+    <div class="actions">
+      <span class="draft-note" id="draft-note" aria-live="polite"></span>
+      <button class="btn" type="button" id="new-cancel">Cancel</button>
+      <button class="btn btn-primary" type="submit" id="new-submit">Create issue <kbd class="mod-enter">⌘↵</kbd></button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="dialog-form" id="keys-dialog" aria-labelledby="keys-h">
+  <form method="dialog">
+    <h2 id="keys-h">Keyboard shortcuts</h2>
+    <div class="shortcuts-grid">
+      <dl class="keys">
+        <dt><kbd>J</kbd><kbd>K</kbd></dt><dd>Next / previous issue</dd>
+        <dt><kbd>↵</kbd></dt><dd>Open the selected issue</dd>
+        <dt><kbd>esc</kbd></dt><dd>Close panel or menu</dd>
+        <dt><kbd>/</kbd></dt><dd>Filter the list</dd>
+        <dt><kbd class="mod-k">⌘K</kbd></dt><dd>Search or run a command</dd>
+        <dt><kbd>G</kbd><kbd>T</kbd></dt><dd>Go to Triage</dd>
+        <dt><kbd>G</kbd><kbd>M</kbd></dt><dd>Go to My issues</dd>
+        <dt><kbd>G</kbd><kbd>A</kbd></dt><dd>Go to All open</dd>
+      </dl>
+      <dl class="keys">
+        <dt><kbd>S</kbd></dt><dd>Change status</dd>
+        <dt><kbd>P</kbd></dt><dd>Change priority</dd>
+        <dt><kbd>0</kbd>–<kbd>3</kbd></dt><dd>Set P0–P3 directly</dd>
+        <dt><kbd>A</kbd></dt><dd>Assign</dd>
+        <dt><kbd>I</kbd></dt><dd>Assign to me</dd>
+        <dt><kbd>L</kbd></dt><dd>Labels</dd>
+        <dt><kbd>X</kbd></dt><dd>Close as done</dd>
+        <dt><kbd>C</kbd></dt><dd>New issue</dd>
+        <dt><kbd>Z</kbd></dt><dd>Undo the last change</dd>
+      </dl>
+    </div>
+    <label class="switch-row" for="keys-toggle"><input type="checkbox" id="keys-toggle" checked> Single-key shortcuts (turn off if they clash with your screen reader or voice control)</label>
+    <div class="actions"><button class="btn btn-primary" type="submit">Done</button></div>
+  </form>
+</dialog>
+
+<div class="toasts" role="status" aria-live="polite" id="toasts"></div>
+
+<script>
+"use strict";
+/* ================= data ================= */
+const NOW = new Date("2026-11-16T09:20:00");
+const bootTime = Date.now();
+const ME = "jo";
+const ADMIN = "pr";
+const PEOPLE = {
+  pr: { name: "Priya Raman", initials: "PR" },
+  tf: { name: "Tomás Ferreira", initials: "TF" },
+  jo: { name: "Jun Okada", initials: "JO" },
+  mh: { name: "Maren Holt", initials: "MH" },
+  da: { name: "Dele Adeyemi", initials: "DA" },
+  sn: { name: "Sasha Novak", initials: "SN" },
+};
+const STATUSES = [
+  { id: "triage", label: "Triage", icon: "circle-dashed" },
+  { id: "progress", label: "In progress", icon: "circle-half" },
+  { id: "review", label: "In review", icon: "git-pull-request" },
+  { id: "todo", label: "Todo", icon: "circle" },
+  { id: "done", label: "Done", icon: "check-circle", closed: true, stamp: "DONE" },
+  { id: "duplicate", label: "Duplicate", icon: "copy", closed: true, stamp: "DUPLICATE" },
+  { id: "wontfix", label: "Won't fix", icon: "x-circle", closed: true, stamp: "WON'T FIX" },
+];
+const PRIORITIES = [
+  { id: 0, label: "P0", name: "Drop everything" },
+  { id: 1, label: "P1", name: "This week" },
+  { id: 2, label: "P2", name: "This cycle" },
+  { id: 3, label: "P3", name: "When there's time" },
+];
+const LABELS = ["api", "backfill", "bug", "ci", "cli", "dedupe", "deps", "docs", "export", "flaky", "incident", "infra", "kafka", "observability", "performance", "schema", "webhooks"];
+
+function issue(key, title, status, priority, assignee, labels, reporter, created, updated, description, comments) {
+  return { key, title, status, priority, assignee, labels, reporter, created, updated: updated || created, description: description || [], comments: comments || [], events: [] };
+}
+const ISSUES = [
+  issue("ING-231", "Webhook retries hammer customer endpoints after a 429", "triage", null, null, ["webhooks", "bug"], "da", "2026-11-16T08:47", null,
+    ["When a customer endpoint answers <code>429</code>, the delivery worker retries at once instead of honouring <code>Retry-After</code>. Tenant 2207 saw 1,900 requests in 40 seconds this morning and opened a support ticket.",
+     "Expected: back off using <code>Retry-After</code>, capped by the retry budget from ING-205."]),
+  issue("ING-230", "Backfill job ignores --since when it resumes after a crash", "triage", null, null, ["backfill", "bug"], "tf", "2026-11-16T08:12", null,
+    ["Restarted <code>backfill-events</code> after the OOM at 03:10. The resumed run started from the first offset instead of <code>--since 2026-11-01</code>, so we re-exported two weeks of events to S3."]),
+  issue("ING-229", "Schema registry returns 500 for unions with null listed first", "triage", null, null, ["schema", "bug"], "sn", "2026-11-15T18:30", null,
+    ["Registering <code>[\"null\", \"string\"]</code> fails with a 500; <code>[\"string\", \"null\"]</code> works. Avro allows both orders, and the Python producer generates null first by default."]),
+  issue("ING-228", "consumer_rebalance_test times out on the arm64 CI runners", "triage", null, null, ["ci", "flaky"], "jo", "2026-11-15T16:05", null, []),
+  issue("ING-227", "Show p99 consumer lag on the partition dashboard", "triage", null, null, ["observability"], "mh", "2026-11-15T11:20", null,
+    ["The dashboard shows average lag only. During the failover on the 13th the average looked fine while two partitions were 40 minutes behind."]),
+  issue("ING-226", "S3 export writes zero-byte files when a batch is empty", "triage", null, null, ["export", "bug"], "pr", "2026-11-14T17:55", null,
+    ["Quiet tenants get a zero-byte <code>.jsonl.gz</code> every five minutes. Downstream loaders treat an empty gzip as corrupt and page the data team."]),
+
+  issue("ING-219", "Move the dedupe window to Redis Streams", "progress", 1, "jo", ["dedupe"], "pr", "2026-11-06T10:00", "2026-11-16T08:30",
+    ["The in-memory dedupe window is lost on every deploy, so we let duplicates through for ten minutes after each rollout.", "Plan: keep the last 15 minutes of event IDs per tenant in a stream with <code>MAXLEN ~</code>, read on start-up."]),
+  issue("ING-214", "Consumer group stalls after a broker failover", "progress", 0, "mh", ["kafka", "incident"], "da", "2026-11-13T22:41", "2026-11-16T09:02",
+    ["After broker 3 failed over at 22:14 on the 13th, the <code>ingest-workers</code> group stopped committing offsets for 38 minutes. Lag reached 2.1M events on partitions 4 and 11. Restarting the workers cleared it.",
+     "Suspect: the rebalance callback blocks on a flush to the dedupe store while the coordinator moves, and <code>max.poll.interval.ms</code> expires.",
+     "Before closing: a test that kills the coordinator mid-rebalance, and an alert on commit age."],
+    [{ who: "da", at: "2026-11-14T09:12", text: "Second time this month. Raising to P0 until we know why the commit loop stops." },
+     { who: "mh", at: "2026-11-16T09:02", text: "Reproduced locally with toxiproxy: the flush in on_revoke takes 45 s when the coordinator is gone. Moving the flush out of the callback now." }]),
+  issue("ING-212", "Rate-limit /v2/events per API key", "progress", 1, "tf", ["api"], "pr", "2026-11-04T14:00", "2026-11-15T17:10",
+    ["One key can currently use the whole ingest budget. Token bucket per key, 5,000 events/s burst, configurable per tenant."]),
+  issue("ING-208", "Upgrade librdkafka to 2.6", "progress", 2, "sn", ["deps", "kafka"], "sn", "2026-11-02T09:30", "2026-11-15T14:40",
+    ["2.6 fixes the idempotent producer stall we hit in September. Needs a canary on one worker pool first."]),
+  issue("ING-205", "Retry budget for webhook deliveries", "progress", 1, "da", ["webhooks"], "da", "2026-10-30T11:00", "2026-11-15T12:05",
+    ["Cap retries per endpoint per hour and park the rest in the dead-letter queue with the reason."]),
+
+  issue("ING-216", "Drop events older than retention at ingest", "review", 2, "pr", ["api"], "mh", "2026-11-08T15:20", "2026-11-16T08:55",
+    ["Events with <code>occurred_at</code> older than the tenant's retention are accepted and then deleted by the nightly sweep. Reject them with a 422 instead."]),
+  issue("ING-211", "Compress export batches with zstd", "review", 2, "jo", ["export", "performance"], "jo", "2026-11-05T13:00", "2026-11-15T19:20",
+    ["zstd level 3 cuts export size by 31% against gzip on last week's sample, at about the same CPU."]),
+  issue("ING-203", "Document event envelope v2", "review", 3, "sn", ["docs"], "pr", "2026-10-28T10:00", "2026-11-14T10:00",
+    ["Fields, size limits, and the migration note for teams still sending v1."]),
+
+  issue("ING-224", "Alert when DLQ depth passes 10,000", "todo", 1, "mh", ["observability"], "mh", "2026-11-12T16:00", null,
+    ["We found the 60k backlog on the 9th by accident. Page the on-call above 10,000 for 10 minutes."]),
+  issue("ING-223", "Hot partition for tenant 4410 after the key change", "todo", 1, "tf", ["kafka", "performance"], "da", "2026-11-11T12:30", null,
+    ["Since keys moved to <code>tenant_id</code>, partition 7 takes 38% of traffic. Add the source ID to the key for tenants above 2k events/s."]),
+  issue("ING-222", "Remove the v1 ingest endpoint after 1 December", "todo", 2, "pr", ["api"], "pr", "2026-11-10T09:00", null,
+    ["Three tenants still call v1. Account managers have the list."]),
+  issue("ING-220", "ingest replay: add a --dry-run flag", "todo", 3, "jo", ["cli"], "tf", "2026-11-09T17:45", null,
+    ["Print the offsets and the count it would replay, then exit."]),
+  issue("ING-218", "Autotune batch size from producer throughput", "todo", 2, null, ["performance"], "jo", "2026-11-07T11:10", null,
+    ["Fixed 500-event batches are too small at peak and too slow at night."]),
+  issue("ING-217", "Deploy ingest-api separately from the workers", "todo", 2, "da", ["infra"], "da", "2026-11-07T10:00", null,
+    ["An API hotfix currently restarts every consumer and costs us a rebalance."]),
+  issue("ING-215", "Typo in the 413 error message: \u201cpayload to large\u201d", "todo", 3, "sn", ["api"], "sn", "2026-11-06T16:30", null, []),
+  issue("ING-213", "Load test 50k events/s on staging", "todo", 1, "tf", ["performance"], "pr", "2026-11-05T09:15", null,
+    ["Before the retail tenants arrive in December. Record p99 ack latency and consumer lag."]),
+
+  issue("ING-210", "Pin the protobuf runtime to 4.28", "done", 2, "sn", ["deps"], "sn", "2026-11-12T10:00", "2026-11-14T15:30", ["4.29 changed default field presence and broke the envelope parser."]),
+  issue("ING-209", "Health check reports ready before the consumer joins the group", "done", 1, "jo", ["kafka", "bug"], "mh", "2026-11-10T14:00", "2026-11-13T11:00", ["Readiness now waits for the first assignment."]),
+  issue("ING-207", "Webhook signature check fails on URLs with a trailing slash", "duplicate", 2, "da", ["webhooks", "bug"], "tf", "2026-11-11T09:00", "2026-11-12T10:20", ["Same root cause as ING-201."]),
+  issue("ING-204", "Accept gzip request bodies on v1", "wontfix", 3, "tf", ["api"], "pr", "2026-11-03T12:00", "2026-11-11T16:00", ["v1 is going away on 1 December; v2 already accepts gzip."]),
+];
+for (const it of ISSUES) {
+  it.events.push({ at: it.created, text: `${PEOPLE[it.reporter].name} filed this` });
+  if (it.status !== "triage" && it.priority != null) it.events.push({ at: it.created, text: `Set to ${PRIORITIES[it.priority].label} in triage` });
+}
+
+const VIEWS = [
+  { id: "triage", name: "Triage", icon: "tray", nav: "main", hint: "New issues land here. Give each one a priority (<kbd>0</kbd>–<kbd>3</kbd>), an owner (<kbd>A</kbd>) and a status (<kbd>S</kbd>), and it leaves the queue.", match: (i) => i.status === "triage" },
+  { id: "mine", name: "My issues", icon: "user-circle", nav: "main", hint: "Assigned to you, grouped by status.", match: (i) => i.assignee === ME },
+  { id: "all", name: "All open", icon: "stack", nav: "main", hint: "Everything the team hasn't closed.", match: (i) => !statusOf(i).closed || isRecentClosed(i) },
+  { id: "urgent", name: "P0–P1 open", icon: "bookmark-simple", nav: "saved", hint: "Saved view: priority P0 or P1, not closed.", match: (i) => i.priority != null && i.priority <= 1 && !statusOf(i).closed },
+  { id: "review", name: "Waiting on review", icon: "bookmark-simple", nav: "saved", hint: "Saved view: in review.", match: (i) => i.status === "review" },
+  { id: "unassigned", name: "Unassigned", icon: "bookmark-simple", nav: "saved", hint: "Saved view: open and nobody owns it.", match: (i) => !i.assignee && !statusOf(i).closed && i.status !== "triage" },
+];
+
+/* ================= state ================= */
+const ui = {
+  view: "triage", selected: null, panelOpen: true,
+  filters: { q: "", priority: new Set(), assignee: new Set(), label: new Set() },
+  mode: "ready", // ready | loading | error | issue-error
+  offline: false, guest: false, failNext: false, empty: false,
+  shortcutsOn: true, closedOpen: false, theme: "system",
+  undo: [], recent: [], triageSession: { count: 0, start: null }, justCleared: false,
+};
+let issues = ISSUES;
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const token = (name) => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(`--duration-${name}`)) || 0;
+const easing = (name) => getComputedStyle(document.documentElement).getPropertyValue(`--ease-${name}`).trim();
+const isPhone = () => matchMedia("(max-width: 767px)").matches;
+
+function statusOf(i) { return STATUSES.find((s) => s.id === i.status); }
+function isRecentClosed(i) { return statusOf(i).closed && (NOW - new Date(i.updated)) < 7 * 864e5; }
+function byKey(key) { return issues.find((i) => i.key === key); }
+function viewOf(id) { return VIEWS.find((v) => v.id === id) || VIEWS[0]; }
+
+/* ================= formatting ================= */
+const fmtTime = new Intl.DateTimeFormat("en", { hour: "2-digit", minute: "2-digit", hour12: false });
+const fmtDay = new Intl.DateTimeFormat("en", { month: "short", day: "numeric" });
+const fmtNum = new Intl.NumberFormat("en");
+/* the demo clock starts at NOW and runs in real time; stored as local wall time like the fixtures */
+function nowIso() {
+  const d = new Date(NOW.getTime() + (Date.now() - bootTime)), p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function when(iso) {
+  const d = new Date(iso);
+  return d.toDateString() === NOW.toDateString() ? fmtTime.format(d) : fmtDay.format(d);
+}
+function whenLong(iso) {
+  const d = new Date(iso);
+  return d.toDateString() === NOW.toDateString() ? `Today ${fmtTime.format(d)}` : `${fmtDay.format(d)}, ${fmtTime.format(d)}`;
+}
+function tagHtml(p, extra = "") {
+  const label = p == null ? "––" : `P${p}`;
+  const sr = p == null ? "No priority yet" : `Priority ${PRIORITIES[p].label}, ${PRIORITIES[p].name.toLowerCase()}`;
+  return `<span class="tag ${extra}" data-p="${p == null ? "none" : p}" title="${sr}"><span aria-hidden="true">${label}</span><span class="visually-hidden">${sr}</span></span>`;
+}
+function avatarHtml(id) {
+  if (!id) return `<span class="avatar" data-none title="Unassigned" aria-label="Unassigned"><i class="ph ph-user" aria-hidden="true" style="font-size:var(--icon-sm);inline-size:var(--icon-sm);block-size:var(--icon-sm)"></i></span>`;
+  return `<span class="avatar" title="${esc(PEOPLE[id].name)}" aria-label="Assigned to ${esc(PEOPLE[id].name)}">${PEOPLE[id].initials}</span>`;
+}
+
+/* ================= filtering ================= */
+function visibleIssues() {
+  if (ui.empty) return [];
+  const v = viewOf(ui.view), f = ui.filters, q = f.q.trim().toLowerCase();
+  return issues.filter((i) => v.match(i)
+    && (!q || i.title.toLowerCase().includes(q) || i.key.toLowerCase().includes(q))
+    && (!f.priority.size || f.priority.has(i.priority == null ? "none" : String(i.priority)))
+    && (!f.assignee.size || f.assignee.has(i.assignee || "none"))
+    && (!f.label.size || i.labels.some((l) => f.label.has(l))));
+}
+function filtersActive() { const f = ui.filters; return !!(f.q.trim() || f.priority.size || f.assignee.size || f.label.size); }
+function grouped(list) {
+  const open = STATUSES.filter((s) => !s.closed).map((s) => ({ status: s, items: list.filter((i) => i.status === s.id) })).filter((g) => g.items.length);
+  const closed = list.filter((i) => statusOf(i).closed);
+  const sortFn = (a, b) => (a.priority ?? 9) - (b.priority ?? 9) || new Date(b.updated) - new Date(a.updated);
+  open.forEach((g) => g.items.sort(g.status.id === "triage" ? (a, b) => new Date(b.created) - new Date(a.created) : sortFn));
+  closed.sort((a, b) => new Date(b.updated) - new Date(a.updated));
+  return { open, closed };
+}
+/* rows in on-screen order (closed group counts only when expanded) */
+function orderedKeys() {
+  const { open, closed } = grouped(visibleIssues());
+  return [...open.flatMap((g) => g.items), ...(ui.closedOpen ? closed : [])].map((i) => i.key);
+}
+
+/* ================= rendering: rail ================= */
+function countFor(v) { return ui.empty ? 0 : issues.filter(v.match).filter((i) => !statusOf(i).closed).length; }
+function renderRail() {
+  const item = (v) => {
+    const n = countFor(v);
+    const badge = v.id === "triage" && n > 0
+      ? `<span class="tag" data-p="0" id="triage-badge"><span aria-hidden="true">${n}</span><span class="visually-hidden">${n} to triage</span></span>`
+      : `<span class="count"${v.id === "triage" ? ' id="triage-badge"' : ""}>${n}</span>`;
+    return `<button type="button" class="nav-item" data-view="${v.id}" ${ui.view === v.id ? 'aria-current="page"' : ""}><i class="ph ph-${v.icon}" aria-hidden="true"></i>${esc(v.name)}${badge}</button>`;
+  };
+  $("#nav-views").innerHTML = VIEWS.filter((v) => v.nav === "main").map(item).join("");
+  $("#nav-saved").innerHTML = `<h2 class="nav-heading" id="saved-h">Saved views</h2>` + VIEWS.filter((v) => v.nav === "saved").map(item).join("");
+  $("#view-select").innerHTML = VIEWS.map((v) => `<option value="${v.id}" ${ui.view === v.id ? "selected" : ""}>${esc(v.name)} (${countFor(v)})</option>`).join("");
+}
+
+/* ================= rendering: toolbar ================= */
+function renderToolbar() {
+  const v = viewOf(ui.view);
+  const n = ui.mode === "ready" ? visibleIssues().filter((i) => !statusOf(i).closed).length : null;
+  $("#view-name").textContent = v.name;
+  $("#view-count").textContent = n == null ? "" : fmtNum.format(n);
+  $("#view-count-sr").textContent = n == null ? "" : `${n} open`;
+  $("#view-hint").innerHTML = v.hint;
+  $("#filter-q").value = ui.filters.q;
+  for (const chip of $$(".chip")) {
+    const set = ui.filters[chip.dataset.filter];
+    chip.toggleAttribute("data-active", set.size > 0);
+    chip.querySelector(".val").textContent = set.size ? `: ${[...set].map((x) => filterLabel(chip.dataset.filter, x)).join(", ")}` : "";
+  }
+  document.title = `${v.name} · Docket`;
+}
+function filterLabel(kind, val) {
+  if (kind === "priority") return val === "none" ? "None" : `P${val}`;
+  if (kind === "assignee") return val === "none" ? "Unassigned" : PEOPLE[val].initials;
+  return val;
+}
+
+/* ================= rendering: banner ================= */
+function renderBanner() {
+  const b = $("#banner");
+  if (ui.offline) {
+    b.hidden = false;
+    b.innerHTML = `<i class="ph ph-wifi-slash" aria-hidden="true"></i><span>Offline. Showing issues as of 09:14. Changes you make are kept here and sync when you reconnect.</span><button class="btn" type="button" data-act="reconnect">Reconnect</button>`;
+  } else if (ui.guest) {
+    b.hidden = false;
+    b.innerHTML = `<i class="ph ph-lock-simple" aria-hidden="true"></i><span>You're viewing as a guest. Only team members can change issues. Ask ${PEOPLE[ADMIN].name} (admin) for access.</span>`;
+  } else { b.hidden = true; b.innerHTML = ""; }
+}
+
+/* ================= rendering: list ================= */
+function rowHtml(i) {
+  const cur = i.key === ui.selected;
+  return `<button type="button" class="row" data-key="${i.key}" ${cur ? 'aria-current="true"' : ""} tabindex="${cur ? 0 : -1}" ${statusOf(i).closed ? "data-closed" : ""} ${i.queued ? "data-queued" : ""}>
+    ${tagHtml(i.priority)}<span class="key">${i.key}</span><span class="title" title="${esc(i.title)}">${esc(i.title)}</span>
+    <span class="labels">${i.labels.slice(0, 2).map((l) => `<span>${esc(l)}</span>`).join("")}</span>${avatarHtml(i.assignee)}<time class="when" datetime="${i.updated}">${when(i.updated)}</time></button>`;
+}
+function renderList({ flip = false } = {}) {
+  const host = $("#list");
+  const before = flip ? rects() : null;
+  host.setAttribute("aria-busy", ui.mode === "loading" ? "true" : "false");
+  if (ui.mode === "loading") { host.innerHTML = skeletonHtml(); return; }
+  if (ui.mode === "error") { host.innerHTML = errorHtml(); return; }
+  const list = visibleIssues();
+  if (!list.length) { host.innerHTML = emptyHtml(); afterEmpty(); return; }
+  const { open, closed } = grouped(list);
+  if (ui.selected && !list.some((i) => i.key === ui.selected)) ui.selected = null;
+  let html = "";
+  for (const g of open) {
+    html += `<div role="group" aria-labelledby="g-${g.status.id}"><div class="group-head" id="g-${g.status.id}"><i class="ph ph-${g.status.icon} st-icon" data-s="${g.status.id}" aria-hidden="true"></i>${g.status.label}<span class="n">${g.items.length}</span></div>${g.items.map(rowHtml).join("")}</div>`;
+  }
+  if (closed.length) {
+    html += `<div role="group" aria-labelledby="g-closed"><div class="group-head" id="g-closed"><button type="button" data-act="toggle-closed" aria-expanded="${ui.closedOpen}"><i class="ph ph-caret-${ui.closedOpen ? "down" : "right"}" aria-hidden="true"></i>Closed in the last 7 days<span class="n">${closed.length}</span></button></div>${ui.closedOpen ? closed.map(rowHtml).join("") : ""}</div>`;
+  }
+  host.innerHTML = html;
+  if (before) playFlip(before);
+}
+function skeletonHtml() {
+  const widths = [72, 58, 84, 46, 66, 78, 52, 70, 60, 80];
+  return `<p class="visually-hidden">Loading issues…</p><ul class="skeleton" aria-hidden="true">${widths.map((w) => `<li><span class="sk"></span><span class="sk"></span><span class="sk" style="inline-size:${w}%"></span><span class="sk"></span></li>`).join("")}</ul>`;
+}
+function errorHtml() {
+  return `<section class="state" role="alert"><i class="ph ph-warning-octagon err-icon" aria-hidden="true"></i><h2>Couldn't load issues</h2>
+    <p>The issue service didn't answer within 10 seconds. Your view and filters are kept; nothing you changed was lost.</p>
+    <button class="btn btn-primary" type="button" data-act="retry-load"><i class="ph ph-arrow-clockwise" aria-hidden="true"></i>Try again</button></section>`;
+}
+function emptyHtml() {
+  if (ui.empty) {
+    return `<section class="state"><div class="state-art" aria-hidden="true"><span class="string"></span>${tagHtml(null, "tag-lg")}</div>
+      <h2>No issues yet</h2><p>Issues your team files land here, newest first, and wait in Triage until someone gives them a priority and an owner.</p>
+      <button class="btn btn-primary" type="button" data-act="new">New issue <kbd>C</kbd></button></section>`;
+  }
+  if (filtersActive()) {
+    const f = ui.filters, used = [];
+    if (f.q.trim()) used.push(`“${esc(f.q.trim())}”`);
+    for (const k of ["priority", "assignee", "label"]) for (const v of f[k]) used.push(esc(filterLabel(k, v)));
+    return `<section class="state"><h2>No issues match these filters</h2><div class="filters-used">${used.map((u) => `<span>${u}</span>`).join("")}</div>
+      <p>${esc(viewOf(ui.view).name)} has ${countFor(viewOf(ui.view))} open issues without the filters.</p>
+      <button class="btn btn-primary" type="button" data-act="clear-filters">Clear filters</button></section>`;
+  }
+  if (ui.view === "triage") {
+    const s = ui.triageSession;
+    const mins = s.start ? Math.max(1, Math.round((Date.now() - s.start) / 60000)) : 0;
+    const fact = s.count ? `${s.count} ${s.count === 1 ? "issue" : "issues"} sorted in ${mins} min.` : "Nothing new since the last triage.";
+    return `<section class="state cleared-signature" ${ui.justCleared ? "data-play" : ""} role="status">
+      <div class="state-art" aria-hidden="true"><span class="string"></span>${tagHtml(null, "tag-lg")}<span class="cleared-signature-stamp">CLEARED</span></div>
+      <div class="cleared-signature-text"><h2>Triage is clear</h2><p>${fact} New issues will wait here until tomorrow's pass.</p></div>
+      <button class="btn" type="button" data-act="goto-mine">Go to My issues <kbd>G</kbd><kbd>M</kbd></button></section>`;
+  }
+  return `<section class="state"><h2>Nothing here right now</h2><p>${esc(viewOf(ui.view).hint)}</p><button class="btn" type="button" data-act="goto-all">Show all open issues</button></section>`;
+}
+function afterEmpty() { ui.justCleared = false; }
+
+/* FLIP: rows glide to their new group (150ms, transform only) */
+function rects() { return new Map($$(".row").map((r) => [r.dataset.key, r.getBoundingClientRect()])); }
+function playFlip(first) {
+  if (reduced()) return;
+  const duration = token("short"), ease = easing("move");
+  for (const r of $$(".row")) {
+    const f = first.get(r.dataset.key);
+    if (!f) { r.animate([{ opacity: 0 }, { opacity: 1 }], { duration, easing: ease }); continue; }
+    const l = r.getBoundingClientRect(), dy = f.top - l.top;
+    if (Math.abs(dy) > 1 && Math.abs(dy) < innerHeight) r.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration, easing: ease });
+  }
+}
+
+/* ================= rendering: panel ================= */
+function renderPanel({ entering = false } = {}) {
+  const p = $("#panel");
+  const show = ui.panelOpen && (ui.selected || !isPhone());
+  p.hidden = !show;
+  $("#app").classList.toggle("panel-closed", !show);
+  if (!show) return;
+  if (entering && !p.hasAttribute("data-entering")) {
+    p.setAttribute("data-entering", "");
+    p.addEventListener("animationend", () => p.removeAttribute("data-entering"), { once: true });
+  }
+  const i = ui.selected && byKey(ui.selected);
+  if (ui.mode === "loading") { p.innerHTML = panelHead(null) + `<div class="panel-skel" aria-hidden="true"><span class="sk" style="inline-size:80%;block-size:20px"></span><span class="sk" style="inline-size:50%"></span><span class="sk" style="inline-size:60%"></span><span class="sk" style="inline-size:40%"></span></div>`; return; }
+  if (!i) { p.innerHTML = panelHead(null) + primerHtml(); return; }
+  if (ui.mode === "issue-error") {
+    p.innerHTML = panelHead(i) + `<div class="panel-body"><section class="state" role="alert" style="padding-inline:0"><i class="ph ph-warning-octagon err-icon" aria-hidden="true"></i><h2>Couldn't load ${i.key}</h2><p>The list is fine; only this issue's details failed. Comments you typed are kept.</p><button class="btn btn-primary" type="button" data-act="retry-issue"><i class="ph ph-arrow-clockwise" aria-hidden="true"></i>Try again</button></section></div>`;
+    return;
+  }
+  p.innerHTML = panelHead(i) + panelBody(i);
+}
+function panelHead(i) {
+  return `<div class="panel-head">
+    <button class="btn btn-ghost panel-back" type="button" data-act="close-panel"><i class="ph ph-arrow-left" aria-hidden="true"></i>Issues</button>
+    ${i ? `${tagHtml(i.priority)}<span class="key">${i.key}</span>` : `<span class="muted">No issue selected</span>`}
+    <span class="spacer"></span>
+    ${i ? `<button class="icon-btn" type="button" data-act="copy-link" aria-label="Copy link to ${i.key}" title="Copy link"><i class="ph ph-link-simple" aria-hidden="true"></i></button>` : ""}
+    <button class="icon-btn panel-close" type="button" data-act="close-panel" aria-label="Close panel (Esc)" title="Close panel (Esc)"><i class="ph ph-x" aria-hidden="true"></i></button></div>`;
+}
+function panelBody(i) {
+  const s = statusOf(i), ro = ui.guest;
+  const lock = ro ? `<p class="locked-note"><i class="ph ph-lock-simple" aria-hidden="true"></i>Read-only. Ask ${PEOPLE[ADMIN].name} (admin) for team access to change issues.</p>` : "";
+  const field = (key, label, value, kbd) => `<dt id="f-${key}">${label}</dt><dd><button type="button" class="field-btn" data-field="${key}" aria-labelledby="f-${key} fv-${key}" ${ro ? 'aria-disabled="true"' : ""}><span id="fv-${key}" style="display:contents">${value}</span><kbd>${kbd}</kbd></button></dd>`;
+  const priVal = i.priority == null ? `${tagHtml(null)}<span class="muted">Not set</span>` : `${tagHtml(i.priority)}<span>${PRIORITIES[i.priority].name}</span>`;
+  const asgVal = i.assignee ? `${avatarHtml(i.assignee)}<span>${esc(PEOPLE[i.assignee].name)}</span>` : `${avatarHtml(null)}<span class="muted">Unassigned</span>`;
+  const lblVal = i.labels.length ? i.labels.map((l) => `<span class="label-pill">${esc(l)}</span>`).join("") : `<span class="muted">No labels</span>`;
+  const stamp = s.closed ? `<div class="disposition cleared-signature" ${i.justStamped ? "data-play" : ""}><span class="cleared-signature-stamp">${s.stamp}</span></div>` : "";
+  i.justStamped = false;
+  const desc = i.description.length ? i.description.map((p) => `<p>${p}</p>`).join("") : `<p class="muted">No description yet. Add what you saw as a comment below.</p>`;
+  const acts = [...i.events.map((e) => ({ ...e, kind: "ev" })), ...i.comments.map((c) => ({ ...c, kind: "cm" }))].sort((a, b) => new Date(a.at) - new Date(b.at));
+  const actHtml = acts.map((a) => a.kind === "ev"
+    ? `<li class="ev"><i class="ph ph-dot-outline" aria-hidden="true"></i><span>${esc(a.text)}</span><time datetime="${a.at}">${whenLong(a.at)}</time></li>`
+    : `<li class="cm" ${a.pending ? "data-pending" : ""}>${avatarHtml(a.who)}<span class="who">${esc(PEOPLE[a.who].name)}<time datetime="${a.at}">${a.pending ? "Sending…" : whenLong(a.at)}</time></span><p>${esc(a.text)}</p></li>`).join("");
+  return `<div class="panel-body">${lock}${stamp}
+    <h2 class="panel-title" id="panel-title" tabindex="-1">${esc(i.title)}</h2>
+    <dl class="fields">
+      ${field("status", "Status", `<i class="ph ph-${s.icon} st-icon" data-s="${s.id}" aria-hidden="true"></i><span>${s.label}</span>`, "S")}
+      ${field("priority", "Priority", priVal, "P")}
+      ${field("assignee", "Assignee", asgVal, "A")}
+      ${field("labels", "Labels", lblVal, "L")}
+      <dt>Reporter</dt><dd><span class="field-static">${avatarHtml(i.reporter)}${esc(PEOPLE[i.reporter].name)}</span></dd>
+      <dt>Filed</dt><dd><span class="field-static mono muted">${whenLong(i.created)}</span></dd>
+    </dl>
+    <h3 class="section-h">Description</h3><div class="prose">${desc}</div>
+    <h3 class="section-h">Activity</h3><ul class="activity">${actHtml}</ul>
+    ${ro ? "" : `<form class="comment-form" data-act="comment"><label class="visually-hidden" for="comment-box">Comment on ${i.key}</label>
+      <textarea id="comment-box" rows="3" placeholder="Leave a comment…">${esc(i.draft || "")}</textarea>
+      <div class="row-actions"><span><kbd class="mod-enter">⌘↵</kbd> to send</span><button class="btn btn-primary" type="submit">Comment</button></div></form>`}
+  </div>`;
+}
+function primerHtml() {
+  return `<div class="primer"><h2>Pick an issue</h2><p>Click a row, or move with <kbd>J</kbd> and <kbd>K</kbd>. Everything here works from the keyboard.</p>
+    <dl class="keys"><dt><kbd>S</kbd></dt><dd>Status</dd><dt><kbd>0</kbd>–<kbd>3</kbd></dt><dd>Priority P0–P3</dd><dt><kbd>A</kbd></dt><dd>Assign</dd><dt><kbd>X</kbd></dt><dd>Close as done</dd><dt><kbd>Z</kbd></dt><dd>Undo</dd><dt><kbd class="mod-k">⌘K</kbd></dt><dd>Everything else</dd></dl></div>`;
+}
+
+function renderAll(opts = {}) {
+  renderRail(); renderToolbar(); renderBanner(); renderList(opts); renderPanel(opts); syncUrl(opts.push);
+  applyModKeys();
+}
+function applyModKeys() {
+  for (const k of $$(".mod-k")) k.textContent = isMac ? "⌘K" : "Ctrl K";
+  for (const k of $$(".mod-enter")) k.textContent = isMac ? "⌘↵" : "Ctrl ↵";
+}
+
+/* ================= URL as state ================= */
+function syncUrl(push) {
+  const p = new URLSearchParams();
+  p.set("view", ui.view);
+  if (ui.selected) p.set("issue", ui.selected);
+  if (ui.filters.q) p.set("q", ui.filters.q);
+  for (const k of ["priority", "assignee", "label"]) if (ui.filters[k].size) p.set(k, [...ui.filters[k]].join(","));
+  const st = currentPreview();
+  if (st !== "live") p.set("state", st);
+  const url = `${location.pathname}?${p}`;
+  if (url === location.pathname + location.search) return;
+  (push ? history.pushState : history.replaceState).call(history, null, "", url);
+}
+function readUrl() {
+  const p = new URLSearchParams(location.search);
+  ui.view = VIEWS.some((v) => v.id === p.get("view")) ? p.get("view") : "triage";
+  ui.selected = p.get("issue");
+  ui.filters.q = p.get("q") || "";
+  for (const k of ["priority", "assignee", "label"]) ui.filters[k] = new Set((p.get(k) || "").split(",").filter(Boolean));
+  return p.get("state") || "live";
+}
+
+/* ================= selection & navigation ================= */
+function select(key, { focus = true, open = true } = {}) {
+  const wasOpen = !$("#panel").hidden && !!ui.selected;
+  ui.selected = key;
+  if (key) { ui.recent = [key, ...ui.recent.filter((k) => k !== key)].slice(0, 5); }
+  const opening = open && (!ui.panelOpen || (isPhone() && !wasOpen));
+  if (open) ui.panelOpen = true;
+  for (const r of $$(".row")) {
+    const cur = r.dataset.key === key;
+    r.toggleAttribute("aria-current", cur); if (cur) r.setAttribute("aria-current", "true");
+    r.tabIndex = cur ? 0 : -1;
+  }
+  renderPanel({ entering: opening });
+  syncUrl();
+  const row = key && $(`.row[data-key="${key}"]`);
+  if (row) { row.scrollIntoView({ block: "nearest" }); if (focus) row.focus({ preventScroll: true }); }
+}
+function move(delta) {
+  const keys = orderedKeys();
+  if (!keys.length) return;
+  const idx = keys.indexOf(ui.selected);
+  const next = idx < 0 ? keys[0] : keys[Math.min(keys.length - 1, Math.max(0, idx + delta))];
+  select(next, { open: !isPhone() || ui.panelOpen && !!ui.selected });
+}
+function setView(id) {
+  if (ui.view === id) return;
+  ui.view = id;
+  ui.selected = null;
+  renderAll({ push: true });
+  const first = orderedKeys()[0];
+  if (first && !isPhone()) select(first, { focus: false });
+  announce(`${viewOf(id).name}, ${visibleIssues().filter((i) => !statusOf(i).closed).length} open`);
+}
+function closePanel() {
+  ui.panelOpen = false;
+  renderPanel(); syncUrl();
+  const row = ui.selected && $(`.row[data-key="${ui.selected}"]`);
+  (row || $("#list")).focus();
+  if (isPhone()) ui.selected = null, syncUrl();
+}
+
+/* ================= mutations: optimistic + undo ================= */
+function guard() {
+  if (ui.guest) { toast(`Only team members can change issues. Ask ${PEOPLE[ADMIN].name} (admin) for access.`, { kind: "error" }); return false; }
+  if (ui.mode !== "ready") return false;
+  return true;
+}
+function describe(patch) {
+  if ("status" in patch) return `moved to ${STATUSES.find((s) => s.id === patch.status).label}`;
+  if ("priority" in patch) return `set to ${PRIORITIES[patch.priority].label}`;
+  if ("assignee" in patch) return patch.assignee ? `assigned to ${PEOPLE[patch.assignee].name}` : "unassigned";
+  if ("labels" in patch) return `labels: ${patch.labels.join(", ") || "none"}`;
+  return "updated";
+}
+function mutate(key, patch, { quiet = false } = {}) {
+  if (!guard()) return;
+  const it = byKey(key);
+  if (!it) return;
+  const prev = Object.fromEntries(Object.keys(patch).map((k) => [k, Array.isArray(it[k]) ? [...it[k]] : it[k]]));
+  const orderBefore = orderedKeys();
+  const triageBefore = countFor(viewOf("triage"));
+  apply(it, patch);
+  ui.undo.push({ key, prev, patch });
+  if (prev.status === "triage" && it.status !== "triage") noteTriaged();
+  reselectAfter(key, orderBefore);
+  if (triageBefore > 0 && countFor(viewOf("triage")) === 0 && ui.view === "triage") ui.justCleared = true;
+  renderAll({ flip: true });
+  if (ui.justCleared) rollTriageCount(triageBefore);
+  if (ui.selected) $(`.row[data-key="${ui.selected}"]`)?.focus({ preventScroll: true });
+  if (!quiet) changeToast(key, describe(patch));
+  sync(it, prev, patch);
+}
+/* one toast per issue: quick successive changes to the same issue read as one sentence */
+function changeToast(key, what) {
+  const host = $("#toasts"), last = host.lastElementChild;
+  const same = last && last.dataset.issue === key && !last.classList.contains("is-leaving");
+  const parts = same ? [...JSON.parse(last.dataset.parts), what] : [what];
+  const msg = `<span class="key">${key}</span> ${esc(parts.join(", "))}${ui.offline ? ". Will sync when you're online" : ""}`;
+  if (same) { last.dataset.parts = JSON.stringify(parts); last.querySelector("p").innerHTML = msg; last.restart(); return; }
+  const el = toast(msg, { action: "Undo", kbd: "Z", onAction: () => undoToast(el), html: true });
+  el.dataset.issue = key; el.dataset.parts = JSON.stringify(parts);
+}
+function apply(it, patch) {
+  Object.assign(it, patch, { updated: nowIso() });
+  if ("status" in patch && statusOf(it).closed) it.justStamped = true;
+  it.events.push({ at: it.updated, text: `${PEOPLE[ME].name} ${describe(patch)}` });
+}
+/* keep the keyboard flow: if the issue left this view, select the next one in the old order */
+function reselectAfter(key, orderBefore) {
+  const now = orderedKeys();
+  if (now.includes(key)) return;
+  const idx = orderBefore.indexOf(key);
+  const candidates = [...orderBefore.slice(idx + 1), ...orderBefore.slice(0, idx).reverse()];
+  ui.selected = candidates.find((k) => now.includes(k)) || null;
+}
+function noteTriaged() {
+  const s = ui.triageSession;
+  if (!s.start) s.start = Date.now();
+  s.count += 1;
+}
+/* simulated save: offline queues it; the "Next save fails" preview rolls it back visibly */
+function sync(it, prev, patch) {
+  if (ui.offline) { it.queued = true; return; }
+  if (!ui.failNext) return;
+  ui.failNext = false;
+  $("#preview-label").textContent = "Live";
+  setTimeout(() => rollback(it, prev, patch), 700);
+}
+function rollback(it, prev, patch) {
+  Object.assign(it, prev);
+  it.events.pop();
+  ui.undo = ui.undo.filter((u) => u.patch !== patch);
+  if (visibleIssues().some((i) => i.key === it.key)) ui.selected = it.key;
+  renderAll({ flip: true });
+  toast(`Couldn't save the change to <span class="key">${it.key}</span> (${esc(describe(patch))}). The server timed out, so it's back as it was.`, { kind: "error", action: "Try again", onAction: () => mutate(it.key, patch), html: true });
+}
+/* Z undoes the latest change; a toast's Undo reverts every change that toast lists */
+function undo() { revert(ui.undo.length ? [ui.undo.pop()] : []); }
+function undoToast(el) {
+  const key = el.dataset.issue, n = JSON.parse(el.dataset.parts).length, picked = [];
+  for (let i = ui.undo.length - 1; i >= 0 && picked.length < n; i--) if (ui.undo[i].key === key) picked.push(...ui.undo.splice(i, 1));
+  revert(picked);
+}
+function revert(entries) {
+  if (!entries.length) { toast("Nothing to undo."); return; }
+  const it = byKey(entries[0].key);
+  for (const e of entries) { // newest first, so the oldest saved state wins
+    Object.assign(it, e.prev);
+    it.events.push({ at: nowIso(), text: `${PEOPLE[ME].name} undid: ${describe(e.patch)}` });
+    if (e.prev.status === "triage" && ui.triageSession.count) ui.triageSession.count -= 1;
+  }
+  const visible = visibleIssues().some((i) => i.key === it.key);
+  if (visible) ui.selected = it.key;
+  renderAll({ flip: true });
+  if (visible) $(`.row[data-key="${it.key}"]`)?.focus({ preventScroll: true });
+  for (const t of $$(`.toast[data-issue="${it.key}"]`)) dismiss(t);
+  toast(`Undone. <span class="key">${it.key}</span> is back as it was.`, { html: true });
+}
+
+/* number-change: the rail's Triage count rolls down to 0 (part of the cleared moment) */
+function rollTriageCount(from) {
+  const el = $("#triage-badge");
+  if (!el || reduced()) return;
+  const duration = token("long"), start = performance.now();
+  const frame = (now) => {
+    const t = Math.min(1, (now - start) / duration);
+    el.textContent = String(Math.round(from * (1 - t)));
+    if (t < 1) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+
+/* ================= comments ================= */
+function addComment(text) {
+  if (!guard()) return;
+  const it = byKey(ui.selected);
+  const c = { who: ME, at: nowIso(), text, pending: true };
+  it.comments.push(c); it.draft = "";
+  renderPanel();
+  setTimeout(() => { c.pending = !!ui.offline; renderPanel(); }, 450);
+  announce("Comment added");
+}
+
+/* ================= menus (combobox in a popover) ================= */
+const menu = { el: $("#menu"), input: $("#menu-input"), list: $("#menu-list"), opts: [], active: 0, onPick: null, multi: false, returnFocus: null, selected: new Set() };
+function openMenu({ anchor, label, options, multi = false, selected = [], onPick }) {
+  closeMenu(false);
+  Object.assign(menu, { opts: options, onPick, multi, active: 0, returnFocus: document.activeElement, selected: new Set(selected.map(String)), anchor });
+  menu.input.value = ""; menu.input.placeholder = `${label}…`; menu.input.setAttribute("aria-label", label);
+  menu.list.setAttribute("aria-label", label);
+  menu.list.setAttribute("aria-multiselectable", String(multi));
+  menu.el.hidden = false;
+  placeMenu(anchor);
+  const firstSel = options.findIndex((o) => menu.selected.has(String(o.id)));
+  menu.active = firstSel >= 0 ? firstSel : 0;
+  drawMenu();
+  anchor?.setAttribute?.("aria-expanded", "true");
+  menu.input.focus();
+}
+function placeMenu(anchor) {
+  const r = anchor.getBoundingClientRect(), w = menu.el.offsetWidth, h = menu.el.offsetHeight;
+  const left = Math.min(Math.max(8, r.left), innerWidth - w - 8);
+  const below = r.bottom + 4 + h < innerHeight;
+  menu.el.style.left = `${left}px`;
+  menu.el.style.top = `${below ? r.bottom + 4 : Math.max(8, r.top - h - 4)}px`;
+  menu.el.style.transformOrigin = below ? "top left" : "bottom left";
+}
+function filteredOpts() {
+  const q = menu.input.value.trim().toLowerCase();
+  return menu.opts.filter((o) => !q || o.label.toLowerCase().includes(q) || (o.keys || "").includes(q));
+}
+function drawMenu() {
+  const list = filteredOpts();
+  menu.active = Math.min(menu.active, Math.max(0, list.length - 1));
+  menu.list.innerHTML = list.length ? list.map((o, n) => `<li role="option" id="mo-${n}" class="opt" data-n="${n}" aria-selected="${n === menu.active}" ${menu.multi ? `aria-checked="${menu.selected.has(String(o.id))}"` : ""}>${o.html || esc(o.label)}${menu.selected.has(String(o.id)) ? `<i class="ph ph-check check" aria-hidden="true"></i>` : ""}${o.kbd ? `<kbd>${o.kbd}</kbd>` : ""}</li>`).join("")
+    : `<li class="empty-opt" role="presentation">No match for “${esc(menu.input.value)}”</li>`;
+  menu.input.setAttribute("aria-activedescendant", list.length ? `mo-${menu.active}` : "");
+  menu.list.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
+}
+function pickMenu(n) {
+  const o = filteredOpts()[n];
+  if (!o) return;
+  if (menu.multi) {
+    const id = String(o.id);
+    menu.selected.has(id) ? menu.selected.delete(id) : menu.selected.add(id);
+    menu.onPick([...menu.selected]);
+    drawMenu();
+    return;
+  }
+  const cb = menu.onPick;
+  closeMenu(true);
+  cb(o.id);
+}
+function closeMenu(restore = true) {
+  if (menu.el.hidden) return;
+  menu.el.hidden = true;
+  menu.anchor?.setAttribute?.("aria-expanded", "false");
+  if (restore && menu.returnFocus?.isConnected) menu.returnFocus.focus({ preventScroll: true });
+}
+menu.input.addEventListener("input", () => { menu.active = 0; drawMenu(); });
+menu.input.addEventListener("keydown", (e) => {
+  const n = filteredOpts().length;
+  if (e.key === "ArrowDown") { e.preventDefault(); menu.active = Math.min(n - 1, menu.active + 1); drawMenu(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); menu.active = Math.max(0, menu.active - 1); drawMenu(); }
+  else if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); pickMenu(menu.active); }
+  else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeMenu(true); }
+  else if (e.key === "Tab") { closeMenu(false); }
+});
+menu.list.addEventListener("mousedown", (e) => e.preventDefault());
+menu.list.addEventListener("click", (e) => { const li = e.target.closest(".opt"); if (li) pickMenu(+li.dataset.n); });
+document.addEventListener("mousedown", (e) => { if (!menu.el.hidden && !menu.el.contains(e.target)) closeMenu(false); });
+
+function anchorFor(field) {
+  return $(`.field-btn[data-field="${field}"]`) || $(`.row[data-key="${ui.selected}"]`) || $("#list");
+}
+function statusMenu(key = ui.selected) {
+  const it = byKey(key); if (!it || !guard()) return;
+  openMenu({ anchor: anchorFor("status"), label: "Change status", selected: [it.status],
+    options: STATUSES.map((s, n) => ({ id: s.id, label: s.label, kbd: String(n + 1), html: `<i class="ph ph-${s.icon} st-icon" data-s="${s.id}" aria-hidden="true"></i>${s.label}` })),
+    onPick: (id) => id !== it.status && mutate(key, { status: id }) });
+}
+function priorityMenu(key = ui.selected) {
+  const it = byKey(key); if (!it || !guard()) return;
+  openMenu({ anchor: anchorFor("priority"), label: "Set priority", selected: it.priority == null ? [] : [it.priority],
+    options: PRIORITIES.map((p) => ({ id: p.id, label: `${p.label} ${p.name}`, keys: String(p.id), kbd: String(p.id), html: `${tagHtml(p.id)}<span>${p.name}</span>` })),
+    onPick: (id) => id !== it.priority && mutate(key, { priority: id }) });
+}
+function assignMenu(key = ui.selected) {
+  const it = byKey(key); if (!it || !guard()) return;
+  const people = Object.entries(PEOPLE).sort(([a], [b]) => (b === ME) - (a === ME));
+  openMenu({ anchor: anchorFor("assignee"), label: "Assign to", selected: [it.assignee || "none"],
+    options: [...people.map(([id, p]) => ({ id, label: p.name, html: `${avatarHtml(id)}<span>${esc(p.name)}${id === ME ? ' <span class="muted">(you)</span>' : ""}</span>`, kbd: id === ME ? "I" : "" })),
+      { id: "none", label: "Unassigned", html: `${avatarHtml(null)}<span>Unassigned</span>` }],
+    onPick: (id) => { const v = id === "none" ? null : id; if (v !== it.assignee) mutate(key, { assignee: v }); } });
+}
+function labelMenu(key = ui.selected) {
+  const it = byKey(key); if (!it || !guard()) return;
+  openMenu({ anchor: anchorFor("labels"), label: "Labels", multi: true, selected: it.labels,
+    options: LABELS.map((l) => ({ id: l, label: l })),
+    onPick: (ids) => mutate(key, { labels: LABELS.filter((l) => ids.includes(l)) }, { quiet: true }) });
+}
+function filterMenu(kind, anchor) {
+  const opts = {
+    priority: [...PRIORITIES.map((p) => ({ id: String(p.id), label: `${p.label} ${p.name}`, html: `${tagHtml(p.id)}<span>${p.name}</span>` })), { id: "none", label: "No priority", html: `${tagHtml(null)}<span>No priority</span>` }],
+    assignee: [...Object.entries(PEOPLE).map(([id, p]) => ({ id, label: p.name, html: `${avatarHtml(id)}<span>${esc(p.name)}</span>` })), { id: "none", label: "Unassigned", html: `${avatarHtml(null)}<span>Unassigned</span>` }],
+    label: LABELS.map((l) => ({ id: l, label: l })),
+  }[kind];
+  openMenu({ anchor, label: `Filter by ${kind}`, multi: true, selected: [...ui.filters[kind]], options: opts,
+    onPick: (ids) => { ui.filters[kind] = new Set(ids); refreshList(); } });
+}
+function refreshList() { renderToolbar(); renderList({ flip: true }); if (ui.selected == null || !visibleIssues().some((i) => i.key === ui.selected)) { const f = orderedKeys()[0]; ui.selected = f || null; } renderPanel(); syncUrl(); }
+
+/* ================= command palette ================= */
+const pal = { dlg: $("#palette"), input: $("#palette-input"), list: $("#palette-list"), items: [], active: 0, returnFocus: null };
+function commands() {
+  const sel = ui.selected;
+  const c = [
+    ...VIEWS.map((v) => ({ group: "Go to", label: v.name, icon: v.icon, kbd: { triage: "G T", mine: "G M", all: "G A" }[v.id] || "", run: () => setView(v.id) })),
+    { group: "Actions", label: "New issue", icon: "plus", kbd: "C", run: openNew },
+  ];
+  if (sel) {
+    c.push(...STATUSES.map((s) => ({ group: `Actions on ${sel}`, label: `Status: ${s.label}`, icon: s.icon, run: () => mutate(sel, { status: s.id }) })));
+    c.push(...PRIORITIES.map((p) => ({ group: `Actions on ${sel}`, label: `Priority: ${p.label} ${p.name.toLowerCase()}`, icon: "flag", kbd: String(p.id), run: () => mutate(sel, { priority: p.id }) })));
+    c.push(...Object.entries(PEOPLE).map(([id, p]) => ({ group: `Actions on ${sel}`, label: `Assign to ${p.name}`, icon: "user", kbd: id === ME ? "I" : "", run: () => mutate(sel, { assignee: id }) })));
+    c.push({ group: `Actions on ${sel}`, label: "Copy link", icon: "link-simple", run: copyLink });
+  }
+  c.push(
+    { group: "App", label: "Keyboard shortcuts", icon: "keyboard", kbd: "?", run: openKeys },
+    { group: "App", label: `Theme: ${ui.theme === "dark" ? "system" : ui.theme === "light" ? "dark" : "light"}`, icon: "circle-half", run: cycleTheme },
+    { group: "App", label: ui.shortcutsOn ? "Turn off single-key shortcuts" : "Turn on single-key shortcuts", icon: "keyboard", run: () => setShortcuts(!ui.shortcutsOn) },
+    ...PREVIEWS.map((p) => ({ group: "Preview states", label: `Preview: ${p.label}`, icon: "sliders-horizontal", run: () => setPreview(p.id) })),
+  );
+  return c;
+}
+function score(label, q) {
+  const l = label.toLowerCase();
+  if (!q) return 1;
+  if (l.startsWith(q)) return 4;
+  if (l.split(/[\s:/_-]+/).some((w) => w.startsWith(q))) return 3;
+  if (l.includes(q)) return 2;
+  let i = 0; for (const ch of l) if (ch === q[i]) i++;
+  return i === q.length ? 1 : 0;
+}
+function highlight(label, q) {
+  if (!q) return esc(label);
+  const at = label.toLowerCase().indexOf(q);
+  return at < 0 ? esc(label) : `${esc(label.slice(0, at))}<mark>${esc(label.slice(at, at + q.length))}</mark>${esc(label.slice(at + q.length))}`;
+}
+function paletteResults() {
+  const q = pal.input.value.trim().toLowerCase();
+  if (!q) {
+    const recent = ui.recent.map(byKey).filter(Boolean).slice(0, 4).map((i) => issueItem(i, "Recent issues"));
+    const suggested = commands().filter((c) => c.group === "Go to" || c.group === "Actions" || c.group.startsWith("Actions on") && /Status: In progress|Assign to Jun/.test(c.label));
+    return [...recent, ...suggested];
+  }
+  const iss = issues.map((i) => [issueItem(i, "Issues"), Math.max(score(i.key, q) + 1, score(i.title, q))]);
+  const cmd = commands().map((c) => [c, score(c.label, q)]);
+  return [...iss, ...cmd].filter(([, s]) => s > 0).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([c]) => c);
+}
+function issueItem(i, group) {
+  return { group, label: `${i.key} ${i.title}`, issue: i, run: () => openIssue(i.key) };
+}
+function openIssue(key) {
+  const i = byKey(key);
+  if (!visibleIssues().some((x) => x.key === key)) {
+    const v = VIEWS.find((x) => x.match(i)) || viewOf("all");
+    ui.filters = { q: "", priority: new Set(), assignee: new Set(), label: new Set() };
+    ui.view = v.id; renderAll({ push: true });
+  }
+  select(key);
+}
+function drawPalette() {
+  const q = pal.input.value.trim().toLowerCase();
+  pal.items = paletteResults();
+  pal.active = Math.min(pal.active, Math.max(0, pal.items.length - 1));
+  if (!pal.items.length) {
+    pal.list.innerHTML = `<li class="empty-opt" role="presentation" style="padding:var(--space-3)">No issue or command matches “${esc(pal.input.value)}”.</li><li role="option" id="po-new" class="opt" aria-selected="true" data-new>
+      <i class="ph ph-plus" aria-hidden="true"></i>Create issue “${esc(pal.input.value)}”</li>`;
+    pal.input.setAttribute("aria-activedescendant", "po-new");
+    $("#palette-count").textContent = "No results";
+    return;
+  }
+  let html = "", group = "";
+  pal.items.forEach((c, n) => {
+    if (c.group !== group) { group = c.group; html += `<li class="grp" role="presentation">${esc(group)}</li>`; }
+    const body = c.issue
+      ? `${tagHtml(c.issue.priority)}<span class="mono muted">${c.issue.key}</span><span>${highlight(c.issue.title, q)}</span>`
+      : `<i class="ph ph-${c.icon}" aria-hidden="true"></i><span>${highlight(c.label, q)}</span>`;
+    html += `<li role="option" id="po-${n}" class="opt" data-n="${n}" aria-selected="${n === pal.active}">${body}${c.kbd ? `<kbd>${c.kbd}</kbd>` : ""}</li>`;
+  });
+  pal.list.innerHTML = html;
+  pal.input.setAttribute("aria-activedescendant", `po-${pal.active}`);
+  pal.list.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
+  $("#palette-count").textContent = q ? `${pal.items.length} results` : "";
+}
+function openPalette() {
+  closeMenu(false);
+  if (pal.dlg.open) { pal.dlg.close(); return; }
+  pal.returnFocus = document.activeElement;
+  pal.input.value = ""; pal.active = 0;
+  pal.dlg.showModal(); drawPalette(); pal.input.focus();
+}
+function runPalette(n) {
+  const newRow = pal.list.querySelector("[data-new]");
+  const title = pal.input.value.trim();
+  const item = pal.items[n];
+  pal.pending = newRow ? () => openNew(title) : item?.run;
+  pal.dlg.close();
+}
+pal.input.addEventListener("input", () => { pal.active = 0; drawPalette(); });
+pal.input.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowDown") { e.preventDefault(); pal.active = Math.min(pal.items.length - 1, pal.active + 1); drawPalette(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); pal.active = Math.max(0, pal.active - 1); drawPalette(); }
+  else if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); runPalette(pal.active); }
+});
+pal.list.addEventListener("click", (e) => { const li = e.target.closest(".opt"); if (li) runPalette(li.dataset.new != null ? 0 : +li.dataset.n); });
+pal.dlg.addEventListener("close", () => {
+  const run = pal.pending; pal.pending = null;
+  if (run) { run(); return; }
+  if (pal.returnFocus?.isConnected && !document.querySelector("dialog[open]")) pal.returnFocus.focus({ preventScroll: true });
+});
+pal.dlg.addEventListener("click", (e) => { if (e.target === pal.dlg) pal.dlg.close(); });
+
+/* ================= new issue dialog ================= */
+const nd = { dlg: $("#new-dialog"), form: $("#new-form"), title: $("#new-title"), desc: $("#new-desc"), pri: $("#new-pri"), asg: $("#new-asg"), err: $("#new-title-err"), returnFocus: null };
+nd.asg.innerHTML = `<option value="">Unassigned</option>` + Object.entries(PEOPLE).map(([id, p]) => `<option value="${id}">${esc(p.name)}${id === ME ? " (you)" : ""}</option>`).join("");
+function openNew(prefill = "") {
+  if (ui.guest) { guard(); return; }
+  nd.returnFocus = document.activeElement;
+  if (typeof prefill === "string" && prefill) nd.title.value = prefill;
+  $("#draft-note").textContent = nd.title.value || nd.desc.value ? "Draft restored" : "";
+  nd.dlg.showModal(); nd.title.focus();
+}
+function validateTitle() {
+  const bad = !nd.title.value.trim();
+  nd.title.setAttribute("aria-invalid", String(bad)); nd.err.hidden = !bad;
+  return !bad;
+}
+nd.title.addEventListener("blur", () => { if (nd.title.value || nd.title.getAttribute("aria-invalid") === "true") validateTitle(); });
+nd.title.addEventListener("input", () => { if (nd.title.getAttribute("aria-invalid") === "true") validateTitle(); });
+nd.form.addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); nd.form.requestSubmit(); } });
+$("#new-cancel").addEventListener("click", () => nd.dlg.close());
+nd.dlg.addEventListener("close", () => { if (nd.title.value || nd.desc.value) toast("Draft kept. Press C to pick it up again."); nd.returnFocus?.focus?.({ preventScroll: true }); });
+nd.form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!validateTitle()) { nd.title.focus(); return; }
+  const btn = $("#new-submit");
+  btn.setAttribute("aria-disabled", "true"); btn.firstChild.textContent = "Creating… ";
+  setTimeout(() => {
+    const n = Math.max(...issues.map((i) => +i.key.split("-")[1])) + 1;
+    const pri = nd.pri.value === "" ? null : +nd.pri.value;
+    const asg = nd.asg.value || null;
+    const at = nowIso();
+    const it = issue(`ING-${n}`, nd.title.value.trim(), pri != null && asg ? "todo" : "triage", pri, asg, [], ME, at, at,
+      nd.desc.value.trim() ? nd.desc.value.trim().split(/\n{2,}/).map(esc) : []);
+    it.events.push({ at, text: `${PEOPLE[ME].name} filed this` });
+    issues = [it, ...issues]; ui.empty = false;
+    nd.form.reset(); btn.removeAttribute("aria-disabled"); btn.firstChild.textContent = "Create issue ";
+    nd.dlg.close();
+    if (!visibleIssues().some((i) => i.key === it.key)) { ui.view = it.status === "triage" ? "triage" : "all"; }
+    renderAll({ flip: true, push: true });
+    select(it.key);
+    toast(`<span class="key">${it.key}</span> filed${it.status === "triage" ? " in Triage" : ""}`, { html: true });
+  }, 400);
+});
+
+/* ================= shortcuts dialog, theme, preview ================= */
+function openKeys() { $("#keys-dialog").showModal(); }
+function setShortcuts(on) { ui.shortcutsOn = on; $("#keys-toggle").checked = on; toast(on ? "Single-key shortcuts on." : `Single-key shortcuts off. ${isMac ? "⌘K" : "Ctrl K"} still opens the command menu.`); }
+$("#keys-toggle").addEventListener("change", (e) => setShortcuts(e.target.checked));
+function cycleTheme() {
+  ui.theme = { system: "light", light: "dark", dark: "system" }[ui.theme];
+  if (ui.theme === "system") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = ui.theme;
+  $("#theme-label").textContent = `Theme: ${ui.theme}`;
+}
+const PREVIEWS = [
+  { id: "live", label: "Live data", short: "Live" },
+  { id: "loading", label: "Loading", short: "Loading" },
+  { id: "error", label: "List fails to load", short: "Error" },
+  { id: "issue-error", label: "Issue fails to load", short: "Error" },
+  { id: "offline", label: "Offline, stale data", short: "Offline" },
+  { id: "guest", label: "Guest, read-only", short: "Guest" },
+  { id: "empty", label: "Empty workspace", short: "Empty" },
+  { id: "fail", label: "Next save fails", short: "Fail" },
+];
+function currentPreview() {
+  if (ui.mode === "loading" && ui.previewLoading) return "loading";
+  if (ui.mode === "error") return "error";
+  if (ui.mode === "issue-error") return "issue-error";
+  if (ui.offline) return "offline";
+  if (ui.guest) return "guest";
+  if (ui.empty) return "empty";
+  if (ui.failNext) return "fail";
+  return "live";
+}
+function setPreview(id) {
+  Object.assign(ui, { mode: "ready", offline: false, guest: false, empty: false, failNext: false, previewLoading: false });
+  if (id === "loading") Object.assign(ui, { mode: "loading", previewLoading: true });
+  if (id === "error") ui.mode = "error";
+  if (id === "issue-error") ui.mode = "issue-error";
+  if (id === "offline") ui.offline = true;
+  if (id === "guest") ui.guest = true;
+  if (id === "empty") { ui.empty = true; ui.selected = null; }
+  if (id === "fail") ui.failNext = true;
+  $("#preview-label").textContent = PREVIEWS.find((p) => p.id === id).short;
+  if (!ui.selected && !ui.empty && ui.mode === "ready" && !isPhone()) ui.selected = orderedKeys()[0] || null;
+  renderAll();
+  if (id === "fail") toast("The next change you make will fail to save, so you can see the rollback.");
+}
+function loadThen(fn) { // simulated fetch: skeleton only appears after 300ms (CSS delay)
+  ui.mode = "loading"; renderAll();
+  setTimeout(() => { ui.mode = "ready"; fn?.(); renderAll(); }, 650);
+}
+
+/* ================= toasts ================= */
+function toast(message, { action, kbd, onAction, kind, html = false } = {}) {
+  const host = $("#toasts");
+  const el = document.createElement("div");
+  el.className = "toast"; if (kind) el.dataset.kind = kind;
+  el.innerHTML = `<p></p>${action ? `<button class="btn" type="button">${esc(action)}${kbd ? ` <kbd>${kbd}</kbd>` : ""}</button>` : ""}`;
+  el.querySelector("p")[html ? "innerHTML" : "textContent"] = message;
+  if (action) el.querySelector("button").addEventListener("click", () => { dismiss(el); onAction?.(); });
+  host.append(el);
+  while (host.children.length > 3) host.firstElementChild.remove();
+  let timer = setTimeout(() => dismiss(el), 8000); // reading time for Undo, not motion
+  el.restart = () => { clearTimeout(timer); timer = setTimeout(() => dismiss(el), 8000); };
+  el.addEventListener("pointerenter", () => clearTimeout(timer));
+  el.addEventListener("pointerleave", () => (timer = setTimeout(() => dismiss(el), 3000)));
+  el.addEventListener("focusin", () => clearTimeout(timer));
+  return el;
+}
+function dismiss(el) {
+  if (!el.isConnected || el.classList.contains("is-leaving")) return;
+  el.classList.add("is-leaving");
+  setTimeout(() => el.remove(), token("micro") + 30);
+}
+function announce(text) { const n = $("#view-count-sr"); n.setAttribute("aria-live", "polite"); n.textContent = text; }
+async function copyLink() {
+  try { await navigator.clipboard.writeText(location.href); toast(`Link to ${ui.selected} copied.`); }
+  catch { toast(`Couldn't reach the clipboard. The link is in the address bar.`, { kind: "error" }); }
+}
+
+/* ================= keyboard ================= */
+let chord = null, chordTimer = 0;
+function typingIn(t) { return t.closest?.("input, textarea, select, [contenteditable]"); }
+document.addEventListener("keydown", (e) => {
+  const mod = e.metaKey || e.ctrlKey;
+  if (mod && e.key.toLowerCase() === "k") { e.preventDefault(); openPalette(); return; }
+  if (document.querySelector("dialog[open]") || !menu.el.hidden) return;
+  if (e.key === "Escape") {
+    if (typingIn(e.target)) { e.target.blur(); return; }
+    if (ui.panelOpen && ui.selected) { e.preventDefault(); closePanel(); }
+    return;
+  }
+  if (mod || e.altKey || typingIn(e.target)) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") { if (e.target.closest(".row, #list") || e.target === document.body) { e.preventDefault(); move(e.key === "ArrowDown" ? 1 : -1); } return; }
+  if (e.key === "Enter" && e.target.closest(".row")) return; // native button click opens it
+  if (!ui.shortcutsOn) return;
+  const k = e.key.toLowerCase();
+  if (chord === "g") {
+    chord = null; clearTimeout(chordTimer);
+    const v = { t: "triage", m: "mine", a: "all" }[k];
+    if (v) { e.preventDefault(); setView(v); }
+    return;
+  }
+  const sel = ui.selected;
+  const act = {
+    j: () => move(1), k: () => move(-1),
+    o: () => sel && select(sel),
+    "/": () => $("#filter-q").focus(),
+    "?": openKeys,
+    c: () => openNew(),
+    z: undo,
+    g: () => { chord = "g"; chordTimer = setTimeout(() => (chord = null), 900); },
+    s: () => sel && statusMenu(), p: () => sel && priorityMenu(), a: () => sel && assignMenu(), l: () => sel && labelMenu(),
+    i: () => sel && mutate(sel, { assignee: ME }),
+    x: () => sel && mutate(sel, { status: "done" }),
+    0: () => sel && mutate(sel, { priority: 0 }), 1: () => sel && mutate(sel, { priority: 1 }),
+    2: () => sel && mutate(sel, { priority: 2 }), 3: () => sel && mutate(sel, { priority: 3 }),
+  }[e.key === "?" ? "?" : k];
+  if (act) { e.preventDefault(); act(); }
+});
+
+/* ================= clicks ================= */
+document.addEventListener("click", (e) => {
+  const row = e.target.closest(".row");
+  if (row) { select(row.dataset.key, { open: true }); if (isPhone()) $("#panel-title")?.focus(); return; }
+  const nav = e.target.closest("[data-view]");
+  if (nav) { setView(nav.dataset.view); return; }
+  const f = e.target.closest(".field-btn");
+  if (f) { ({ status: statusMenu, priority: priorityMenu, assignee: assignMenu, labels: labelMenu })[f.dataset.field](); return; }
+  const chip = e.target.closest(".chip");
+  if (chip) { filterMenu(chip.dataset.filter, chip); return; }
+  const a = e.target.closest("[data-act]");
+  if (!a || a.tagName === "FORM") return;
+  ({
+    "close-panel": closePanel,
+    "copy-link": copyLink,
+    "toggle-closed": () => { ui.closedOpen = !ui.closedOpen; renderList(); $('[data-act="toggle-closed"]')?.focus(); },
+    "retry-load": () => loadThen(),
+    "retry-issue": () => { ui.mode = "ready"; renderAll(); },
+    "clear-filters": () => { ui.filters = { q: "", priority: new Set(), assignee: new Set(), label: new Set() }; refreshList(); $("#list").focus(); },
+    "goto-mine": () => setView("mine"),
+    "goto-all": () => setView("all"),
+    "new": () => openNew(),
+    "reconnect": () => { ui.offline = false; issues.forEach((i) => delete i.queued); $("#preview-label").textContent = "Live"; renderAll(); toast("Back online. Your changes are synced."); },
+  })[a.dataset.act]?.();
+});
+document.addEventListener("submit", (e) => {
+  if (!e.target.matches(".comment-form")) return;
+  e.preventDefault();
+  const box = e.target.querySelector("textarea"), text = box.value.trim();
+  if (!text) { box.focus(); return; }
+  addComment(text);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.target.id === "comment-box" && e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); e.target.form.requestSubmit(); }
+});
+document.addEventListener("input", (e) => { if (e.target.id === "comment-box") { const it = byKey(ui.selected); if (it) it.draft = e.target.value; } });
+$("#filter-q").addEventListener("input", (e) => { ui.filters.q = e.target.value; refreshList(); });
+$("#filter-q").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === "ArrowDown") { e.preventDefault(); const k = orderedKeys()[0]; if (k) select(k); } });
+$("#open-palette").addEventListener("click", openPalette);
+$("#m-palette").addEventListener("click", openPalette);
+$("#new-issue").addEventListener("click", () => openNew());
+$("#m-new").addEventListener("click", () => openNew());
+$("#open-shortcuts").addEventListener("click", openKeys);
+$("#theme-btn").addEventListener("click", cycleTheme);
+$("#view-select").addEventListener("change", (e) => setView(e.target.value));
+$("#preview-btn").addEventListener("click", (e) => openMenu({ anchor: e.currentTarget, label: "Preview state", selected: [currentPreview()],
+  options: PREVIEWS.map((p) => ({ id: p.id, label: p.label })), onPick: setPreview }));
+addEventListener("popstate", () => { const st = readUrl(); if (st === "live") renderAll(); else setPreview(st); });
+addEventListener("message", (e) => { if (e.data?.type === "fgu:theme") document.documentElement.dataset.theme = e.data.theme; });
+
+/* ================= boot ================= */
+(function boot() {
+  const st = readUrl();
+  if (!ui.selected && !isPhone()) ui.selected = orderedKeys()[0] || null;
+  if (isPhone() && !new URLSearchParams(location.search).get("issue")) ui.panelOpen = false;
+  if (st !== "live") { setPreview(st); return; }
+  loadThen(() => { if (!ui.selected && !isPhone()) ui.selected = orderedKeys()[0] || null; });
+})();
+</script>
+</body>
+</html>
