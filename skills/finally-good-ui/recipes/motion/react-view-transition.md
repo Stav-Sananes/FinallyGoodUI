@@ -19,7 +19,7 @@ The stack profile's `viewTransitions` is `"react"` when this recipe applies.
 - `name` is for shared elements only. One mounted element per name in the whole app. A pair forms only when both sides are in the viewport.
 - React skips popstate: the browser back button gets no animation. Fine: it is what users expect from back.
 
-## Pick the pattern (most valuable first; one signature moment per app)
+## Pick the pattern (most valuable first; at most three expressive moments per app)
 | The person needs to… | Pattern | Props |
 |---|---|---|
 | follow a list item into its detail | shared element | same `name` on both sides, `share="morph" default="none"` |

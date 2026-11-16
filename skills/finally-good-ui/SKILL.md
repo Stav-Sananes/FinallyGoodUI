@@ -30,7 +30,7 @@ Arguments: `$ARGUMENTS`
 4. **Respect what exists.** Precedence: the user's words, then `.design/` files, then the project's existing design system (extract it), then your reasoning. Reuse existing components before creating new ones.
 5. **Adapt to the stack.** Use what is installed. Suggest a new dependency only when a recipe needs a capability the stack lacks, and ask first with the reason and size.
 6. **Verify the rendered result.** "Looks right in code" is not done. Run the verify module. If you cannot render it, say so plainly.
-7. **Motion is a system, not decoration.** Use motion tokens only, animate only transform and opacity, apply the frequency budget, support reduced motion, and give each app one signature moment.
+7. **Motion is a system, not decoration.** Use motion tokens only, animate only transform and opacity, apply the frequency budget, support reduced motion, and give each app a few expressive moments (at most three) that people actually see.
 8. **Real content, never lorem.** Use the product's actual domain language, units and data shapes.
 9. **Never silently skip the interview or the directions for a new app.** "You decide" answers are allowed, but a user choosing is not the same as you guessing. If the user asks to go fast, say what quality you're giving up and ask. (Learned in testing: skipping these steps produced functional but bland apps.)
 10. **Mirror the user's mental model, not the data model.** Before laying out any screen, write one sentence describing how the user thinks about the task (e.g. "the recipe needs 6 eggs; eggs come 12 for $4.29"). If the layout mirrors the database columns instead, redesign it.
@@ -71,7 +71,7 @@ Add: "Every path ends the same way: the result is checked in a real browser, and
 Applies when `.design/config.json` has `"mode": "autonomous"`, or when the request says no person will answer (a headless or CI run, a parent agent's brief). The pipeline is the same; who decides changes:
 - **Interview:** answer each question from the request and the code only. Mark every answer in `brief.md` as `brief`, `inferred (<source>)` or `default`. If the recommended option needs a person (references: "I'll name some"), take the next option ("pick a finish") and choose the finish from the brief. If no option is recommended for this product, decide by the card the question cites and log it.
 - **Approvals** (brief, blueprint, direction): record `self-approved (autonomous)` in `decisions.md` and continue.
-- **Directions:** write all three specs. With subagents, build all three; without, build only the one you pick and record why, as "chosen by agent: <reason>". The delivery gate's fidelity check compares the build with that spec.
+- **Directions:** write all three specs. With subagents, build all three; without, build only the one you pick and record why, as "chosen by agent: <reason>". Pick on **distinctiveness, not safety**: the record says what makes the pick unlike a generic app of its kind and unlike the ink-on-paper house style, citing the brief. The quiet direction (A) wins only when a brief line demands restraint, quoted in the record. The delivery gate's fidelity check compares the build with that spec.
 - **Dependencies:** never install anything. Take the fallback and say so in the report.
 - **Hand-off:** list every self-answered decision first, so the person can overrule them later.
 

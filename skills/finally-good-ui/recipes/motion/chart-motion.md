@@ -6,7 +6,7 @@
 
 **When NOT to use:** data that refreshes on its own (polling, streaming: update in place); charts the person flips between many times a minute (range scrubbing: instant); sparklines in table cells (dozens at once: static); a chart whose library already animates (theme its timing instead, patterns/chart.md and `chart-theme.js`).
 
-**Tokens:** `--duration-medium` (300, line draw, bar grow, range change) · `--duration-instant` (50, step between bars, at most 8 steps) · `--ease-move` (value changes) · `--ease-enter` (first draw) · `--color-chart-1`…`--color-chart-8`
+**Tokens:** `--duration-long` (400, first line draw and bar grow) · `--duration-medium` (300, range change) · `--duration-instant` (50, step between bars, at most 8 steps) · `--ease-move` (value changes) · `--ease-enter` (first draw) · `--color-chart-1`…`--color-chart-8`
 
 ## Line draws in (SVG)
 `pathLength="1"` turns the dash maths into 0→1 whatever the path's real length.
@@ -23,8 +23,8 @@
   fill: none; stroke: var(--color-chart-1); stroke-width: 2; stroke-linejoin: round;
   stroke-dasharray: 1; stroke-dashoffset: 0;
 }
-.chart[data-first] .chart-line { animation: chart-draw var(--duration-medium) var(--ease-enter) both; }
-.chart[data-first] .chart-last { animation: chart-dot var(--duration-short) var(--ease-enter) var(--duration-medium) both; }
+.chart[data-first] .chart-line { animation: chart-draw var(--duration-long) var(--ease-enter) both; }
+.chart[data-first] .chart-last { animation: chart-dot var(--duration-standard) var(--ease-enter) var(--duration-long) both; }
 @keyframes chart-draw { from { stroke-dashoffset: 1; } }
 @keyframes chart-dot { from { opacity: 0; transform: scale(0.6); } }
 .chart-last { transform-box: fill-box; transform-origin: center; fill: var(--color-chart-1); }
@@ -38,7 +38,7 @@ The final point appears after the line reaches it: the eye ends on "now".
   transition: transform var(--duration-medium) var(--ease-move);
 }
 .chart[data-first] .bar {
-  animation: bar-grow var(--duration-medium) var(--ease-enter) both;
+  animation: bar-grow var(--duration-long) var(--ease-enter) both;
   animation-delay: calc(min(var(--i, 0), 7) * var(--duration-instant));
 }
 @keyframes bar-grow { from { transform: scaleY(0.02); } }

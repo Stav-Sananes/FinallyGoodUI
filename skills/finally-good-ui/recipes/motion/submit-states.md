@@ -22,7 +22,7 @@ All three labels sit in one grid cell, so the button is always as wide as its lo
 .submit { display: inline-grid; place-items: center; min-block-size: 44px; padding-inline: var(--space-4); }
 .submit-label {
   grid-area: 1 / 1; display: inline-flex; align-items: center; gap: var(--space-2);
-  opacity: 0; transform: translateY(4px);
+  opacity: 0; transform: translateY(8px);
   transition: opacity var(--duration-short) var(--ease-move), transform var(--duration-short) var(--ease-move);
 }
 .submit[data-state="idle"]    .submit-label[data-for="idle"],

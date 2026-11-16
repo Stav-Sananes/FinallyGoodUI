@@ -38,7 +38,7 @@ Goal: turn the chosen direction (or the confirmed existing brand) into **one sou
 - **Motion**: see below.
 
 ## 3. Motion language
-Start from the `duration` and `easing` groups in `tokens/default.tokens.json` (durations instant 50 · micro 100 · short 150 · standard 250 · medium 300 · long 400 · hero 500 ms; easings enter, enter-emphasized, exit, move, snappy, linear). Then set them from the brief:
+Start from the `duration` and `easing` groups in `tokens/default.tokens.json` (durations instant 50 · micro 100 · short 150 · standard 250 · medium 300 · long 400 · hero 600 ms; easings enter, enter-emphasized, exit, move, snappy, linear). Then set them from the brief:
 
 | Brief says | Axis position | Adjust |
 |---|---|---|
@@ -48,8 +48,8 @@ Start from the `duration` and `easing` groups in `tokens/default.tokens.json` (d
 
 Write a **Motion** section into `.design/brand.md` with:
 - **Spatial map:** which navigations move forward (drill-in), which reverse (back), which crossfade (peer tabs) (`motion.spatial-continuity`).
-- **Budget per screen type**, from frequency of use (`motion.frequency-budget`): e.g. "Inbox list: press feedback only. Onboarding: staggered entrance plus the signature moment."
-- **The one signature moment** (`motion.one-signature-moment`): where it is and why that place.
+- **Budget per screen type**, from frequency of use (`motion.frequency-budget`): e.g. "Inbox list: press feedback only. Onboarding: staggered entrance plus an expressive moment."
+- **The expressive moments, at most three** (`motion.one-signature-moment`): where each is and why that place; each runs once per session or task, up to `--duration-hero`.
 - **Reduced-motion policy:** keep opacity and colour, drop translation and scale (`motion.reduced-motion`).
 
 ## 4. Emit to the stack

@@ -6,7 +6,7 @@
 
 **When NOT to use:** loads under ~300ms (skeleton flash is worse than nothing — delay it); actions the user triggered on one element (use an inline spinner/progress on that control — states.optimistic-feedback); when the layout is unknown (a generic grey block lies about the shape; use a centred progress indicator).
 
-**Tokens:** `--duration-standard` (250, content in) · `--duration-short` (150, skeleton appear) · `--duration-medium` (300, delay before the skeleton shows) · `--ease-enter` · shimmer 1.2–1.6s `--ease-linear` (loop; exempt from the 500ms cap because it is ambient, not a transition) · `--color-muted`
+**Tokens:** `--duration-standard` (250, content in) · `--duration-short` (150, skeleton appear) · `--duration-medium` (300, delay before the skeleton shows) · `--ease-enter` · shimmer 1.2–1.6s `--ease-linear` (loop; exempt from the 600ms cap because it is ambient, not a transition) · `--color-muted`
 
 ## CSS baseline
 ```html

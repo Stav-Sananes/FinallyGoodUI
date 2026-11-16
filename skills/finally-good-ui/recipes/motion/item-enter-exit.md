@@ -6,7 +6,7 @@
 
 **When NOT to use:** first load (list-stagger-enter, once); sort and filter (list-reorder-flip moves the survivors); more than a handful of items at once (bulk delete swaps instantly, then one toast); virtualised lists (never animate row height there); keyboard-driven triage where the person removes items in quick succession (motion.frequency-budget: collapse instantly, keep the Undo).
 
-**Tokens:** `--duration-short` (150, exit) · `--duration-standard` (250, enter) · `--duration-medium` (300, new-item tint fade, after the row opens) · `--ease-enter` · `--ease-exit` · `--ease-move` · `--color-accent` (new-item tint)
+**Tokens:** `--duration-short` (150, exit) · `--duration-medium` (300, enter) · `--duration-medium` (300, new-item tint fade, after the row opens) · `--ease-enter` · `--ease-exit` · `--ease-move` · `--color-accent` (new-item tint)
 
 ## Baseline
 Each row sits in a grid-rows wrapper, so its height animates to and from its real size without measuring (the same technique as accordion-auto-height).
@@ -18,14 +18,14 @@ Each row sits in a grid-rows wrapper, so its height animates to and from its rea
 ```css
 .item {
   display: grid; grid-template-rows: 1fr; opacity: 1;
-  transition: grid-template-rows var(--duration-standard) var(--ease-move), /* fgu-allow: animate-layout-prop */
-              opacity var(--duration-standard) var(--ease-enter),
-              transform var(--duration-standard) var(--ease-enter);
+  transition: grid-template-rows var(--duration-medium) var(--ease-move), /* fgu-allow: animate-layout-prop */
+              opacity var(--duration-medium) var(--ease-enter),
+              transform var(--duration-medium) var(--ease-enter);
 }
 .item-inner { overflow: hidden; min-block-size: 0; }
-.item[data-state="entering"] { grid-template-rows: 0fr; opacity: 0; transform: translateY(-4px); }
+.item[data-state="entering"] { grid-template-rows: 0fr; opacity: 0; transform: translateY(-12px); }
 .item[data-state="leaving"] {
-  grid-template-rows: 0fr; opacity: 0; transform: translateX(-12px);
+  grid-template-rows: 0fr; opacity: 0; transform: translateX(-24px);
   transition-duration: var(--duration-short); transition-timing-function: var(--ease-exit);
   pointer-events: none;
 }
@@ -36,7 +36,7 @@ Each row sits in a grid-rows wrapper, so its height animates to and from its rea
   .item[data-state="entering"], .item[data-state="leaving"] { transform: none; }
 }
 ```
-`translateX(-12px)` on exit says "moved aside", not "flew away"; in RTL use logical direction (`[dir=rtl] .item[data-state="leaving"] { transform: translateX(12px); }`).
+`translateX(-24px)` on exit says "moved aside", not "flew away"; in RTL use logical direction (`[dir=rtl] .item[data-state="leaving"] { transform: translateX(24px); }`).
 
 ## Script
 ```js

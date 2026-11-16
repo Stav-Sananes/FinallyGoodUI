@@ -772,7 +772,7 @@
         "value": 300,
         "unit": "ms"
       },
-      "$description": "Sheets, drawers; ceiling for routine UI"
+      "$description": "Sheets, drawers"
     },
     "long": {
       "$type": "duration",
@@ -780,15 +780,15 @@
         "value": 400,
         "unit": "ms"
       },
-      "$description": "Page transitions, rare moments"
+      "$description": "Page transitions; ceiling for routine UI"
     },
     "hero": {
       "$type": "duration",
       "$value": {
-        "value": 500,
+        "value": 600,
         "unit": "ms"
       },
-      "$description": "Signature moment only; nothing longer except backdrops"
+      "$description": "Expressive moments only (up to three per app); nothing longer except backdrops"
     }
   },
   "easing": {

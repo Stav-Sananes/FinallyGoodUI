@@ -9,6 +9,7 @@ import { findColors, findSpacing, stripComments, jsStringLiterals, JS_EXTS, MARK
 import { RULE_CARDS, DEFAULT_SPACE_SCALE } from "./lib/rules.mjs";
 import { groupTokens, parseDimension } from "./lib/tokens.mjs";
 import { loadTokens } from "./lib/token-files.mjs";
+import { parseColor, toOklch } from "./lib/contrast.mjs";
 
 const HELP = `
 Usage: check-static.mjs [--root <dir>] [--files a,b] [--tokens <tokens.json>]
@@ -33,7 +34,7 @@ const SKIP_TOP = new Set(["test", "tests", "__tests__", "e2e", "cypress", "playw
 const SKIP_NESTED = /(^|\/)(__tests__|__mocks__|tests?|e2e|fixtures|vendor)\//;
 const LAYOUT_PROPS = /^(width|height|top|left|right|bottom|inset|margin(-[a-z-]+)?|padding(-[a-z-]+)?|(max|min)-(width|height))$/;
 const LAYOUT_JS_KEYS = /\b(width|height|top|left|right|bottom|margin\w*|padding\w*|maxHeight|maxWidth|minHeight|minWidth)\s*:/g;
-const SIGNATURE = /signature/i;
+const SIGNATURE = /signature|expressive/i;
 const VISUALLY_HIDDEN = /\bclip\s*:\s*rect\(|clip-path\s*:\s*inset\(\s*50%/;
 const INFINITE = /infinite|Infinity|animate-(spin|pulse|ping|bounce)/;
 const EXEMPT_COLOR_FILE = (f) => {
@@ -60,6 +61,30 @@ export function listDefaultFiles(root) {
 }
 
 /** Custom properties defined in CSS (files and <style> blocks): Map name -> [values]. */
+// ---- ink-on-paper (project-wide): the first (light) definitions of the page and primary colour roles.
+const BACKGROUND_ROLE = /(?<![\w-])--(?:color-)?(?:background|bg|canvas|paper)\s*:\s*([^;{}]+)/;
+const PRIMARY_ROLE = /(?<![\w-])--(?:color-)?primary\s*:\s*([^;{}]+)/;
+function inkOnPaper(targets, read) {
+  const found = {};
+  for (const rel of targets) {
+    const ext = extname(rel).toLowerCase();
+    if (!/^\.(css|scss|sass|less)$/.test(ext) && !MARKUP_EXTS.has(ext)) continue;
+    const text = read(rel);
+    if (text == null) continue;
+    const css = /^\.(css|scss|sass|less)$/.test(ext) ? stripComments(rel, text) : styleView(stripComments(rel, text));
+    for (const [key, re] of [["background", BACKGROUND_ROLE], ["primary", PRIMARY_ROLE]]) {
+      const m = !found[key] && css.match(re);
+      if (m) found[key] = { value: m[1].trim(), file: rel, line: lineIndex(css)(m.index) };
+    }
+    if (found.background && found.primary) break;
+  }
+  if (!found.background || !found.primary) return null;
+  const bg = toOklch(parseColor(found.background.value)), pr = toOklch(parseColor(found.primary.value));
+  if (!bg || !pr) return null;
+  const paper = bg.l >= 0.93 && bg.c <= 0.025, ink = pr.l <= 0.32 && pr.c <= 0.05;
+  return paper && ink ? { file: found.primary.file, line: found.primary.line, background: found.background.value, primary: found.primary.value } : null;
+}
+
 function customProps(rel, text, vars) {
   const ext = extname(rel).toLowerCase();
   const clean = stripComments(rel, text);
@@ -218,11 +243,11 @@ export function checkFile(rel, text, ctx) {
   }
 
   // ---- long-duration
-  // The app's one signature moment (motion.one-signature-moment) may take a long duration; name its
-  // selector or class "signature" to mark it. The 500ms ceiling still holds.
+  // The app's expressive moments (motion.one-signature-moment, up to three) may run longer; put
+  // "signature" or "expressive" in their selector or class to mark them. The 600ms ceiling still holds.
   const judge = (idx, ms, what, signature = false) => {
-    if (ms > 500) add("long-duration", idx, "high", `${what} ${Math.round(ms)}ms exceeds the 500ms ceiling (motion.frequency-budget); routine UI stays ≤300ms.`);
-    else if (ms > 300 && !signature) add("long-duration", idx, "medium", `${what} ${Math.round(ms)}ms is over 300ms; reserve long/hero durations for rare moments. For the app's one signature moment, put "signature" in its selector.`);
+    if (ms > 600) add("long-duration", idx, "high", `${what} ${Math.round(ms)}ms exceeds the 600ms ceiling (motion.frequency-budget); routine UI stays ≤400ms.`);
+    else if (ms > 400 && !signature) add("long-duration", idx, "medium", `${what} ${Math.round(ms)}ms is over 400ms; reserve hero durations for the app's expressive moments (up to three). Mark each by putting "signature" or "expressive" in its selector.`);
   };
   each(/(?<![\w-])(transition(?:-duration)?|animation(?:-duration)?|transitionDuration|animationDuration)\s*:\s*(['"`]?)([^;{}\n]+)/gi, clean, (m) => {
     const value = m[2] ? m[3].split(m[2])[0] : m[3];
@@ -694,6 +719,10 @@ export function checkStatic(rootArg = ".", { files, tokens } = {}) {
       message: "The project animates but never honours prefers-reduced-motion; add a reduced-motion policy (keep opacity/colour, drop movement).",
       card: RULE_CARDS["no-reduced-motion"] });
   }
+  const ink = inkOnPaper(targets, read);
+  if (ink) findings.push({ rule: "ink-on-paper", severity: "low", file: ink.file, line: ink.line, selector: null,
+    message: `Near-neutral light page (${ink.background}) with near-black primary actions (${ink.primary}): the ink-on-paper house style every calm, quiet brief lands on. Take colour from the product's world (a tinted canvas, a coloured primary, a motif that owns a surface), or justify it in decisions.md.`,
+    card: RULE_CARDS["ink-on-paper"] });
   if (ctx.glass.size >= 3) {
     const [first] = ctx.glass.values();
     findings.push({ rule: "glass-overuse", severity: "low", file: first.file, line: first.line, selector: null,

@@ -81,7 +81,7 @@ test("default tokens: groups, motion exactly per the duration/easing tokens", ()
   const t = defaults();
   for (const g of ["color", "font", "text", "space", "radius", "shadow", "duration", "easing"]) assert.ok(t[g], g);
   const d = Object.fromEntries(Object.entries(t.duration).map(([k, v]) => [k, v.$value.value]));
-  assert.deepEqual(d, { instant: 50, micro: 100, short: 150, standard: 250, medium: 300, long: 400, hero: 500 });
+  assert.deepEqual(d, { instant: 50, micro: 100, short: 150, standard: 250, medium: 300, long: 400, hero: 600 });
   const e = Object.fromEntries(Object.entries(t.easing).map(([k, v]) => [k, v.$value]));
   assert.deepEqual(e, { enter: [0, 0, 0, 1], "enter-emphasized": [0.05, 0.7, 0.1, 1], exit: [0.3, 0, 1, 1],
     move: [0.2, 0, 0, 1], snappy: [0.23, 1, 0.32, 1], linear: [0, 0, 1, 1] });

@@ -11,7 +11,7 @@ Depth values: `full` = new app, no brand · `brand` = new app with an existing b
 | Question | If the answer is… | …then downstream |
 |---|---|---|
 | interview.context.frequency | many times a day | Persistent visible nav, keyboard shortcuts, motion budget near zero on repeated actions (≤150ms, no entrance choreography). `motion.frequency-budget` |
-| interview.context.frequency | a few times a year | Guided flows, one-thing-per-page, more explanation, room for one signature moment. `flows-forms.one-thing-per-page` |
+| interview.context.frequency | a few times a year | Guided flows, one-thing-per-page, more explanation, room for a few expressive moments. `flows-forms.one-thing-per-page` |
 | interview.context.device | phone first | Bottom tabs (≤5 destinations), 44px targets, single-column layouts; desktop is the adaptation. `a11y.target-size` |
 | interview.context.device | both equally | 375 and 1440 designed together; one nav model with a phone and a desktop form, same destinations and order. `layout.intrinsic-responsive` |
 | interview.purpose.expertise | experts / daily pros | Density over air, tables over cards, shortcuts, fewer confirmations; resolve `usability.tension-guidance-expertise` toward efficiency. |

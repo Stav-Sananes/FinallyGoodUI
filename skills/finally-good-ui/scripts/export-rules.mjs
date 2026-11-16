@@ -80,7 +80,7 @@ function motionSection(skill, warnings) {
   const d = [...groupTokens(t.duration)].map(([n, v]) => `${n} ${cssValue("duration", v.$value)}`);
   const e = [...groupTokens(t.easing)].map(([n, v]) => `- \`${n}\`: ${cssValue("easing", v.$value)}${v.$description ? ` (${v.$description})` : ""}`);
   return "## Motion tokens\n\n" +
-    (d.length ? `Durations: ${d.join(" · ")}. Exits run at 60–75% of the enter. Routine UI ≤ 300ms; nothing over 500ms except backdrops.\n\n` : "") +
+    (d.length ? `Durations: ${d.join(" · ")}. Exits run at 60–75% of the enter. Routine UI ≤ 400ms; up to three expressive moments to 600ms; nothing longer except backdrops.\n\n` : "") +
     (e.length ? `Easing roles:\n${e.join("\n")}\n\n` : "") +
     "Animate only transform and opacity. Reduced motion: keep opacity/colour, drop movement. One signature motion moment per app.\n";
 }

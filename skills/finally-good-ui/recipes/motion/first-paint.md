@@ -1,15 +1,15 @@
 # Recipe: first-paint
 
-**Intent:** the first time someone opens the app in a session, the main screen assembles in reading order instead of popping in all at once: the frame is already there, the headline fact arrives, then the content below it. It takes under half a second, runs once per session, and never hides content from someone who can't run it.
+**Intent:** the first time someone opens the app in a session, the main screen assembles in reading order instead of popping in all at once: the frame is already there, the headline fact arrives, then the content below it. It takes about half a second, runs once per session, and never hides content from someone who can't run it.
 
 **Cards:** motion.purpose-only · motion.frequency-budget · motion.one-signature-moment · layout.hierarchy-by-weight · data.dashboard-summary-first · states.loading-perceived · motion.compositor-only · motion.reduced-motion
 
 **When NOT to use:** navigation between screens (route-transition); returning to the screen in the same session; every screen of the app (only the landing screen); content that arrives later from the network (skeleton-to-content owns that); tools opened dozens of times a day (they appear at once; a cascade on every open is a tax).
 
-**Tokens:** `--duration-standard` (250, each part) · `--duration-instant` (50, step between parts) · `--ease-enter` · `--duration-long` (400, ceiling for the whole cascade)
+**Tokens:** `--duration-long` (400, each part) · `--duration-instant` (50, step between parts) · `--ease-enter` · `--duration-hero` (600, ceiling for the whole cascade)
 
 ## Baseline
-The shell (header, nav) never animates: it's the stage. Up to four parts below it carry an order index; each rises 8px and fades in, one short step after the previous. The whole sequence ends by 400ms (250 + 3 × 50).
+The shell (header, nav) never animates: it's the stage. Up to four parts below it carry an order index; each rises 20px and fades in, one short step after the previous. The whole sequence ends by 550ms (400 + 3 × 50).
 ```html
 <html class="first-paint">
 <main>
@@ -21,10 +21,10 @@ The shell (header, nav) never animates: it's the stage. Up to four parts below i
 ```
 ```css
 .first-paint .fp {
-  animation: fp-rise var(--duration-standard) var(--ease-enter) both;
+  animation: fp-rise var(--duration-long) var(--ease-enter) both;
   animation-delay: calc(var(--fp, 0) * var(--duration-instant));
 }
-@keyframes fp-rise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes fp-rise { from { opacity: 0; transform: translateY(20px); } }
 @media (prefers-reduced-motion: reduce) {
   .first-paint .fp { animation-name: fp-fade; animation-delay: 0s; }
 }

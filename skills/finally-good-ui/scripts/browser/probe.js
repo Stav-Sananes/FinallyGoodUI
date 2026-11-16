@@ -315,8 +315,8 @@
         if (bad.length) add('anim-non-compositor', bad.some(function (p) { return LAYOUT.test(p); }) ? 'high' : 'medium', s, name + ' animates ' + bad.join(', ') + ' (not transform/opacity)', 'motion.compositor-only');
         else if (props.some(function (p) { return COLOR_PROPS.indexOf(p) >= 0; })) add('anim-color', 'low', s, name + ' animates colour (acceptable; keep it short)', 'motion.compositor-only');
         if (rec.iterations !== 'infinite' && rec.duration != null) {
-          if (rec.duration > 500) add('anim-long-duration', 'medium', s, name + ' runs ' + rec.duration + 'ms > 500ms', 'motion.frequency-budget');
-          else if (rec.duration > 300) add('anim-long-duration', 'low', s, name + ' runs ' + rec.duration + 'ms > 300ms (routine UI budget)', 'motion.frequency-budget');
+          if (rec.duration > 600) add('anim-long-duration', 'medium', s, name + ' runs ' + rec.duration + 'ms > 600ms', 'motion.frequency-budget');
+          else if (rec.duration > 400) add('anim-long-duration', 'low', s, name + ' runs ' + rec.duration + 'ms > 400ms (routine UI budget)', 'motion.frequency-budget');
         }
         if (rec.iterations === 'infinite' && target && target.isConnected) {
           var host = target.closest('p,li,article,section,main,[role=main]') || target.parentElement;

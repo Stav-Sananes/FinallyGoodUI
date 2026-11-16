@@ -32,6 +32,7 @@ export const RULE_CARDS = {
   "generic-cta": "writing.action-labels",
   "gradient-text": "layout.hierarchy-by-weight",
   "purple-blue-gradient": "color.accent-restraint",
+  "ink-on-paper": "craft.tension-restraint-liveliness",
   "glass-overuse": "craft.material-restraint",
   "colored-glow": "craft.material-restraint",
   "bg-pattern": "craft.material-restraint",

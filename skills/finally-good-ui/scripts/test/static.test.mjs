@@ -149,12 +149,12 @@ const plainApp = () => {
   const d = tmp();
   for (const p of ["css", "js", "node_modules/lib", "dist", "test"]) mkdirSync(join(d, p), { recursive: true });
   writeFileSync(join(d, "index.html"), '<!doctype html><link rel="stylesheet" href="css/app.css"><main id="app"></main><script src="js/app.js"></script>\n');
-  writeFileSync(join(d, "css", "tokens.css"), ":root { --duration-micro: 100ms; --duration-slow: 600ms; --duration-alias: var(--duration-slow); }\n");
+  writeFileSync(join(d, "css", "tokens.css"), ":root { --duration-micro: 100ms; --duration-slow: 700ms; --duration-alias: var(--duration-slow); }\n");
   writeFileSync(join(d, "css", "app.css"),
     ".a { transition: transform var(--duration-micro) ease-out; }\n" +          // 1: 100ms, fine
-    ".b { transition: transform var(--duration-slow) ease-out; }\n" +           // 2: 600ms, high
-    ".c { animation: pop var(--duration-alias) ease-out both; }\n" +            // 3: alias -> 600ms, high
-    ".d { transition: opacity var(--nope, 450ms) ease-out; }\n" +               // 4: fallback 450ms, medium
+    ".b { transition: transform var(--duration-slow) ease-out; }\n" +           // 2: 700ms, high
+    ".c { animation: pop var(--duration-alias) ease-out both; }\n" +            // 3: alias -> 700ms, high
+    ".d { transition: opacity var(--nope, 450ms) ease-out; }\n" +               // 4: fallback 450ms, medium (over the 400ms routine budget)
     "@media (prefers-reduced-motion: reduce) { .b { transition: none; } }\n");
   writeFileSync(join(d, "js", "app.js"), [
     "const robust = 2; if (a > robust && b < c) go();",                         // 1: code, not copy
@@ -248,9 +248,9 @@ test("gallery false positives: legitimate patterns are not flagged; their unsafe
   ].join("\n") + "\n");
   writeFileSync(join(d, "page.html"), '<a href="#pricing">Pricing</a>\n'); // 1: no router, no target: flagged
   writeFileSync(join(d, "motion.css"), [
-    ":root { --duration-long: 400ms; }",
-    ".booked-signature { transition: transform var(--duration-long) ease-out; }", // 2: the one signature: fine
-    ".toast { transition: opacity var(--duration-long) ease-out; }",              // 3: routine: medium
+    ":root { --duration-hero: 600ms; }",
+    ".booked-signature { transition: transform var(--duration-hero) ease-out; }", // 2: an expressive moment: fine
+    ".toast { transition: opacity var(--duration-hero) ease-out; }",              // 3: routine: medium
     ".hero-signature { transition: transform 700ms ease-out; }",                  // 4: over the ceiling: high anyway
     "@media (prefers-reduced-motion: reduce) { * { transition: none; } }",
   ].join("\n") + "\n");
@@ -270,4 +270,20 @@ test("gallery false positives: legitimate patterns are not flagged; their unsafe
   assert.deepEqual(hits("long-duration"), ["motion.css:3", "motion.css:4"]);
   assert.deepEqual(hits("outline-none-no-focus"), ["loose.css:1"]);
   assert.deepEqual(hits("off-scale-spacing"), ["a11y.css:2"]);
+});
+
+// ---------- the skill's own house style (2026-11-16 gallery round 2: all four skill builds landed on it) ----------
+test("ink-on-paper: a near-neutral pale page with near-black primary actions is flagged; a tinted or coloured one is not", () => {
+  const theme = (bg, primary) => {
+    const d = tmp();
+    writeFileSync(join(d, "index.html"), `<!doctype html><style>:root { --color-background: ${bg}; --color-primary: ${primary}; }\n@media (prefers-color-scheme: dark) { :root { --color-background: oklch(0.16 0.004 80); } }</style><main></main>\n`);
+    return check(d).findings.filter((f) => f.rule === "ink-on-paper");
+  };
+  const ink = theme("oklch(0.988 0.003 80)", "oklch(0.22 0.01 60)");
+  assert.equal(ink.length, 1);
+  assert.equal(ink[0].severity, "low");
+  assert.equal(ink[0].card, "craft.tension-restraint-liveliness");
+  assert.deepEqual(theme("oklch(0.95 0.04 75)", "oklch(0.22 0.01 60)"), [], "a tinted canvas breaks it");
+  assert.deepEqual(theme("#fbfbfa", "oklch(0.55 0.17 30)"), [], "a coloured primary breaks it");
+  assert.deepEqual(theme("oklch(0.16 0.004 80)", "oklch(0.95 0 0)"), [], "a dark page is not paper");
 });

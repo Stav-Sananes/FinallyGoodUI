@@ -88,6 +88,8 @@ Each entry: **detect** (V = visual, C = code) · **why it signals thoughtlessnes
 - **generic-cta** — V: Get started, Learn more, Explore, Discover. static: generic-cta. Card: writing.action-labels.
 - **generated-cadence** — V: em dashes in UI copy; "not just X, it's Y"; runs of fragments ("No setup. No limits."); lists of exactly three everywhere. static: em-dash-copy. Card: writing.plain-claims.
 
+- **ink-on-paper** — V: near-neutral pale page (barely tinted off-white), near-black primary buttons, one small accent used on a few marks, hairline rules, lots of air, a grotesk with a serif display. C: `--color-background` light with chroma ≤ 0.025 and `--color-primary` dark with chroma ≤ 0.05. static: ink-on-paper. Why: it is where this skill's own runs land when every answer is "calm" and "quiet-crafted"; tasteful, and interchangeable across a dog salon, a ledger and a meal planner. Card: craft.tension-restraint-liveliness, craft.identity-motif, personality.*.
+
 ### The sterile default (the other failure)
 - **sterile-default** — V: near-white page, thin grey borders, 6-8px radius everywhere, a default sans, no accent anywhere, no motif, no focal point, every section the same weight. Why: what you get by deleting the slop above without adding a point of view. Clean and correct, and just as interchangeable. Card: craft.tension-restraint-liveliness, craft.identity-motif.
 

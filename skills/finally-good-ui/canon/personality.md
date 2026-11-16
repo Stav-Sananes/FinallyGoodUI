@@ -16,14 +16,14 @@ produces:
   type-voice: "humanist sans (open apertures read as gentle) or a transitional serif for headings; weights 400/500 only; scale ratio 1.125-1.2"
   accent: "one hue, OKLCH chroma 0.05-0.12, under 5% of the surface"
   radius: "8-12px, consistent"
-  motion: "durations standard-medium (250-300ms); easing enter/move; spring bounce 0; no stagger after first load"
+  motion: "durations standard-long (250-400ms); easing enter/move; spring bounce 0; a gentle first-load cascade"
 applies-when: "Wellbeing, finance-at-home, reading, long-session or anxiety-prone contexts; brief leans calm on calm-energetic."
 not-when: "Time-critical monitoring where alerts must break through immediately."
 decides: [tokens.color, tokens.space, tokens.font, tokens.radius, tokens.duration, motion.level]
 tensions: [personality.energetic, personality.dense-expert, a11y.contrast-minimums, data.tension-density-clarity]
 asked-by: [interview.personality.calm-energetic, interview.personality.references]
 checks:
-  measured: "Tokens: adjacent surface tokens differ by 0.02-0.05 OKLCH L; accent chroma 0.12 or less; duration tokens used 300ms or less with no bounce; screenshot accent share under 5%; text still passes 4.5:1."
+  measured: "Tokens: adjacent surface tokens differ by 0.02-0.05 OKLCH L; accent chroma 0.12 or less; duration tokens used 400ms or less with no bounce; screenshot accent share under 5%; text still passes 4.5:1."
   judged: "Does the screen feel quiet without feeling empty or washed out, and can you still find the primary action in two seconds?"
 ```
 
@@ -48,7 +48,7 @@ decides: [tokens.color, tokens.font, tokens.text, tokens.radius, tokens.easing, 
 tensions: [personality.calm, color.accent-restraint, motion.frequency-budget, motion.tension-delight-speed]
 asked-by: [interview.personality.calm-energetic, interview.personality.references]
 checks:
-  measured: "Tokens: display weight 700 or more; type scale ratio 1.33 or more; accent chroma 0.18 or more; spatial spring bounce 0.3 or less; routine durations still 300ms or less."
+  measured: "Tokens: display weight 700 or more; type scale ratio 1.33 or more; accent chroma 0.18 or more; spatial spring bounce 0.3 or less; routine durations still 400ms or less."
   judged: "Does the energy come from contrast and timing, or from adding more things? Is the page still readable after the first impression?"
 ```
 
@@ -66,7 +66,7 @@ produces:
   type-voice: "neo-grotesque sans (neutral, invisible) or a transitional serif for headings (institutional authority); weights 400/600; scale ratio 1.2-1.25"
   accent: "one hue, mid-dark (L 0.40-0.55), chroma 0.08-0.15, used for actions and links only"
   radius: "2-6px"
-  motion: "durations micro-standard (100-250ms); easing enter/exit/move; spring bounce 0; no signature flourish beyond a success confirmation"
+  motion: "durations short-medium (150-300ms); easing enter/exit/move; spring bounce 0; expressive moments limited to confirmations"
 applies-when: "Finance, health, legal, government, security, B2B admin; brief leans serious or names trust as a risk."
 not-when: "Consumer entertainment where austerity would read as cold."
 decides: [tokens.color, tokens.font, tokens.radius, tokens.duration, motion.level]
@@ -91,7 +91,7 @@ produces:
   type-voice: "geometric sans with round terminals or a characterful humanist display; weights 500-800; scale ratio 1.25-1.333"
   accent: "2-3 hues at OKLCH chroma 0.12-0.22, one dominant; used in illustration and empty states as well as actions"
   radius: "12-24px or pill"
-  motion: "durations standard-long (250-400ms) for rare moments, 150ms for routine; spatial spring bounce 0.2-0.3; effects never bounce; one signature moment"
+  motion: "durations long-hero (400-600ms) for rare moments, 250ms for routine; spatial spring bounce 0.2-0.3; effects never bounce; up to three expressive moments"
 applies-when: "Consumer, education, kids, creative and community products; brief leans playful on serious-playful."
 not-when: "Error, payment and destructive flows, which switch to the serious parameters even inside a playful app."
 decides: [tokens.color, tokens.radius, tokens.font, tokens.easing, motion.signature, copy.labels]
@@ -141,7 +141,7 @@ produces:
   type-voice: "geometric or neo-grotesque display at weights 400-600 with tracking -0.02 to -0.04em (size, not weight, carries hierarchy); or a high-contrast serif display if the brief earns it; body 16-17px, line-height 1.6"
   accent: "one hue, low-mid chroma (0.06-0.12), under 3% of surface, plus one deliberate accent moment per screen"
   radius: "soft and nested: containers 20-32px, inner elements concentric (outer minus padding), buttons pill or 10-14px"
-  motion: "durations medium-long (300-500ms) on presentation surfaces, standard (200-250ms) on controls; easing cubic-bezier(0.32,0.72,0,1) or (0.16,1,0.3,1); bounce 0; press scale 0.98"
+  motion: "durations long-hero (400-600ms) on presentation surfaces, standard (200-250ms) on controls; easing cubic-bezier(0.32,0.72,0,1) or (0.16,1,0.3,1); bounce 0; press scale 0.98"
 applies-when: "Consumer premium, fashion, hospitality, private banking, high-end creative tools; brief words like premium, refined, expensive, crafted."
 not-when: "Dense daily tools where 96px+ gaps would waste the workspace; urgent or alert-driven contexts."
 decides: [tokens.color, tokens.space, tokens.font, tokens.radius, tokens.shadow, tokens.duration, tokens.easing]

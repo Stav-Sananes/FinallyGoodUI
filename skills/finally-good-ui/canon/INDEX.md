@@ -65,13 +65,13 @@
 
 ## motion
 - motion.purpose-only — Every animation must do a job: show where something came from or went, confirm an action, reveal a relationship, or direct attention. If it does none of these, remove it.
-- motion.frequency-budget — Scale motion inversely with how often an interaction happens: 100+ times a day or keyboard-triggered gets no animation; routine UI stays at 300ms or under; only rare moments may run longer, capped at 500ms (backdrops excepted).
+- motion.frequency-budget — Scale motion inversely with how often an interaction happens: 100+ times a day or keyboard-triggered gets no animation; routine UI stays at 400ms or under; the app's few expressive moments may run longer, capped at 600ms (backdrops excepted).
 - motion.duration-by-distance — Pick duration from the size and travel of the change: micro/short (100-150ms) for toggles and hovers, standard (250ms) for popovers and menus, medium/long (300-400ms) for sheets and page transitions. Exits run at 60-75% of the enter.
 - motion.easing-roles — Assign easing by role: entering elements decelerate (enter, enter-emphasized), exiting ones accelerate (exit), on-screen movement uses move, and snappy is for quick, responsive feedback. Scale entrances from 0.9-0.97, never from 0.
 - motion.compositor-only — Anything that moves, grows or shrinks animates transform and opacity only; never width, height, top, left, margin or padding, and never `transition: all`. Colour crossfades are allowed for small state changes. In SVG, animate a <g> wrapper with transform-box: fill-box and an explicit transform-origin, not the paths.
 - motion.spatial-continuity — Give the app one spatial model and keep it: drilling in moves forward, going back reverses the same path, overlays rise from their trigger, and parents animate before children (30-80ms stagger on first load only).
 - motion.reduced-motion — Under prefers-reduced-motion, drop spatial movement (translate, scale, parallax, auto-play) but keep opacity and colour changes so state changes are still visible. Reduced means fewer, not zero. Anything that moves on its own for more than 5 s (carousels, looping illustrations, tickers) gets a visible pause control in every mode (WCAG 2.2.2).
-- motion.one-signature-moment — Spend the expressive motion budget on one moment per app, chosen from the brief (a rare, emotionally significant event such as completion, first success, or onboarding), and keep all other motion quiet.
+- motion.one-signature-moment — Spend the expressive motion budget on a few moments per app, at most three, chosen from the brief (rare or emotionally significant events such as completion, first success, onboarding, the first view of the day's key figure), and keep routine motion visible but short.
 - motion.tension-delight-speed — Delight (expressive, longer, springy motion) and speed (instant, minimal motion) pull against each other. Speed wins on frequent, task-driven, expert paths; delight wins on rare, emotional, or first-run moments.
 
 ## data

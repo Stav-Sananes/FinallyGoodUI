@@ -41,7 +41,7 @@ export async function removeWithFlip(container, el) {
 ```
 Usage: `flip(list, () => sorted.forEach(el => list.append(el)))`.
 - Scale distortion: if item *sizes* change too, children stretch — animate size changes with a crossfade instead, or use Motion's `layout` (it corrects children).
-- Keep `duration` 200–300ms regardless of travel; long lists moving far should not take longer (motion.frequency-budget beats distance here).
+- Keep `duration` 250–400ms regardless of travel; long lists moving far should not take longer (motion.frequency-budget beats distance here).
 
 ## Alternative: same-document View Transitions (Baseline)
 Give each item `style="view-transition-name: row-<id>"` and wrap the DOM change: `document.startViewTransition?.(() => mutate()) ?? mutate()`. Simpler, but snapshots the page and blocks interaction for the duration; prefer FLIP for frequent actions.

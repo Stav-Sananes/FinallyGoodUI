@@ -699,7 +699,7 @@
     "hero": {
       "$type": "duration",
       "$value": {
-        "value": 500,
+        "value": 600,
         "unit": "ms"
       },
       "$description": "Signature moment only; nothing longer except backdrops"

@@ -68,7 +68,7 @@ This matrix is the checklist the build step implements and the verify step force
 - Siblings (tabs, top-level destinations) are lateral: cross-fade or short slide in tab order; no depth change. On daily-use destinations prefer instant or cross-fade.
 - Overlays (modal, sheet, drawer) come from their anchor (sheet from bottom, drawer from its side, popover from trigger) and leave the same way.
 - RTL locales mirror horizontal directions.
-- Name the one signature motion moment and which screen/event owns it. [motion.one-signature-moment]
+- Name the expressive motion moments (at most three) and which screen/event owns each. [motion.one-signature-moment]
 - Per-screen motion budget from frequency: daily screens ≤150ms feedback, no entrance choreography.
 
 ## 7. Record decisions

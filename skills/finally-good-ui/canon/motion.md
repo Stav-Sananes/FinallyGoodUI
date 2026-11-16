@@ -25,7 +25,7 @@ checks:
 ```yaml
 id: motion.frequency-budget
 domain: motion
-principle: "Scale motion inversely with how often an interaction happens: 100+ times a day or keyboard-triggered gets no animation; routine UI stays at 300ms or under; only rare moments may run longer, capped at 500ms (backdrops excepted)."
+principle: "Scale motion inversely with how often an interaction happens: 100+ times a day or keyboard-triggered gets no animation; routine UI stays at 400ms or under; the app's few expressive moments may run longer, capped at 600ms (backdrops excepted)."
 why: "A delay that delights once becomes friction on the hundredth repetition; frequent actions must feel instant or the product feels slow."
 sources: ["Emil Kowalski, emilkowal.ski animation writing", "NN/g, Executing UX Animations: Duration and Motion Characteristics", "Yablonski, Laws of UX, Doherty threshold"]
 applies-when: "Setting motion.level per screen from the brief's frequency of use; any command palette, list navigation, tab switch, or shortcut."
@@ -34,7 +34,7 @@ decides: [motion.level, tokens.duration]
 tensions: [motion.tension-delight-speed, motion.one-signature-moment, personality.playful]
 asked-by: [interview.context.frequency]
 checks:
-  measured: "check-static rule long-duration (>500ms, or >300ms on non-backdrop UI); probe: animations started by keyboard shortcuts or command-palette actions have duration 0."
+  measured: "check-static rule long-duration (>600ms, or >400ms on non-backdrop UI outside an expressive moment); probe: animations started by keyboard shortcuts or command-palette actions have duration 0."
   judged: "Which interaction will this user repeat most often in a day, and does it wait on any animation?"
 ```
 
@@ -52,7 +52,7 @@ decides: [tokens.duration]
 tensions: [motion.frequency-budget]
 asked-by: []
 checks:
-  measured: "Probe: every animation duration is a duration token (50/100/150/250/300/400/500ms); paired exit duration is between 0.6 and 0.75 of its enter."
+  measured: "Probe: every animation duration is a duration token (50/100/150/250/300/400/600ms); paired exit duration is between 0.6 and 0.75 of its enter."
   judged: "Does anything feel slow for its size (a tooltip taking as long as a modal) or abrupt for its distance?"
 ```
 
@@ -133,8 +133,8 @@ checks:
 ```yaml
 id: motion.one-signature-moment
 domain: motion
-principle: "Spend the expressive motion budget on one moment per app, chosen from the brief (a rare, emotionally significant event such as completion, first success, or onboarding), and keep all other motion quiet."
-why: "People remember experiences by their peak and their end; one crafted peak lands harder than expressive motion spread thin, and it stays rare enough never to annoy."
+principle: "Spend the expressive motion budget on a few moments per app, at most three, chosen from the brief (rare or emotionally significant events such as completion, first success, onboarding, the first view of the day's key figure), and keep routine motion visible but short."
+why: "People remember experiences by their peak and their end; a few crafted peaks land harder than expressive motion spread everywhere, and each stays rare enough never to annoy."
 sources: ["Yablonski, Laws of UX, Peak-end rule", "Saffer, Microinteractions", "Thomas & Johnston, The Illusion of Life, staging"]
 applies-when: "Directions and System stages, when locking the motion language."
 not-when: "Utility tools used in short, frequent bursts, where the signature may be only a subtle confirmation."
@@ -142,8 +142,8 @@ decides: [motion.signature, motion.level]
 tensions: [motion.frequency-budget, motion.purpose-only, motion.tension-delight-speed]
 asked-by: []
 checks:
-  measured: "Probe across the flow walk: at most one distinct animation over 300ms (backdrops excepted) or using spatial spring bounce; it is triggered at most once per session. Put \"signature\" in that moment's selector or class (e.g. .booked-signature) so check-static's long-duration rule accepts it up to the 500ms ceiling."
-  judged: "Is the signature moment tied to something this user actually cares about, and would they see it rarely enough to still enjoy it on day 30?"
+  measured: "Probe across the flow walk: at most three distinct animations over 400ms (backdrops excepted) or using spatial spring bounce; each is triggered at most once per session or task. Put \"signature\" (or \"expressive\") in each moment's selector or class (e.g. .booked-signature) so check-static's long-duration rule accepts it up to the 600ms ceiling."
+  judged: "Is each expressive moment tied to something this user actually cares about, and would they see it rarely enough to still enjoy it on day 30?"
 ```
 
 ### motion.tension-delight-speed

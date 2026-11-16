@@ -70,8 +70,8 @@ Rules that apply to all recipes:
 | [submit-states](motion/submit-states.md) | a submit button shows idle, working, done or failed in place, keeps its width, can't be pressed twice | usability.system-status, states.optimistic-feedback, states.error-recovery | No |
 | [item-enter-exit](motion/item-enter-exit.md) | one item added or removed: the list opens or closes the gap, the new item is marked, removal offers Undo | motion.spatial-continuity, usability.user-control-undo, states.optimistic-feedback | No (Motion `AnimatePresence` if present) |
 | [swipe-row-actions](motion/swipe-row-actions.md) | phone rows swipe to reveal one action, follow the finger, commit or spring back; menu path always there | motion.spatial-continuity, a11y.keyboard-complete, usability.user-control-undo | No |
-| [success-moment](motion/success-moment.md) | the app's one signature: ring, tick, then the key fact, within 500ms, once per task | motion.one-signature-moment, motion.tension-delight-speed, usability.system-status | No (dotLottie/Rive only for a brand mark) |
-| [first-paint](motion/first-paint.md) | the landing screen assembles in reading order once per session, under 400ms, content never hidden | motion.purpose-only, layout.hierarchy-by-weight, data.dashboard-summary-first | No |
+| [success-moment](motion/success-moment.md) | the app's main expressive moment: ring, tick, then the key fact, within 600ms, once per task | motion.one-signature-moment, motion.tension-delight-speed, usability.system-status | No (dotLottie/Rive only for a brand mark) |
+| [first-paint](motion/first-paint.md) | the landing screen assembles in reading order once per session, under 600ms, content never hidden | motion.purpose-only, layout.hierarchy-by-weight, data.dashboard-summary-first | No |
 | [chart-motion](motion/chart-motion.md) | lines draw and bars grow on first view, marks move between ranges, meters fill; live data doesn't animate | data.data-ink, motion.purpose-only, motion.spatial-continuity | No (chart libraries: theme their timing) |
 | [slot-picker](motion/slot-picker.md) | calendar periods slide in the direction of travel, a day's times reveal beneath it, the chosen slot's indicator travels | motion.spatial-continuity, ia-nav.progressive-disclosure, a11y.keyboard-complete | No (react-day-picker if installed) |
 
@@ -116,7 +116,7 @@ Rules that apply to all recipes:
 | know a Book, Pay or Save is working, finished or failed, and not press it twice | submit-states |
 | see where an item they added went, or undo one they removed | item-enter-exit |
 | archive or delete a row on a phone with one gesture | swipe-row-actions (always with a menu path) |
-| feel they finished the thing they came to do | success-moment (the app's one signature) |
+| feel they finished the thing they came to do | success-moment (one of the app's expressive moments) |
 | take in the landing screen in order on first open | first-paint |
 | read how a chart's numbers changed when they switch range | chart-motion |
 | pick a day and a time without losing their place | slot-picker |

@@ -6,17 +6,17 @@
 
 **When NOT to use:** typing a known date (a date field with a format hint is faster: birthdays, card expiry); pickers inside dense admin forms used dozens of times a day (no slide, instant swap); a library date picker already in use (theme its own animation: react-day-picker's `--rdp-animation_duration`, recipes/INDEX.md).
 
-**Tokens:** `--duration-standard` (250, week/month slide) · `--duration-short` (150, times reveal, selection indicator) · `--ease-move` · `--ease-enter` · `--color-primary`, `--color-primary-foreground`, `--color-muted-foreground`
+**Tokens:** `--duration-medium` (300, week/month slide) · `--duration-short` (150, times reveal, selection indicator) · `--ease-move` · `--ease-enter` · `--color-primary`, `--color-primary-foreground`, `--color-muted-foreground`
 
 ## Week or month change slides with direction
 The incoming grid comes from the side the person moved towards; the outgoing one leaves the other way. One container, two layers during the change.
 ```css
 .cal-viewport { display: grid; overflow: hidden; }
 .cal-grid { grid-area: 1 / 1; }
-.cal-grid[data-enter] { animation: cal-in var(--duration-standard) var(--ease-move) both; }
-.cal-grid[data-leave] { animation: cal-out var(--duration-standard) var(--ease-move) both; }
-@keyframes cal-in  { from { transform: translateX(calc(var(--dir, 1) * 24px)); opacity: 0; } }
-@keyframes cal-out { to   { transform: translateX(calc(var(--dir, 1) * -24px)); opacity: 0; } }
+.cal-grid[data-enter] { animation: cal-in var(--duration-medium) var(--ease-move) both; }
+.cal-grid[data-leave] { animation: cal-out var(--duration-medium) var(--ease-move) both; }
+@keyframes cal-in  { from { transform: translateX(calc(var(--dir, 1) * 32px)); opacity: 0; } }
+@keyframes cal-out { to   { transform: translateX(calc(var(--dir, 1) * -32px)); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) {
   .cal-grid[data-enter] { animation-name: cal-fade-in; }
   .cal-grid[data-leave] { animation-name: cal-fade-out; }
@@ -33,10 +33,10 @@ export function changePeriod(viewport, renderGrid, dir /* 1 = next, -1 = previou
   old.setAttribute("data-leave", ""); old.inert = true;
   next.setAttribute("data-enter", "");
   viewport.append(next);
-  setTimeout(() => { old.remove(); next.removeAttribute("data-enter"); }, ms("standard"));
+  setTimeout(() => { old.remove(); next.removeAttribute("data-enter"); }, ms("medium"));
 }
 ```
-24px of travel, not the full width: enough to show direction without making the person wait for a page to slide past.
+32px of travel, not the full width: enough to show direction clearly without making the person wait for a page to slide past.
 
 ## A day's times reveal under it
 Use the grid-rows reveal from accordion-auto-height for the times panel (`grid-template-rows: 0fr → 1fr`, `--duration-short`), so the page below moves down smoothly instead of jumping. Choosing another day swaps the times inside the open panel with a crossfade, without closing and reopening it.
@@ -70,10 +70,10 @@ Size changes are set, not transitioned (no layout animation); only the move is a
 - Pre-select the soonest sensible slot only if the brief says most people take the first one (flows-forms.sensible-defaults).
 
 ## React + Motion
-Motion `AnimatePresence mode="popLayout" custom={dir}` with `x: dir * 24` for the grids, and `layoutId="slot"` on the indicator for the travel (needs `domMax`). Only if Motion is already present.
+Motion `AnimatePresence mode="popLayout" custom={dir}` with `x: dir * 32` for the grids, and `layoutId="slot"` on the indicator for the travel (needs `domMax`). Only if Motion is already present.
 
 ## Vue / Svelte
-Vue `<Transition :name="dir > 0 ? 'cal-next' : 'cal-prev'">`; Svelte `in:fly={{ x: dir * 24, duration: msMotion("standard"), easing: easeFn("move") }}` with `out:fly` mirrored.
+Vue `<Transition :name="dir > 0 ? 'cal-next' : 'cal-prev'">`; Svelte `in:fly={{ x: dir * 32, duration: msMotion("standard"), easing: easeFn("move") }}` with `out:fly` mirrored.
 
 ## A11y
 - Announce the visible period when it changes ("November 2026") in a polite live region.

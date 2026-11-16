@@ -51,7 +51,7 @@ Never bundle two questions. Never ask the next one before the answer arrives. Re
 ## 5. Challenge contradictions
 
 After each answer, check it against every earlier answer and the code. When two conflict, stop and name the conflict before continuing: quote both answers, state the trade-off with the tension card, offer 2–3 resolutions with a recommendation. Watch especially for:
-1. **Daily use + energetic/expressive motion.** Rich entrances repeated 50× a day become friction. Resolve: calm routine screens, energy spent on one signature moment (first success, completion). `[motion.frequency-budget, motion.tension-delight-speed, motion.one-signature-moment]`
+1. **Daily use + energetic/expressive motion.** Rich entrances repeated 50× a day become friction. Resolve: calm routine screens, energy spent on a few expressive moments (first success, completion, the first view of the key figure). `[motion.frequency-budget, motion.tension-delight-speed, motion.one-signature-moment]`
 2. **Beginners + dense.** Novices can't parse dense tables on day one. Resolve: airy defaults with a density toggle, or progressive disclosure of columns. `[usability.tension-guidance-expertise, data.tension-density-clarity, ia-nav.progressive-disclosure]`
 3. **Phone-first + 8 top-level tasks.** Bottom tabs hold ~5. Resolve: merge tasks, demote rare ones under "More", or rethink which tasks are top-level. `[ia-nav.nav-model-by-count, ia-nav.tension-discoverability-minimalism]`
 

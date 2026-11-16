@@ -52,7 +52,7 @@ function closeDetail(id) {
 }
 ```
 - Names must be unique in each snapshot: assign `hero` to the tapped item only, never to every row.
-- The page is non-interactive during the transition; keep it ≤ 300ms.
+- The page is non-interactive during the transition; keep it ≤ 400ms.
 - Text that changes size (title → large header): give the title its own name (`hero-title`) and set `::view-transition-old/new(hero-title) { height: 100%; object-fit: none; object-position: left top; }` to avoid squashing.
 - Multi-page apps: `@view-transition { navigation: auto; }` plus matching names on both pages enables cross-document transitions in Chromium and Safari; Firefox just navigates normally — acceptable progressive enhancement.
 - Browser back: listen to `popstate` and call `closeDetail` inside `go(…, 'back')`.
