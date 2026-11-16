@@ -66,6 +66,14 @@ Rules that apply to all recipes:
 | [number-change](motion/number-change.md) | a watched figure counts or rolls to its new value, direction shown, no jitter | usability.system-status, typography.tabular-numbers, motion.frequency-budget | Optional (Number Flow) |
 | [tooltip-group](motion/tooltip-group.md) | first tooltip waits, neighbours open instantly, focus opens at once, one at a time | motion.frequency-budget, a11y.keyboard-complete, ia-nav.progressive-disclosure | No (sets the installed library's provider delays) |
 | [skeleton-to-content](motion/skeleton-to-content.md) | real-shape placeholder, fade in, no shift | states.loading-perceived, usability.system-status, layout.intrinsic-responsive | No |
+| [control-states](motion/control-states.md) | checkbox tick draws, switch thumb slides, radio dot grows, icons morph, clickable cards lift under a mouse | usability.system-status, motion.frequency-budget, motion.compositor-only | No |
+| [submit-states](motion/submit-states.md) | a submit button shows idle, working, done or failed in place, keeps its width, can't be pressed twice | usability.system-status, states.optimistic-feedback, states.error-recovery | No |
+| [item-enter-exit](motion/item-enter-exit.md) | one item added or removed: the list opens or closes the gap, the new item is marked, removal offers Undo | motion.spatial-continuity, usability.user-control-undo, states.optimistic-feedback | No (Motion `AnimatePresence` if present) |
+| [swipe-row-actions](motion/swipe-row-actions.md) | phone rows swipe to reveal one action, follow the finger, commit or spring back; menu path always there | motion.spatial-continuity, a11y.keyboard-complete, usability.user-control-undo | No |
+| [success-moment](motion/success-moment.md) | the app's one signature: ring, tick, then the key fact, within 500ms, once per task | motion.one-signature-moment, motion.tension-delight-speed, usability.system-status | No (dotLottie/Rive only for a brand mark) |
+| [first-paint](motion/first-paint.md) | the landing screen assembles in reading order once per session, under 400ms, content never hidden | motion.purpose-only, layout.hierarchy-by-weight, data.dashboard-summary-first | No |
+| [chart-motion](motion/chart-motion.md) | lines draw and bars grow on first view, marks move between ranges, meters fill; live data doesn't animate | data.data-ink, motion.purpose-only, motion.spatial-continuity | No (chart libraries: theme their timing) |
+| [slot-picker](motion/slot-picker.md) | calendar periods slide in the direction of travel, a day's times reveal beneath it, the chosen slot's indicator travels | motion.spatial-continuity, ia-nav.progressive-disclosure, a11y.keyboard-complete | No (react-day-picker if installed) |
 
 ## Patterns
 | Recipe | Intent | Cards | Needs library? |
@@ -104,6 +112,14 @@ Rules that apply to all recipes:
 | know where they went when the page changes | route-transition; in React 19.3+, react-view-transition |
 | see how far through a long page they are, or keep the header out of the way while reading | scroll-linked |
 | wait for a region without the layout jumping | skeleton-to-content |
+| see that a checkbox, switch or toggle took, without waiting | control-states |
+| know a Book, Pay or Save is working, finished or failed, and not press it twice | submit-states |
+| see where an item they added went, or undo one they removed | item-enter-exit |
+| archive or delete a row on a phone with one gesture | swipe-row-actions (always with a menu path) |
+| feel they finished the thing they came to do | success-moment (the app's one signature) |
+| take in the landing screen in order on first open | first-paint |
+| read how a chart's numbers changed when they switch range | chart-motion |
+| pick a day and a time without losing their place | slot-picker |
 | find their way around the app | app-shell-nav |
 | run a command, choose a value, or narrow a long list from the keyboard | menu-select-combobox |
 | jump to anything or run any action without the mouse | command-palette |

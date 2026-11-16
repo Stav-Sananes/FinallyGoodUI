@@ -31,7 +31,7 @@
   content: ""; position: absolute; inset: 0;
   background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.35), transparent);
   transform: translateX(-100%);
-  animation: sk-shimmer 1.4s linear infinite;
+  animation: sk-shimmer calc(var(--duration-long) * 3.5) var(--ease-linear) infinite; /* one slow sweep, 1.4s at the defaults */
 }
 [data-theme="dark"] .sk::after { background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.06), transparent); }
 @keyframes sk-shimmer { to { transform: translateX(100%); } }
