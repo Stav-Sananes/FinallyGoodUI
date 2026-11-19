@@ -125,7 +125,7 @@ Generated UI fails in two directions. One is the **noisy template**: glass, glow
 - **`craft` canon (15 cards).** How premium is *made*, with ranges to choose from:
   - letter-spacing and line-height by size;
   - headline discipline and number setting;
-  - ink actions on a near-neutral canvas, with the accent kept for meaning;
+  - colour, canvas and action treatment taken from the chosen direction (ink-on-neutral is one option), with the accent kept for meaning;
   - concentric radii, layered tinted shadows, hairlines before boxes;
   - one surface material by role;
   - real icons and imagery;

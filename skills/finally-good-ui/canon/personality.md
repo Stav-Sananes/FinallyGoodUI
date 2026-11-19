@@ -161,7 +161,7 @@ principle: "An editorial feel is produced by print discipline: a paper-like canv
 why: "Readers trust what looks composed by an editor: hierarchy carried by type alone, generous measure and margins, and colour used like ink on paper. Cards and shadows read as software; rules and type read as publishing."
 sources: ["Bringhurst, The Elements of Typographic Style", "Müller-Brockmann, Grid Systems in Graphic Design", "Lupton, Thinking with Type", "taste-skill (Leonxlnx), minimalist-skill parameter set"]
 produces:
-  contrast: "canvas warm or neutral off-white (L 0.97-0.99), ink L 0.18-0.25 (never pure black), muted text L 0.50-0.55; hairlines 1px at 6% alpha"
+  contrast: "canvas warm or neutral off-white (L 0.97-0.99), ink L 0.00-0.25 (true black allowed; softer ink is an option), muted text L 0.50-0.55; structure by hairlines (1px at 6% alpha) or by type, spacing, weight or heavier rules"
   spacing: "8px base; sections 96-128px; content measure 60-72ch; max-width 900-1050px for reading pages"
   type-voice: "serif or sharp grotesk display, tracking -0.02 to -0.04em, line-height 1.1; body sans or serif 16-18px at 1.6-1.7; mono only for metadata"
   accent: "tags and status as washed background/ink pairs (background chroma ~0.03, text chroma ~0.10); one ink accent for links"

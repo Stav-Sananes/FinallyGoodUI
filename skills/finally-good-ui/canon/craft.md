@@ -110,16 +110,16 @@ checks:
 ```yaml
 id: craft.ink-and-accent
 domain: craft
-principle: "Keep the canvas near-neutral (warm or cool paper, chroma 0.015 or less) and draw primary actions in ink: near-black on light, near-white on dark, or the foreground colour. Spend the accent hue on meaning only: the current item, money in or out, one emphasised word or figure, a status. Tinting the page with the brand hue and filling every button with it turns a palette into a theme."
-why: "Premium products read as confident because colour is scarce and therefore meaningful; ink actions are unmistakable without shouting. A brand-tinted canvas plus brand-filled buttons is the default output of theme generators, which is why it reads as a template. In blind comparisons, ink actions on a neutral canvas beat saturated brand buttons on a tinted canvas every time."
+principle: "Take colour, canvas and action treatment from the chosen direction spec, not from a house default. Ink-on-neutral (near-neutral canvas, primary actions in ink, accent spent on meaning) is one valid option when the brief or direction calls for it, never the default; a tinted canvas or a coloured primary is equally valid when the direction's palette is grounded in the subject. Whatever the treatment, keep colour meaningful: one primary action per view, and the accent kept for the current item, money, status or the one focal element. Tinting every surface and filling every button with the brand hue turns a palette into a theme."
+why: "Colour reads as confident when it is scarce and therefore meaningful, and when it is derived from the subject instead of copied from a theme generator. Ink actions on a neutral canvas make actions unmistakable without shouting, but applied to every build they become their own template."
 sources: ["Albers, Interaction of Color", "Lidwell et al., Universal Principles of Design, 'Von Restorff effect'", "Wathan & Schoger, Refactoring UI, 'Color: you need more colors than you think' and 'Emphasize by de-emphasizing'"]
-applies-when: "Calm, serious, editorial, luxurious and dense-expert personalities; any product whose brief asks for premium or trustworthy."
+applies-when: "The chosen direction spec calls for ink-on-neutral: typically one candidate for calm, serious, editorial, luxurious and dense-expert briefs, or a brief that asks for premium or trustworthy with no stronger colour idea."
 not-when: "Playful or energetic briefs where colour is the voice (personality.playful, personality.energetic), and brand books that mandate a coloured primary."
 decides: [tokens.color, component.button, component.link]
 tensions: [color.accent-restraint, personality.playful, personality.energetic]
 asked-by: []
 checks:
-  measured: "Tokens: background chroma <= 0.015; primary button background is the foreground/ink role or its chroma <= 0.03, unless the personality is playful/energetic or a brand rule says otherwise."
+  measured: "Tokens match the chosen direction spec. Where that spec is ink-on-neutral: background chroma <= 0.015 and primary button background is the foreground/ink role or its chroma <= 0.03."
   judged: "Blur the screenshot: is colour where meaning is, and nowhere else?"
 ```
 

@@ -12,7 +12,7 @@ Goal: implement the approved blueprint in the project's own stack, screen by scr
    - **Type:** tracking and leading per size (`craft.tracking-by-size`); headlines ≤ 2 lines, `text-wrap: balance` on headings and `pretty` on paragraphs (`craft.headline-discipline`); numbers set with tabular figures, muted units and a true minus (`craft.number-setting`).
    - **Surfaces:** one material by role (`craft.material-restraint`); layered, tinted shadows and lighter surfaces in dark mode (`craft.tinted-shadows`); space, then hairlines, then boxes, and no box-in-box (`craft.hairlines-before-boxes`); concentric radii (`craft.concentric-radii`).
    - **Real things:** one icon family at one stroke width, real images, logos and initials, no drawn placeholders (`craft.real-imagery-and-icons`); content honest (`craft.honest-content`).
-   - **Colour:** near-neutral canvas, ink primary actions, accent only where it means something (`craft.ink-and-accent`, unless the personality is playful/energetic).
+   - **Colour:** colour, canvas and action treatment per the chosen direction spec (`craft.ink-and-accent` applies only if the spec is ink-on-neutral).
    - **Identity:** the motif from `brand.md` appears in ≥ 3 places (`craft.identity-motif`); every screen has one focal point and at least one deliberate accent moment (`craft.tension-restraint-liveliness`).
    - **Alignment:** card actions share a bottom line, icons are optically centred (`craft.optical-alignment`); sections and screen types vary composition on purpose (`craft.composition-rhythm`).
    - **Copy:** no buzzwords, generic CTAs or em-dash cadence (`writing.plain-claims`).
