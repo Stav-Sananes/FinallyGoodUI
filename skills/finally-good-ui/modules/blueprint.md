@@ -2,7 +2,7 @@
 
 Goal: turn the confirmed brief into `.design/blueprint.md` — the app's structure before any pixels: what exists, how people move through it, and what every screen shows in every state. Nothing visual is decided here except the motion spatial map.
 
-Inputs: `.design/brief.md` (must be `status: confirmed`; if not, run `modules/interview.md` first), the stack profile, existing routes/screens (in `feature` depth, the blueprint covers the feature and its entry points only). Canon: `ia-nav`, `flows-forms`, `states`, `usability`, `motion.spatial-continuity`. Output: `.design/blueprint.md` from `templates/blueprint.md`; decision records appended to `.design/decisions.md` from `templates/decisions.md`.
+Inputs: `.design/brief.md` (a draft is fine: it is approved together with the blueprint; if there is none, run `modules/interview.md` first), the stack profile, existing routes/screens (in `feature` depth, the blueprint covers the feature and its entry points only). Canon: `ia-nav`, `flows-forms`, `states`, `usability`, `motion.spatial-continuity`. Output: `.design/blueprint.md` from `templates/blueprint.md`; decision records appended to `.design/decisions.md` from `templates/decisions.md`.
 
 ## 1. Inventory objects and tasks (IA)
 
@@ -77,8 +77,8 @@ Write a decision record (format in `templates/decisions.md`) for every choice wh
 
 ## 8. Present and get approval
 
-Approval is mandatory; do not start directions or build without it.
-1. Present a digest, not the file: IA in ≤8 lines, nav model + one-line why, a text sitemap, the top flow as steps, the screen count, and the 3–5 decisions most likely to be disputed. Point to `.design/blueprint.md` for the full state matrix.
-2. Ask: "Approve the blueprint, or tell me what to change." Ask one focused question if a decision was close ("Sidebar or top bar was close — you'll have 6 sections; sidebar recommended.").
-3. **Revisions:** apply the change, then trace its ripple — a changed destination alters nav model, flows, screen inventory, state rows and spatial map. Update all affected sections; mark superseded decision records `Superseded by Dn` (never delete them) and add new ones. If a revision contradicts the brief, name the conflict and ask whether the brief changes too. Show only what changed and ask again.
-4. On approval, set `status: approved` and the date in the blueprint header.
+Approval is mandatory; do not start directions or build without it. In a full run the blueprint digest is shown together with the brief summary (`modules/interview.md` §7) as one checkpoint; standalone `blueprint` shows it alone.
+1. Present a digest, not the file: IA in ≤8 lines, nav model + one-line why, a text sitemap, the top flow as steps, the screen count, and the 3–5 decisions most likely to be disputed. Point to `.design/blueprint.md` for the full state matrix. Fold a close call into the approval ask ("Sidebar or top bar was close; 6 sections, sidebar recommended.").
+2. Ask: "Approve the brief and blueprint, or tell me what to change."
+3. **Revisions:** apply the change, then trace its ripple — a changed destination alters nav model, flows, screen inventory, state rows and spatial map. Update all affected sections; mark superseded decision records `Superseded by Dn` (never delete them) and add new ones. A changed brief answer re-runs the contradiction check and may change the blueprint too. Show only what changed and ask again.
+4. On approval, set `status: approved` and the date in the blueprint header (and `status: confirmed` in the brief).

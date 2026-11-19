@@ -1,6 +1,6 @@
 {
-  "mode": "interactive",
-  "directions": "on",
+  "mode": "guided",
+  "directions": "three",
   "verify": "full",
   "viewports": [
     [

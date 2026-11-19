@@ -1,6 +1,6 @@
 # Module: design interview
 
-Goal: turn a vague request into `.design/brief.md` — a confirmed set of facts and decisions that every later step resolves trade-offs against. Interview like a senior designer who will not start drawing until they understand the job: relentless, one question at a time, always with a recommendation and a reason.
+Goal: turn a vague request into `.design/brief.md` — a confirmed set of facts and decisions that every later step resolves trade-offs against. Work like a senior designer who will not start drawing until they understand the job: draft the brief from evidence, ask only what evidence cannot settle, always with a recommendation and a reason.
 
 In an autonomous run, answer the questions yourself as SKILL.md's "Autonomous runs" says; everything else in this module still applies.
 
@@ -24,27 +24,29 @@ Respect `.design/config.json` → `interviewDepth` if it is not `auto`. Otherwis
 | Existing app with screens, request names a feature/page/flow | `feature` | the 7 `feature` questions, scoped to the feature; ~4–7 |
 | `.design/brief.md` exists and is confirmed | none | ask only what the new request changes; otherwise reuse the brief |
 
-Tell the user the depth and rough count in one line before the first question ("New app, no brand: about 15 quick questions. Say 'you decide' on any of them."). In `feature` depth, inherit context and personality from the existing brief or brand; if none exists, infer from the code and list those inferences for confirmation in the final brief.
+The depth sets which questions are in scope. In `feature` depth, inherit context and personality from the existing brief or brand; if none exists, infer from the code and list those inferences for confirmation in the final brief.
 
-## 3. Ask — one question per message
+## 3. Draft first, ask the rest in one batch
 
-For each question in bank order, filtered by `depth` and `skip-if`:
-1. **Question** in plain language. No jargon (not "IA", "affordance", "density token"). A non-designer founder must be able to answer.
-2. **Options**, lettered, concrete, recommendation first and marked **(recommended)** with its condition tailored to this project ("recommended: you said daily use").
-3. **Why it matters** — 1–2 lines linking the answer to a concrete design consequence, then card ids in brackets. Teach; don't lecture.
-4. Always accept free text and "you decide".
+Unless `mode` is `interactive`, do not walk the bank question by question:
+1. Answer every in-scope question from the code and the request (§1).
+2. Take the bank's `recommended` option for the rest, marked `decided by agent` with its card ids.
+3. Ask only the 2-4 questions where no option is recommended for this product, or where the brief is silent on personality. Batch them into ONE `AskUserQuestion` call (plain-text message if the tool is missing). Never ask a fact that is in the code.
+4. Then go to §7: brief and blueprint digest shown together for one approval.
 
-Never bundle two questions. Never ask the next one before the answer arrives. Reword bank questions to fit the product; keep their intent and ids.
+Each question: plain language (no "IA", "affordance", "density token"), lettered concrete options, recommendation first marked **(recommended)** with its condition tailored to this project, and a 1-2 line **why it matters** with card ids. Free text and "you decide" always allowed. Reword bank questions to fit the product; keep intent and ids.
+
+In `interactive` mode, ask in bank order, one question per message (or per call), never the next before the answer arrives, and say the depth and rough count first.
 
 ### Tool use
-- If the `AskUserQuestion` tool is available: use it for every multiple-choice question. Put the recommended option first with "(Recommended)" in its label, one-line consequence in each option's description, and the "why" line in the question text. Rely on its built-in free-text "Other" for custom answers; add a "You decide" option only if the tool does not already offer free text. One question per call.
-- Otherwise: plain text in the format of §8. Keep it under ~10 lines.
-- Open questions (`purpose.one-liner`, `jobs.top-tasks` when drafting from scratch) go as plain text even when the tool exists — show your draft and ask for corrections.
+- With `AskUserQuestion`: recommended option first with "(Recommended)" in its label, a one-line consequence per option, the "why" in the question text; rely on its built-in "Other" for free text. Open questions (`purpose.one-liner`, `jobs.top-tasks` from scratch) go as plain text with your draft.
+- An unanswered or timed-out question means "you decide": take the recommended option, record it `decided by agent`, continue.
+- Without the tool: plain text in the format of §8, under ~10 lines.
 
 ## 4. Adapt
 
 - **Skip** when `skip-if` is met or an earlier answer implies it (e.g. experts + daily → dense is implied; confirm it in one line inside the next question instead of asking).
-- **Follow up** when an answer is vague ("everyone", "both", "it depends"), when it has two verbs, or when a bank `follow-ups` entry applies. Maximum 2 follow-ups per question; then take the recommendation and note the uncertainty.
+- **Follow up** when an answer is vague ("everyone", "both", "it depends"), when it has two verbs, or when a bank `follow-ups` entry applies. Interactive mode only; maximum 2 follow-ups per question, then take the recommendation and note the uncertainty.
 - **Reorder** only when an answer makes a later area urgent (e.g. "it moves money" → ask `risks.failure` next).
 - **Update the count** if skips change it materially ("Only 5 left").
 
@@ -63,13 +65,13 @@ When the user says "you decide", "whatever you think", or skips: take the recomm
 
 ## 7. Stop, write, confirm
 
-Stop when every in-depth question is answered, skipped with reason, or delegated — or earlier if the user says "enough"; fill the rest with recommendations marked `decided by agent`. Don't ask more than 20 questions in `full` depth.
+Stop when every in-depth question is answered, inferred, skipped with reason, or delegated; if the user says "enough", fill the rest with recommendations marked `decided by agent`.
 
 Then:
 1. Write `.design/brief.md` from `templates/brief.md`. Every field carries its source: `user`, `inferred (file)`, or `decided by agent`. Record the question id next to each answer.
-2. Show a compact summary (≤15 lines): one-liner, primary user, top tasks, device + frequency, personality in three words, key tensions and how they were resolved, anything decided by agent.
-3. Ask: "Is this right? Correct anything, or say 'approved' to move to the blueprint." Do not start the blueprint until the user confirms. On corrections, update the brief, re-check contradictions, and ask again.
-4. Set `status: confirmed` and the date in the brief header.
+2. Draft the blueprint (`modules/blueprint.md`) from the brief without waiting.
+3. Show ONE message (checkpoint 1): a compact brief summary (≤15 lines: one-liner, primary user, top tasks, device + frequency, personality in three words, tensions and how resolved, every inferred or agent-decided answer, so the user can overrule it) followed by the blueprint digest (blueprint.md §8). Ask: "Approve the brief and blueprint, or tell me what to change." Do not start directions or build until approved.
+4. On corrections, update the brief, re-check contradictions, and follow the revision loop in blueprint.md §8. On approval set `status: confirmed` (brief) and `status: approved` (blueprint) with the date.
 
 ## 8. Example exchange (ideal format, plain text)
 

@@ -17,5 +17,39 @@
     "anti-slop",
     "polish",
     "design-review"
-  ]
+  ],
+  "userConfig": {
+    "mode": {
+      "type": "string",
+      "title": "Run mode",
+      "description": "guided: 3 checkpoints (brief + blueprint, direction pick, hand-off). interactive: also asks each interview question. autonomous: never asks.",
+      "options": [
+        "interactive",
+        "guided",
+        "autonomous"
+      ],
+      "default": "guided"
+    },
+    "directions": {
+      "type": "string",
+      "title": "Design directions",
+      "description": "How many animated directions to build and preview before locking the design.",
+      "options": [
+        "three",
+        "one",
+        "off"
+      ],
+      "default": "three"
+    },
+    "verify": {
+      "type": "string",
+      "title": "Verification",
+      "description": "full: real browser walk and independent review. static: code-only checks.",
+      "options": [
+        "full",
+        "static"
+      ],
+      "default": "full"
+    }
+  }
 }

@@ -3,13 +3,13 @@
 Goal: three written, then built, directions for the **key screen**, each fully animated with one real transition. The user picks one or mixes. Output: `.design/directions/{a,b,c}.html`, `.design/directions/compare.html`, a decision entry in `.design/decisions.md`.
 
 ## 0. Gate
-1. Read `.design/config.json`. If `"directions": "off"` → skip this module, log `directions: skipped (config)` in `decisions.md`, go to `system`.
+1. Read `directions` (SKILL.md, run settings). `off` → skip this module, log `directions: skipped (config)` in `decisions.md`, go to `system`. `one` → write only the grounded standard (A), build it, skip the divergence rule.
 2. Require an approved `.design/blueprint.md`. If missing, run `blueprint` first.
-3. Show the cost warning (verbatim, then wait for an answer). In an autonomous run (SKILL.md, "Autonomous runs"), skip the warning and follow that section instead:
+3. Show the cost warning only when `directions` is `three` and the user did not choose it in the plugin setting or `.design/config.json` (the default counts as not chosen); then wait. Never in an autonomous run (follow SKILL.md "Autonomous runs"):
 
-> Directions builds 3 full HTML prototypes in parallel subagents. Expect roughly 3–4× the tokens of one screen build and a few minutes. Proceed (recommended for new apps), build only 1 direction, or skip? To turn this step off permanently, set `"directions": "off"` in `.design/config.json`.
+> Directions builds 3 full HTML prototypes in parallel subagents. Expect roughly 3–4× the tokens of one screen build and a few minutes. Proceed (recommended for new apps), build only 1 direction, or skip? To change this permanently, set `directions` (`three`, `one`, `off`) in the plugin settings or `.design/config.json`.
 
-   - "1 direction" → write only the grounded standard (A), build it, skip the divergence rule.
+   - "1 direction" → as `one` above.
    - "skip" → log it and continue to `system`.
 
 ## 1. Read inputs
@@ -90,7 +90,7 @@ Fingerprint check: <pass | matches: <id> → justified because <brief line> | re
 ```
 
 Rules for the specs:
-- Palette: framework defaults (stock blue primary on a blue-grey canvas, Tailwind/shadcn neutrals) are the sterile default, not a grounded choice; use one only if the brief names it. Derive, don't pick. For calm, serious, editorial, luxurious and dense briefs, keep the canvas near-neutral and draw the primary action in ink; spend the accent on meaning (`craft.ink-and-accent`).
+- Palette: framework defaults (stock blue primary on a blue-grey canvas, Tailwind/shadcn neutrals) are the sterile default, not a grounded choice; use one only if the brief names it. Derive, don't pick. For calm, serious, editorial, luxurious and dense briefs, ink-on-neutral (near-neutral canvas, ink primary action, accent on meaning; `craft.ink-and-accent`) may be ONE candidate among the three, never all three; the others take their palette from the subject or a distinct contrast position.
 - Type voice is the strongest premium lever: every direction gets a display voice with character for its one or two large moments (statement, key figure), chosen from the brief's words; a neutral UI sans at medium weight everywhere is the sterile default. Start from base hue (brief/brand), accent hue, and the contrast position. Soft = lightness steps ~4–6%; stark = ≥10% and near-black ink. Chroma of neutrals ≤ 0.02 unless the thesis needs tint.
 - Type: any Google Fonts family. Do **not** default to Inter, Space Grotesk, Roboto, or a lone system stack — use one only if the spec's `why` names a brief reason (e.g. "must match existing product UI"). Max 2 families + optional mono (typography.limited-families-weights).
 - Motion values come from the `duration`/`easing` groups of `tokens/default.tokens.json`: durations `instant 50 · micro 100 · short 150 · standard 250 · medium 300 · long 400 · hero 600`; easings `enter (0,0,0,1) · enter-emphasized (0.05,0.7,0.1,1) · exit (0.3,0,1,1) · move (0.2,0,0,1) · snappy (0.23,1,0.32,1)`. Exits = 60–75% of enter. Nothing routine over 300ms.
