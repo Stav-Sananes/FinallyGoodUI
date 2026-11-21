@@ -35,6 +35,13 @@ export function validateSpec(spec) {
   const errors = [];
   if (!isObj(spec)) return { ok: false, errors: ["spec: must be an object"] };
 
+  if (spec.tags !== undefined) {
+    if (!isObj(spec.tags)) errors.push("tags: must be an object (part name to element tag)");
+    else for (const [part, tag] of Object.entries(spec.tags)) {
+      if (Array.isArray(spec.parts) && !spec.parts.includes(part)) errors.push(`tags.${part}: "${part}" is not one of parts`);
+      if (typeof tag !== "string" || !/^[a-z][a-z0-9]*$/.test(tag)) errors.push(`tags.${part}: must be a plain lowercase tag name`);
+    }
+  }
   if (!isText(spec.name)) errors.push("name: must be a non-empty string");
   textList(errors, "shapes", spec.shapes);
   textList(errors, "events", spec.events);

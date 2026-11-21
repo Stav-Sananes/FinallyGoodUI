@@ -1,6 +1,6 @@
 // Disclosure behaviour. The trigger is a native <button aria-expanded aria-controls>, so Enter, Space and
 // focus are native. attach adds: toggle on click, closed content made `inert` (not focusable, not read),
-// and single-open when the root says data-mode="single" (default is multiple: users compare sections).
+// and single-open when the root says data-variant="single" (default is multiple: users compare sections).
 const TRIGGER = '[data-part="trigger"]';
 const panelOf = (trigger) => {
   const id = trigger.getAttribute("aria-controls");
@@ -22,7 +22,7 @@ export function attach(root) {
     const open = trigger.getAttribute("aria-expanded") !== "true";
     if (open) {
       const owner = trigger.closest('[data-part="root"]');
-      if (owner?.getAttribute("data-mode") === "single") {
+      if (owner?.getAttribute("data-variant") === "single") {
         for (const other of owner.querySelectorAll(TRIGGER)) if (other !== trigger) setOpen(other, false);
       }
     }

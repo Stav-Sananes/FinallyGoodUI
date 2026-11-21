@@ -11,15 +11,15 @@
 ## Shapes
 | Shape | Use for |
 |---|---|
-| single | accordion where opening one section closes the others (`data-mode="single"` on the root) |
 | multiple | independent sections, the default: users compare, so nothing auto-closes |
+| single | accordion where opening one section closes the others (`data-variant="single"` on the root) |
 
 Heading, trigger and panel structure follow the WAI-ARIA APG [accordion](https://www.w3.org/WAI/ARIA/apg/patterns/accordion/) pattern. The open and close animation, its two CSS baselines and the reduced-motion rule are in `recipes/motion/accordion-auto-height.md`; this spec does not repeat them.
 
 ## Parts and slots
 | Part (`data-part`) | Role |
 |---|---|
-| `root` | wrapper for one or more items; carries `data-mode` |
+| `root` | wrapper for one or more items; carries `data-variant` |
 | `item` | one trigger plus its panel |
 | `heading` | the real heading element (`<h3>`) around the trigger; pick the level that fits the page outline |
 | `trigger` | native `<button>` (slot `trigger`) with `aria-expanded` and `aria-controls`; fills the row, at least `--size-control-md` tall |
@@ -44,14 +44,14 @@ Only open and disabled have attributes, so only they are in `states` in `spec.js
 | Enter, Space | toggles the focused trigger (native `<button>`) |
 
 - No custom key handling: do not add Enter or Space listeners. Arrow, Home and End between triggers are optional in the APG and left out here.
-- `attach` toggles on `click`, sets `inert` on the panel to match `aria-expanded`, and closes the siblings only when the root says `data-mode="single"`.
+- `attach` toggles on `click`, sets `inert` on the panel to match `aria-expanded`, and closes the siblings only when the root says `data-variant="single"`.
 
 ## Motion
 `grid-template-rows` 0fr to 1fr plus `opacity` (the one sanctioned layout-property exception, marked `fgu-allow: animate-layout-prop`), `--duration-standard` open, `--duration-short` close. The chevron only rotates. Under `prefers-reduced-motion` only opacity animates.
 
 ## Markup
 ```html
-<div data-part="root" data-mode="single">
+<div data-part="root" data-variant="single">
   <div data-part="item">
     <h3 data-part="heading"><button type="button" data-part="trigger" id="t-ship" aria-expanded="false" aria-controls="p-ship"><span>Shipping</span><span data-part="indicator" aria-hidden="true"></span></button></h3>
     <div data-part="panel" id="p-ship" role="region" aria-labelledby="t-ship" inert><div data-part="content">...</div></div>

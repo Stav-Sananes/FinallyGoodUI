@@ -2,7 +2,10 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cpSync, readdirSync, writeFileSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fx, run, tmp } from "./_h.mjs";
+import { fx, run, tmp, SR } from "./_h.mjs";
+import { planScaffold } from "../lib/scaffold.mjs";
+import { loadSpec } from "../lib/component-spec.mjs";
+import { detectStack } from "../detect-stack.mjs";
 
 // End to end: scaffold a component into a fixture project, then the conformance checker must accept it.
 const COMPONENTS = ["field", "toggle", "disclosure"];
@@ -56,4 +59,47 @@ test("a non-native role part gets an explicit role and role-missing fires withou
   writeFileSync(file, text.replace(' role="region"', ""));
   const check = run("check-components.mjs", ["--root", root]);
   assert.ok(check.json.findings.some((f) => f.rule === "role-missing" && /panel/.test(f.message)), JSON.stringify(check.json.findings));
+});
+
+const EXT = { plain: "html", "react-radix": "tsx", "vue-reka": "vue" };
+const markup = (root, name, project) => readFileSync(scaffoldedFile(root, name, EXT[project]), "utf8");
+
+test("toggle: the scaffolded root is a <label> that contains the input, in every fixture project", () => {
+  for (const project of PROJECTS) {
+    const { root } = scaffoldAndCheck("toggle", project);
+    const text = markup(root, "toggle", project);
+    assert.match(text, /<(?:label\b|Primitive\.label\b|Primitive as="label")[^>]*data-part="root"[\s\S]*<input data-part="control"[\s\S]*<\/(?:label|Primitive\.label|Primitive)>/, project);
+    assert.doesNotMatch(text, /<div[^>]*data-part="root"/, project);
+  }
+});
+
+test("toggle: a root that is not a <label> is caught (negative control)", () => {
+  const text = markup(scaffoldAndCheck("toggle", "plain").root, "toggle", "plain");
+  assert.doesNotMatch(text.replace(/<label\b/g, "<div").replace(/<\/label>/g, "</div>"), /<label\b[^>]*data-part="root"/);
+});
+
+test("field: hint and error are <p> elements, the label is a <label>", () => {
+  const text = markup(scaffoldAndCheck("field", "plain").root, "field", "plain");
+  assert.match(text, /<label data-part="label"/);
+  assert.match(text, /<p data-part="hint"/);
+  assert.match(text, /<p data-part="error"/);
+  assert.doesNotMatch(text, /<p data-part="hint" aria-hidden/);
+});
+
+test("disclosure: scaffolded markup carries data-variant, default multiple", () => {
+  const react = markup(scaffoldAndCheck("disclosure", "react-radix").root, "disclosure", "react-radix");
+  assert.match(react, /data-variant=\{variant\}/);
+  assert.match(react, /variant = "multiple"/);
+  const plain = markup(scaffoldAndCheck("disclosure", "plain").root, "disclosure", "plain");
+  assert.match(plain, /data-variant="multiple"/);
+  assert.doesNotMatch(plain, /data-mode|\smode=/);
+});
+
+test("scaffold fails loudly when the role part has no element in the markup", () => {
+  const spec = loadSpec(join(SR, "components/toggle"));
+  const root = tmp();
+  cpSync(fx("components/projects/plain"), root, { recursive: true });
+  const plan = (rolePart) => planScaffold({ spec: { ...spec, a11y: { ...spec.a11y, rolePart } }, stack: detectStack(root), profile: JSON.parse(readFileSync(join(root, ".design/component-style.json"), "utf8")), root });
+  assert.ok(plan("control").files.length > 0, "positive control: a real part plans fine");
+  assert.throws(() => plan("knob"), /knob/);
 });

@@ -32,7 +32,7 @@ const PRIMITIVES = {
 
 const pascal = (s) => s.split(/[-_]/).map((w) => w[0].toUpperCase() + w.slice(1)).join("");
 const camel = (s) => s.replace(/-(\w)/g, (_, c) => c.toUpperCase());
-const tagFor = (spec) => ({ button: "button", link: "a" })[spec.a11y.role] ?? "div";
+const tagFor = (spec) => spec.tags?.root ?? ({ button: "button", link: "a" })[spec.a11y.role] ?? "div";
 
 /** The spec as the pieces templates need: attributes, props and the markup of its parts. */
 function viewModel(spec) {
@@ -174,16 +174,39 @@ function plain(v, spec) {
 // Roles an element has natively: emitted as the native tag, never as a redundant role attribute.
 const NATIVE_INPUT = { textbox: 'type="text"', checkbox: 'type="checkbox"' };
 
+/** Replaces `pattern` in the generated files, or throws: a silent no-op would ship markup without the role or tag. */
+function rewrite(files, pattern, replacement, what) {
+  let hit = false;
+  const out = files.map((f) => {
+    const content = f.content.replace(pattern, (...m) => { hit = true; return typeof replacement === "function" ? replacement(...m) : replacement; });
+    return { ...f, content };
+  });
+  if (!hit) throw new Error(`scaffold: could not ${what}: no matching element in the generated markup`);
+  return out;
+}
+
 /** Puts the spec's role on the element of a.rolePart: the native tag where one exists, else role="<role>". */
 function applyRole(files, spec) {
   const role = spec.a11y.role, part = rolePartOf(spec);
   if (part === "root") {
     if (role in { button: 1, link: 1 }) return files;
-    return files.map((f) => ({ ...f, content: f.content.replace(' data-part="root"', ` data-part="root" role="${role}"`) }));
+    return rewrite(files, ' data-part="root"', ` data-part="root" role="${role}"`, `put role "${role}" on the root`);
   }
   const span = new RegExp(`<span data-part="${part}"(?: aria-hidden="true")?>[\\s\\S]*?</span>`);
   const el = role in NATIVE_INPUT ? `<input data-part="${part}" ${NATIVE_INPUT[role]} />` : `<span data-part="${part}" role="${role}"></span>`;
-  return files.map((f) => ({ ...f, content: f.content.replace(span, el) }));
+  return rewrite(files, span, el, `put role "${role}" on part "${part}"`);
+}
+
+/** spec.tags: part -> element. The root is handled by tagFor; other parts are rewritten from their default span.
+ *  A tagged part is content, not decoration, so it loses the default aria-hidden. */
+function applyTags(files, spec) {
+  let out = files;
+  for (const [part, tag] of Object.entries(spec.tags ?? {})) {
+    if (part === "root" || part === rolePartOf(spec)) continue;
+    const el = new RegExp(`<span data-part="${part}"(?: aria-hidden="true")?([^>]*)>([\\s\\S]*?)</span>`);
+    out = rewrite(out, el, (_, attrs, inner) => `<${tag} data-part="${part}"${attrs}>${inner}</${tag}>`, `render part "${part}" as <${tag}>`);
+  }
+  return out;
 }
 
 const TEMPLATES = { react, vue, svelte, angular };
@@ -229,7 +252,7 @@ export function planScaffold({ spec, stack, profile, root, force = false }) {
 
   const refDir = join(COMPONENTS_ROOT, spec.name);
   const css = `${readFileSync(join(refDir, `${spec.name}.css`), "utf8").trimEnd()}\n\n${profileCss(profile, spec).trimEnd()}\n`;
-  const rendered = applyRole(family ? TEMPLATES[family](v, { shared, prim, typescript }) : plain(v, spec), spec);
+  const rendered = applyTags(applyRole(family ? TEMPLATES[family](v, { shared, prim, typescript }) : plain(v, spec), spec), spec);
 
   const out = [
     { path: `${dir}/${spec.name}.css`, content: css },

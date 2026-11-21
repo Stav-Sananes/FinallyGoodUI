@@ -121,3 +121,42 @@ test("the adapter check fails for a missing heading or too many lines", () => {
 test("components/INDEX.md points at the adapters folder", () => {
   assert.match(readFileSync(join(COMPONENTS, "INDEX.md"), "utf8"), /components\/adapters\//);
 });
+
+// Disclosure single-open: a fake DOM is enough, attach only uses these members.
+const fakeDisclosure = () => {
+  const mk = (id, open) => {
+    const panel = { id, inert: !open };
+    const attrs = { "aria-expanded": String(open), "aria-controls": id, "data-part": "trigger" };
+    const t = {
+      disabled: false, panel,
+      getAttribute: (k) => attrs[k] ?? null, setAttribute: (k, v) => { attrs[k] = String(v); },
+      closest: (sel) => (sel.includes("trigger") ? t : sel.includes("root") ? rootEl : null),
+      ownerDocument: { getElementById: (i) => (i === id ? panel : null) },
+    };
+    return t;
+  };
+  const triggers = [mk("a", true), mk("b", false)];
+  const handlers = {};
+  const rootEl = {
+    getAttribute: (k) => (k === "data-variant" ? variant.value : null),
+    querySelectorAll: () => triggers,
+    addEventListener: (t, f) => { handlers[t] = f; },
+    removeEventListener: (t) => { delete handlers[t]; },
+  };
+  const variant = { value: "single" };
+  return { triggers, rootEl, variant, click: (t) => handlers.click({ target: { closest: (sel) => (sel.includes("trigger") ? t : null) } }) };
+};
+
+test("disclosure attach: data-variant=single closes siblings, multiple keeps them open", async () => {
+  const { attach } = await import(join(COMPONENTS, "disclosure/disclosure.js"));
+  for (const [variant, aOpen] of [["single", "false"], ["multiple", "true"]]) {
+    const d = fakeDisclosure();
+    d.variant.value = variant;
+    attach(d.rootEl);
+    assert.equal(d.triggers[0].panel.inert, false, "initial sync: open panel is not inert");
+    assert.equal(d.triggers[1].panel.inert, true, "initial sync: closed panel is inert");
+    d.click(d.triggers[1]);
+    assert.equal(d.triggers[1].getAttribute("aria-expanded"), "true");
+    assert.equal(d.triggers[0].getAttribute("aria-expanded"), aOpen, variant);
+  }
+});

@@ -65,3 +65,18 @@ test("a11y.rolePart must be one of parts", () => {
   assert.equal(bad.ok, false);
   assert.ok(bad.errors.some((e) => e.startsWith("a11y.rolePart")), bad.errors.join("\n"));
 });
+
+test("tags maps parts to plain lowercase tag names", () => {
+  const spec = read("spec-valid.json");
+  const part = spec.parts[0];
+  assert.equal(validateSpec({ ...spec, tags: { [part]: "label" } }).ok, true);
+  const unknown = validateSpec({ ...spec, tags: { nope: "label" } });
+  assert.ok(unknown.errors.some((e) => e.startsWith("tags.nope")), unknown.errors.join("\n"));
+  const badTag = validateSpec({ ...spec, tags: { [part]: "<Label>" } });
+  assert.ok(badTag.errors.some((e) => e.startsWith(`tags.${part}`)), badTag.errors.join("\n"));
+  assert.equal(validateSpec({ ...spec, tags: "label" }).ok, false);
+});
+
+test("events may be empty", () => {
+  assert.equal(validateSpec({ ...read("spec-valid.json"), events: [] }).ok, true);
+});
