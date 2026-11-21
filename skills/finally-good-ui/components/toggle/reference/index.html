@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toggle reference</title>
+<!-- tokens.css: node scripts/emit-tokens.mjs --in tokens/default.tokens.json --format css > tokens.css -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../toggle.css">
+</head>
+<body>
+<main id="demo">
+  <label data-part="root" data-variant="checkbox"><input type="checkbox" data-part="control" name="news"><span data-part="label">Send me product news</span></label>
+  <label data-part="root" data-variant="checkbox"><input type="checkbox" data-part="control" name="terms" checked><span data-part="label">Accept the terms</span></label>
+  <label data-part="root" data-variant="checkbox"><input type="checkbox" data-part="control" data-indeterminate><span data-part="label">Select all (some selected)</span></label>
+  <label data-part="root" data-variant="checkbox"><input type="checkbox" data-part="control" aria-invalid="true" aria-describedby="terms-err"><span data-part="label">Accept the terms</span></label>
+  <label data-part="root" data-variant="switch"><input type="checkbox" role="switch" data-part="control" name="wifi"><span data-part="label">Wi-Fi</span></label>
+  <label data-part="root" data-variant="switch"><input type="checkbox" role="switch" data-part="control" name="sync" checked><span data-part="label">Sync on this device</span></label>
+  <label data-part="root" data-variant="switch"><input type="checkbox" role="switch" data-part="control" disabled><span data-part="label">Unavailable</span></label>
+</main>
+<script type="module">
+  import { attach } from "../toggle.js";
+  attach(document.getElementById("demo"));
+</script>
+</body>
+</html>
