@@ -25,3 +25,8 @@ Thumbs.db
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+
+# gallery round 4: framework apps are built in place; sources only
+docs/gallery/r4/apps/**/dist/
+docs/gallery/r4/apps/**/.angular/
+docs/gallery/r4/apps/**/.svelte-kit/
