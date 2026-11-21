@@ -6,7 +6,7 @@ import { run, SR } from "./_h.mjs";
 import { loadSpec } from "../lib/component-spec.mjs";
 
 const COMPONENTS = join(SR, "components");
-const dirs = () => (existsSync(COMPONENTS) ? readdirSync(COMPONENTS).filter((d) => statSync(join(COMPONENTS, d)).isDirectory()) : []);
+const dirs = () => (existsSync(COMPONENTS) ? readdirSync(COMPONENTS).filter((d) => statSync(join(COMPONENTS, d)).isDirectory() && d !== "adapters") : []);
 const css = run("emit-tokens.mjs", ["--in", join(SR, "tokens/default.tokens.json"), "--format", "css"]).stdout;
 const declared = (token) => new RegExp(`${token}\\s*:`).test(css);
 const LITERAL = /#[0-9a-f]{3,8}\b|\d\s*px\b|\d\s*ms\b/i;
@@ -89,4 +89,35 @@ test("every reference attaches and detaches", async () => {
 test("components/INDEX.md lists every component", () => {
   const index = readFileSync(join(COMPONENTS, "INDEX.md"), "utf8");
   for (const d of dirs()) assert.match(index, new RegExp(`components/${d}/spec\\.md`));
+});
+
+// Adapters: one rule file per framework, all with the same five headings, short enough to load on demand.
+const ADAPTER_HEADINGS = ["Props and events", "State attributes", "Slots and children", "Behaviour source", "Motion"];
+const adapterProblems = (text) => {
+  const problems = ADAPTER_HEADINGS.filter((h) => !new RegExp(`^#{2,3} ${h}\\s*$`, "m").test(text)).map((h) => `missing heading: ${h}`);
+  const lines = text.replace(/\n$/, "").split("\n").length;
+  if (lines > 80) problems.push(`${lines} lines (max 80)`);
+  return problems;
+};
+const adapterFiles = () => {
+  const root = join(COMPONENTS, "adapters");
+  const list = (dir) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".md")).map((f) => join(dir, f)) : []);
+  return [...list(root), ...list(join(root, "light"))];
+};
+
+test("every adapter has the five headings and is <= 80 lines", () => {
+  const files = adapterFiles();
+  assert.equal(files.length, 7, `found: ${files.join(",") || "none"}`);
+  for (const f of files) assert.deepEqual(adapterProblems(readFileSync(f, "utf8")), [], f);
+});
+
+test("the adapter check fails for a missing heading or too many lines", () => {
+  const full = ADAPTER_HEADINGS.map((h) => `## ${h}\ntext`).join("\n");
+  assert.deepEqual(adapterProblems(full), []);
+  assert.deepEqual(adapterProblems(full.replace("## Motion", "## Animation")), ["missing heading: Motion"]);
+  assert.equal(adapterProblems(`${full}\n${"x\n".repeat(80)}`).length, 1);
+});
+
+test("components/INDEX.md points at the adapters folder", () => {
+  assert.match(readFileSync(join(COMPONENTS, "INDEX.md"), "utf8"), /components\/adapters\//);
 });
