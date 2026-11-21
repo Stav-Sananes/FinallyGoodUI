@@ -167,6 +167,9 @@ test("primitives: every headless library found, alongside any styled kit", () =>
   writeFileSync(join(s, "package.json"), JSON.stringify({ dependencies: { svelte: "5.0.0", "bits-ui": "2.21.0", "@kobalte/core": "0.13.14" } }));
   assert.deepEqual(detect(s).primitives, ["bits", "kobalte"]);
   assert.deepEqual(detect(fx("vue")).primitives, []);
+  const a = tmp();
+  writeFileSync(join(a, "package.json"), JSON.stringify({ dependencies: { "@angular/core": "19.0.0", "@angular/cdk": "19.0.0" } }));
+  assert.deepEqual(detect(a).primitives, ["angular-cdk"]);
 });
 
 test("component kit major version; Joy UI (on hold) is no longer reported as Material UI", () => {

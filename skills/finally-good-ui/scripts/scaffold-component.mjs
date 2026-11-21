@@ -16,7 +16,9 @@ Writes <components dir>/<name>/ into the project: <name>.css (the style profile 
 component), one framework file (.tsx/.jsx, .vue, .svelte, .component.ts + .html, or plain .html),
 <name>.behaviour.js (only when no installed primitive supplies the behaviour) and
 .fgu-component.json. Reads .design/component-style.json. Components dir: src/components/fgu, or fgu
-under the shadcn components alias. Existing files are skipped unless --force.
+under the shadcn components alias. <name>.css is the reference CSS followed by the profile layer;
+the profile layer comes last and overrides border, border-radius, min-height, padding-inline and
+transition on purpose. Existing files are skipped unless --force.
 
 Options:
   --name <component>   a component under components/ (e.g. button)

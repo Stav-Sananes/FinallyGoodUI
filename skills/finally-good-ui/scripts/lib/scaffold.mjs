@@ -13,17 +13,20 @@ export const COMPONENTS_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..
 const NATIVE = new Set(["expo", "react-native", "flutter", "swiftui", "compose"]);
 const FAMILY = { react: "react", next: "react", vue: "vue", nuxt: "vue", svelte: "svelte", sveltekit: "svelte", angular: "angular" };
 
-// Primitive wiring per framework family: [import line, open tag, close tag]. `poly` primitives wrap any
-// tag; the others are button-only (tag must be "button"). A pair with no entry falls back to shared.
+// Primitive wiring per framework family. `imp(deps)` returns the import line for a package the project
+// really has, or null (then the component falls back to shared). `poly` primitives wrap any tag; the
+// others are button-only. A pair with no entry (or null) falls back to shared.
+const from = (deps, table) => { const hit = table.find(([d]) => d in deps); return hit ? hit[1] : null; };
 const PRIMITIVES = {
-  radix: { react: { poly: true, imp: 'import { Primitive } from "@radix-ui/react-primitive";', open: (t) => `<Primitive.${t}`, close: (t) => `</Primitive.${t}>` } },
-  ark: { react: { poly: true, imp: 'import { ark } from "@ark-ui/react/factory";', open: (t) => `<ark.${t}`, close: (t) => `</ark.${t}>` } },
-  "base-ui": { react: { imp: 'import { Button } from "@base-ui/react/button";', open: () => "<Button", close: () => "</Button>" } },
-  "react-aria": { react: { imp: 'import { Button } from "react-aria-components";', open: () => "<Button", close: () => "</Button>" } },
+  radix: { react: { poly: true, imp: (d) => from(d, [["@radix-ui/react-primitive", 'import { Primitive } from "@radix-ui/react-primitive";'], ["radix-ui", 'import { Primitive } from "radix-ui";']]), open: (t) => `<Primitive.${t}`, close: (t) => `</Primitive.${t}>` } },
+  ark: { react: { poly: true, imp: (d) => from(d, [["@ark-ui/react", 'import { ark } from "@ark-ui/react/factory";']]), open: (t) => `<ark.${t}`, close: (t) => `</ark.${t}>` } },
+  "base-ui": { react: { imp: (d) => from(d, [["@base-ui/react", 'import { Button } from "@base-ui/react/button";'], ["@base-ui-components/react", 'import { Button } from "@base-ui-components/react/button";']]), open: () => "<Button", close: () => "</Button>" } },
+  "react-aria": { react: { imp: (d) => from(d, [["react-aria-components", 'import { Button } from "react-aria-components";']]), open: () => "<Button", close: () => "</Button>" } },
   kobalte: { react: null },
-  headlessui: { react: { imp: 'import { Button } from "@headlessui/react";', open: () => "<Button", close: () => "</Button>" } },
-  reka: { vue: { poly: true, imp: 'import { Primitive } from "reka-ui";', open: (t) => `<Primitive as="${t}"`, close: () => "</Primitive>" } },
-  bits: { svelte: { imp: 'import { Button } from "bits-ui";', open: () => "<Button.Root", close: () => "</Button.Root>" } },
+  headlessui: { react: { imp: (d) => from(d, [["@headlessui/react", 'import { Button } from "@headlessui/react";']]), open: () => "<Button", close: () => "</Button>" } },
+  reka: { vue: { poly: true, imp: (d) => from(d, [["reka-ui", 'import { Primitive } from "reka-ui";'], ["radix-vue", 'import { Primitive } from "radix-vue";']]), open: (t) => `<Primitive as="${t}"`, close: () => "</Primitive>" } },
+  bits: { svelte: { imp: (d) => from(d, [["bits-ui", 'import { Button } from "bits-ui";']]), open: () => "<Button.Root", close: () => "</Button.Root>" } },
+  "angular-cdk": { angular: null }, // the CDK has no button primitive
 };
 
 const pascal = (s) => s.split(/[-_]/).map((w) => w[0].toUpperCase() + w.slice(1)).join("");
@@ -51,7 +54,13 @@ function viewModel(spec) {
 const lit = (p) => (p.default === undefined ? "undefined" : p.type === "boolean" ? String(p.default === "true" || p.default === true) : JSON.stringify(String(p.default)));
 const ts = (p) => (p.type === "boolean" ? "boolean" : p.type === "string" ? "string" : "unknown");
 const slotName = (s) => (s === "default" ? "children" : camel(s));
+const busyProp = (v) => v.attrs.find((a) => a.name === "aria-busy")?.prop ?? null;
 const SPAN = (part, inner = "") => `<span data-part="${part}" aria-hidden="true">${inner}</span>`;
+
+// Inline busy guard for primitive sources (no behaviour script): a busy control stays focusable but swallows clicks.
+const react_guard = (v, c) => (c.prim && busyProp(v) ? `onClickCapture={(e) => { if (${camel(busyProp(v))}) { e.preventDefault(); e.stopPropagation(); } }} ` : "");
+const vue_guard = (v, c) => (c.prim && busyProp(v) ? ` @click.capture="(e: Event) => { if (${busyProp(v)}) { e.preventDefault(); e.stopImmediatePropagation(); } }"` : "");
+const svelte_guard = (v, c) => (c.prim && busyProp(v) ? `onclickcapture={(e) => { if (${camel(busyProp(v))}) { e.preventDefault(); e.stopImmediatePropagation(); } }} ` : "");
 
 // ---- templates: (view, ctx) -> [{ ext, content }]. ctx: { shared, prim, typescript, base, framework }
 function react(v, c) {
@@ -84,7 +93,7 @@ function react(v, c) {
   const body = c.shared
     ? `  const ref = useRef${c.typescript ? `<HTMLElement>` : ""}(null);\n  useEffect(() => (ref.current ? attach(ref.current) : undefined), []);\n`
     : "";
-  const content = `${imports.join("\n")}\n${types}\nexport function ${v.Name}({ ${[...props, ...slots, "...rest"].join(", ")} ${sig}) {\n${body}  return (\n    ${open}${c.shared ? " ref={ref}" : ""} data-part="root" ${attrs.join(" ")} {...rest}>\n${kids.map((k) => `      ${k}`).join("\n")}\n    ${close}\n  );\n}\n`;
+  const content = `${imports.join("\n")}\n${types}\nexport function ${v.Name}({ ${[...props, ...slots, "...rest"].join(", ")} ${sig}) {\n${body}  return (\n    ${open}${c.shared ? " ref={ref}" : ""} data-part="root" ${attrs.join(" ")} ${react_guard(v, c)}{...rest}>\n${kids.map((k) => `      ${k}`).join("\n")}\n    ${close}\n  );\n}\n`;
   return [{ ext: c.typescript ? ".tsx" : ".jsx", content }];
 }
 
@@ -106,7 +115,7 @@ function vue(v, c) {
     `const props = withDefaults(defineProps<{ ${v.props.map((p) => `${camel(p.name)}?: ${ts(p)}`).join("; ")} }>(), { ${defaults.join(", ")} });`,
     ...(c.shared ? ["const el = ref<HTMLElement | null>(null);", "let detach: (() => void) | undefined;", "onMounted(() => { if (el.value) detach = attach(el.value); });", "onBeforeUnmount(() => detach?.());"] : []),
   ];
-  const content = `<script setup lang="ts">\n${script.join("\n")}\n</script>\n\n<template>\n  ${open}${c.shared ? ' ref="el"' : ""} data-part="root" ${attrs.join(" ")}>\n${kids.map((k) => `    ${k}`).join("\n")}\n  ${close}\n</template>\n\n<style src="./${v.name}.css"></style>\n`;
+  const content = `<script setup lang="ts">\n${script.join("\n")}\n</script>\n\n<template>\n  ${open}${c.shared ? ' ref="el"' : ""} data-part="root" ${attrs.join(" ")}${vue_guard(v, c)}>\n${kids.map((k) => `    ${k}`).join("\n")}\n  ${close}\n</template>\n\n<style src="./${v.name}.css"></style>\n`;
   return [{ ext: ".vue", content }];
 }
 
@@ -130,7 +139,7 @@ function svelte(v, c) {
     `let { ${props.join(", ")} } = $props();`,
     ...(c.shared ? ["", "function behaviour(node: HTMLElement) {", "  const detach = attach(node);", "  return { destroy: detach };", "}"] : []),
   ];
-  const content = `<script lang="ts">\n${script.join("\n")}\n</script>\n\n${open}${c.shared ? " use:behaviour" : ""} data-part="root" ${attrs.join(" ")} {...rest}>\n${kids.map((k) => `  ${k}`).join("\n")}\n${close}\n`;
+  const content = `<script lang="ts">\n${script.join("\n")}\n</script>\n\n${open}${c.shared ? " use:behaviour" : ""} data-part="root" ${attrs.join(" ")} ${svelte_guard(v, c)}{...rest}>\n${kids.map((k) => `  ${k}`).join("\n")}\n${close}\n`;
   return [{ ext: ".svelte", content }];
 }
 
@@ -173,15 +182,19 @@ function componentsDir(root, stack) {
   return `${base}/fgu`;
 }
 
+const projectDeps = (root) => { const p = readJson(join(root, "package.json")); return { ...p?.peerDependencies, ...p?.devDependencies, ...p?.dependencies }; };
+
 /** The primitive the project already has: its own, else the kit's base. Null when none can be wired. */
-function chooseSource(stack, family, tag) {
+function chooseSource(stack, family, tag, deps) {
   const name = stack.primitives?.[0] ?? stack.shadcn?.base ?? null;
   if (!name) return { source: "shared", prim: null, note: null };
-  const prim = PRIMITIVES[name]?.[family];
-  if (!prim || (!prim.poly && tag !== "button")) {
+  const entry = PRIMITIVES[name]?.[family];
+  if (!entry || (!entry.poly && tag !== "button")) {
     return { source: "shared", prim: null, note: `primitive "${name}" has no wiring for ${family ?? "this framework"}: using the shared behaviour script` };
   }
-  return { source: `primitives:${name}`, prim, note: null };
+  const imp = entry.imp(deps);
+  if (!imp) return { source: "shared", prim: null, note: `primitive "${name}": no package to import it from in package.json: using the shared behaviour script` };
+  return { source: `primitives:${name}`, prim: { ...entry, imp }, note: null };
 }
 
 export function planScaffold({ spec, stack, profile, root, force = false }) {
@@ -192,7 +205,7 @@ export function planScaffold({ spec, stack, profile, root, force = false }) {
   if (!family) notes.push(`no ${framework === "unknown" ? "framework" : framework} template: emitted plain HTML, CSS and the shared behaviour script`);
 
   const v = viewModel(spec);
-  const { source, prim, note } = family ? chooseSource(stack, family, v.tag) : { source: "shared", prim: null, note: null };
+  const { source, prim, note } = family ? chooseSource(stack, family, v.tag, projectDeps(root)) : { source: "shared", prim: null, note: null };
   if (note) notes.push(note);
   const shared = source === "shared";
   const dir = `${componentsDir(root, stack)}/${spec.name}`;

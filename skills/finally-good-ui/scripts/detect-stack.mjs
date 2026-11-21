@@ -59,6 +59,7 @@ const PRIMITIVES = [
   ["ark", (has, hasPrefix) => hasPrefix("@ark-ui/")],
   ["kobalte", (has) => has("@kobalte/core")],
   ["headlessui", (has, hasPrefix) => hasPrefix("@headlessui/")],
+  ["angular-cdk", (has) => has("@angular/cdk")],
   ["ui-sdk", (has, hasPrefix) => hasPrefix("@ui-sdk/")],
 ];
 

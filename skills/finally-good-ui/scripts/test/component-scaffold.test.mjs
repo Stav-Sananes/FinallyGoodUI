@@ -3,6 +3,9 @@ import assert from "node:assert/strict";
 import { cpSync, existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { fx, run, tmp, SR } from "./_h.mjs";
+import { planScaffold } from "../lib/scaffold.mjs";
+import { loadSpec } from "../lib/component-spec.mjs";
+import { detectStack } from "../detect-stack.mjs";
 
 const PROJECTS = ["react-radix", "vue-reka", "svelte-bits", "angular-cdk", "plain"];
 const copy = (name) => { const d = tmp(); cpSync(fx(`components/projects/${name}`), d, { recursive: true }); return d; };
@@ -23,7 +26,8 @@ test("react project with radix: primitives:radix, no behaviour.js", () => {
   assert.match(tsx, /data-part="root"/);
   assert.match(tsx, /aria-busy=\{loading \? "true" : undefined\}/);
   assert.doesNotMatch(tsx, /attach/);
-  assert.match(read(root, "button.css"), /component-style|radius=soft/);
+  const guard = /onClickCapture=\{\(e\) => \{ if \(loading\) \{ e\.preventDefault\(\); e\.stopPropagation\(\)/;
+  assert.match(tsx, guard);
 });
 
 test("plain project: shared source, behaviour.js is a copy of the reference", () => {
@@ -55,12 +59,16 @@ test("vue and svelte wire the primitive; angular uses the shared behaviour", () 
   const vue = copy("vue-reka");
   assert.equal(scaffold(vue).json.source, "primitives:reka");
   assert.match(read(vue, "button.vue"), /<Primitive as="button"/);
+  assert.match(read(vue, "button.vue"), /@click\.capture="\(e: Event\) => \{ if \(loading\) \{ e\.preventDefault\(\)/);
   assert.ok(!existsSync(join(dirOf(vue), "button.behaviour.js")));
   const sv = copy("svelte-bits");
   assert.equal(scaffold(sv).json.source, "primitives:bits");
   assert.match(read(sv, "button.svelte"), /<Button\.Root/);
+  assert.match(read(sv, "button.svelte"), /onclickcapture=\{\(e\) => \{ if \(loading\) \{ e\.preventDefault\(\)/);
   const ng = copy("angular-cdk");
-  assert.equal(scaffold(ng).json.source, "shared");
+  const ngRun = scaffold(ng);
+  assert.equal(ngRun.json.source, "shared");
+  assert.ok(ngRun.json.notes.some((n) => /angular-cdk.*no wiring/.test(n)), ngRun.stdout);
   assert.match(read(ng, "button.component.ts"), /attach\(this\.host\.nativeElement\)/);
   assert.match(read(ng, "button.component.html"), /\[attr\.aria-busy\]/);
 });
@@ -155,4 +163,61 @@ test("output is byte-identical on a second run", () => {
     scaffold(a, "--force");
     assert.deepEqual(names(a).map((f) => read(a, f)), before);
   }
+});
+
+const project = (deps) => { const d = tmp(); writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: deps })); mkdirSync(join(d, ".design")); cpSync(fx("components/projects/plain/.design"), join(d, ".design"), { recursive: true }); return d; };
+const plan = (deps) => {
+  const root = project(deps);
+  return planScaffold({ spec: loadSpec(join(SR, "components/button")), stack: detectStack(root), profile: JSON.parse(readFileSync(join(root, ".design/component-style.json"), "utf8")), root, force: false });
+};
+const importLine = (p, ext) => p.files.find((f) => f.path.endsWith(ext)).content.split("\n").find((l) => /^import .* from "(?!\.|react"|vue")/.test(l));
+
+test("primitive import specifiers come from the package the project has", () => {
+  assert.match(importLine(plan({ react: "18", "radix-ui": "1" }), ".jsx"), /from "radix-ui"/);
+  assert.match(importLine(plan({ react: "18", "@base-ui-components/react": "1" }), ".jsx"), /@base-ui-components\/react\/button/);
+  assert.match(importLine(plan({ react: "18", "@base-ui/react": "1" }), ".jsx"), /"@base-ui\/react\/button"/);
+  assert.match(importLine(plan({ vue: "3", "radix-vue": "1" }), ".vue"), /from "radix-vue"/);
+  assert.match(importLine(plan({ vue: "3", "reka-ui": "2" }), ".vue"), /from "reka-ui"/);
+});
+
+test("radix project without a package to import Primitive from falls back to shared with a note", () => {
+  const p = plan({ react: "18", "@radix-ui/react-slot": "1" });
+  assert.equal(p.source, "shared");
+  assert.ok(p.notes.some((n) => /no package to import/.test(n)));
+  assert.ok(p.files.some((f) => f.path.endsWith("button.behaviour.js")));
+  assert.equal(plan({ react: "18", "@radix-ui/react-primitive": "2" }).source, "primitives:radix"); // control
+});
+
+test("primitive with no wiring for this component falls back to shared with a note", () => {
+  const kob = plan({ react: "18", "@kobalte/core": "1" });
+  assert.equal(kob.source, "shared");
+  assert.ok(kob.notes.some((n) => /kobalte.*no wiring/.test(n)));
+  const mismatch = plan({ vue: "3", "@radix-ui/react-primitive": "2" }); // radix has no Vue wiring
+  assert.equal(mismatch.source, "shared");
+  assert.ok(mismatch.notes.some((n) => /radix.*no wiring for vue/.test(n)));
+  assert.deepEqual(plan({ vue: "3", "reka-ui": "2" }).notes, []); // control: wired, no note
+});
+
+test("astro, solid, html and unknown give plain output with a note and exit 0", () => {
+  for (const fw of ["astro", "solid", "html", "unknown"]) {
+    const root = copy("plain");
+    const r = scaffold(root, "--framework", fw);
+    assert.equal(r.code, 0, `${fw}: ${r.stderr}`);
+    assert.equal(r.json.source, "shared");
+    assert.ok(r.json.notes.some((n) => /plain HTML/.test(n)), fw);
+    assert.ok(existsSync(join(dirOf(root), "button.html")), fw);
+  }
+  const control = scaffold(copy("plain"), "--framework", "react");
+  assert.deepEqual(control.json.notes, []);
+});
+
+test("css is the reference rules followed by the profile layer", () => {
+  const root = copy("plain");
+  scaffold(root);
+  const css = read(root, "button.css");
+  const reference = readFileSync(join(SR, "components/button/button.css"), "utf8").trimEnd();
+  assert.ok(css.startsWith(reference));
+  const profileAt = css.indexOf("/* button: radius=soft");
+  assert.ok(profileAt >= reference.length, "profile layer must come after the reference rules");
+  assert.ok(css.indexOf("border-radius", profileAt) > profileAt);
 });
