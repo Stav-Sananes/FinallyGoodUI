@@ -1,0 +1,5 @@
+{
+  "name": "dialog",
+  "source": "shared",
+  "framework": "svelte"
+}

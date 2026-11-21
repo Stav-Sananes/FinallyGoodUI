@@ -1,0 +1,120 @@
+/* scoped: [data-c="disclosure"] added by scripts/scope-fgu-css.mjs */
+/* Disclosure / accordion reference. Tokens only; load tokens.css (emit-tokens.mjs --format css) first. */
+[data-part="root"][data-c="disclosure"] {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-foreground);
+}
+[data-part="item"][data-c="disclosure"] { border-block-end: var(--border-width-hairline) solid var(--color-border); }
+[data-part="heading"][data-c="disclosure"] { margin: 0; font: inherit; }
+
+[data-part="trigger"][data-c="disclosure"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--size-control-md);
+  padding-inline: var(--space-2);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+[data-part="trigger"][data-c="disclosure"]:focus-visible {
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: calc(var(--ring-offset) * -1);
+}
+[data-part="trigger"][data-c="disclosure"]:disabled { opacity: 0.5; color: var(--color-muted-foreground); cursor: not-allowed; }
+
+/* The chevron is always in the box; opening only rotates it, so the trigger keeps its size. */
+[data-part="indicator"][data-c="disclosure"] {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+  transition: transform var(--duration-short) var(--ease-exit);
+}
+[data-part="indicator"][data-c="disclosure"]::before { content: "\2304"; }
+[data-part="trigger"][data-c="disclosure"][aria-expanded="true"] [data-part="indicator"][data-c="disclosure"] {
+  transform: rotate(0.5turn);
+  transition-duration: var(--duration-standard);
+  transition-timing-function: var(--ease-move);
+}
+
+/* Panel: grid rows 0fr to 1fr is the all-browsers auto-height animation (recipes/motion/accordion-auto-height.md). */
+[data-part="panel"][data-c="disclosure"] {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--duration-short) var(--ease-exit), /* fgu-allow: animate-layout-prop */
+    opacity var(--duration-short) var(--ease-exit);
+}
+[data-part="heading"][data-c="disclosure"]:has([aria-expanded="true"]) + [data-part="panel"][data-c="disclosure"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition-duration: var(--duration-standard);
+  transition-timing-function: var(--ease-move);
+}
+[data-part="content"][data-c="disclosure"] {
+  overflow: hidden;
+  min-block-size: 0;
+  padding-inline: var(--space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part="panel"][data-c="disclosure"] { transition-property: opacity; }
+  [data-part="indicator"][data-c="disclosure"] { transition: none; }
+}
+
+/* disclosure: radius=soft material=layered density=balanced motion=balanced motif="registration mark: circle and crosshair, CMYK colour bar" */
+
+[data-part][data-c="disclosure"] {
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  border-style: none;
+  border-width: var(--border-width-hairline);
+  border-color: var(--color-border);
+  box-shadow: none;
+  transition-property: background-color, border-color, box-shadow, color, transform;
+  transition-duration: var(--duration-short);
+}
+
+[data-part="root"][data-c="disclosure"] {
+  min-height: var(--size-control-md);
+  padding-inline: var(--space-3);
+  gap: var(--space-2);
+}
+
+[data-part][data-c="disclosure"]:focus-visible {
+  outline-style: solid;
+  outline-width: var(--ring-width);
+  outline-color: var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+
+/* state: open */
+[data-part="root"][data-c="disclosure"][aria-expanded]:not([aria-expanded="false"]) {
+  cursor: default;
+}
+
+/* state: disabled */
+[data-part="root"][data-c="disclosure"][disabled]:not([disabled="false"]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part][data-c="disclosure"] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

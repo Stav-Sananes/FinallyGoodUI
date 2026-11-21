@@ -1,0 +1,5 @@
+<button data-part="root" [attr.data-variant]="variant" [attr.disabled]="disabled ? '' : null" [attr.aria-busy]="loading ? 'true' : null" [attr.type]="type" [attr.data-dialog-open]="dialogOpen" [attr.aria-label]="ariaLabel" [attr.aria-keyshortcuts]="ariaKeyshortcuts">
+  <span data-part="icon" aria-hidden="true"><ng-content select="[icon]" /></span>
+  <span data-part="label"><ng-content /></span>
+  <span data-part="spinner" aria-hidden="true"></span>
+</button>

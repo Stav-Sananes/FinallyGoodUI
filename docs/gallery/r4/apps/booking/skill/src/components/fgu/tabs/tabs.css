@@ -1,0 +1,89 @@
+/* scoped by data-fgu="tabs" so six components can share one stylesheet (see README: friction) */
+/* Tabs reference: an underline indicator that slides between tabs. Tokens only; load tokens.css first.
+   The indicator moves with transform only (recipes/motion/tabs-indicator.md); tabs.js writes
+   --indicator-x (px) and --indicator-scale (tab width / list width) on the list. */
+[data-fgu="tabs"][data-part="root"] {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-foreground);
+}
+
+[data-fgu="tabs"] [data-part="list"]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *)) {
+  position: relative;
+  display: flex;
+  gap: var(--space-1);
+  border-block-end: var(--border-width-hairline) solid var(--color-border);
+}
+
+[data-fgu="tabs"] [data-part="tab"]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *)) {
+  box-sizing: border-box;
+  min-block-size: var(--size-control-md);
+  padding-inline: var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--color-muted-foreground);
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+[data-fgu="tabs"] [data-part="tab"]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *))[aria-selected="true"] { color: var(--color-foreground); }
+[data-fgu="tabs"] [data-part="tab"]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *)):focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: calc(var(--ring-offset) * -1); }
+
+/* One element for the whole list: full width, scaled to the tab's share and moved to its left edge. */
+[data-fgu="tabs"] [data-part="indicator"]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *)) {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-end: 0;
+  inline-size: 100%;
+  block-size: var(--border-width-strong);
+  background: var(--color-primary);
+  transform-origin: 0 0;
+  transform: translateX(var(--indicator-x, 0)) scaleX(var(--indicator-scale, 0));
+  pointer-events: none;
+}
+/* No transition on the first measure, so the indicator does not fly in from the left. */
+[data-fgu="tabs"] [data-part="list"]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *))[data-ready] [data-part="indicator"]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *)) { transition: transform var(--duration-standard) var(--ease-move); }
+
+[data-fgu="tabs"] [data-part="panel"]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *)) { padding-block: var(--space-4); }
+[data-fgu="tabs"] [data-part="panel"]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *)):focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
+[data-fgu="tabs"] [data-part="panel"]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *))[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="tabs"] [data-part="list"]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *))[data-ready] [data-part="indicator"]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *)) { transition: none; }
+}
+
+/* tabs: radius=soft material=flat density=airy motion=expressive motif="Ticket stub: perforated tear line and half-round notches, as on a salon appointment card" */
+
+[data-fgu="tabs"][data-part], [data-fgu="tabs"] [data-part]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *)) {
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  border-style: none;
+  box-shadow: none;
+  transition-property: background-color, border-color, box-shadow, color, transform;
+  transition-duration: var(--duration-standard);
+}
+
+[data-fgu="tabs"][data-part="root"] {
+  min-height: var(--size-control-lg);
+  padding-inline: var(--space-4);
+  gap: var(--space-3);
+}
+
+[data-fgu="tabs"][data-part]:focus-visible, [data-fgu="tabs"] [data-part]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *)):focus-visible {
+  outline-style: solid;
+  outline-width: var(--ring-width);
+  outline-color: var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+
+/* state: selected */
+[data-fgu="tabs"][data-part="root"][aria-selected]:not([aria-selected="false"]) {
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="tabs"][data-part], [data-fgu="tabs"] [data-part]:where(:not([data-fgu]:not([data-fgu="tabs"])):not([data-fgu]:not([data-fgu="tabs"]) *)) {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

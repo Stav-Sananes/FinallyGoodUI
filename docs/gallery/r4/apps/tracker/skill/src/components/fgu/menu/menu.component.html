@@ -1,0 +1,14 @@
+<div data-part="root">
+  <button type="button" data-part="trigger" [attr.aria-label]="label"><ng-content select="[trigger]" /></button>
+  <div data-part="list" role="menu" #list>
+    @for (item of items; track item.id) {
+      <button type="button" data-part="item" role="menuitem" tabindex="-1"
+        [attr.aria-disabled]="item.disabled ? 'true' : null"
+        [attr.aria-current]="item.id === current ? 'true' : null"
+        (click)="picked.emit(item.id)">
+        <span class="mark" aria-hidden="true">{{ item.mark }}</span>{{ item.label }}
+      </button>
+    }
+  </div>
+  <ng-content />
+</div>

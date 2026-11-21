@@ -1,0 +1,7 @@
+# Decisions (autonomous run; every approval is `self-approved (autonomous)`)
+## D-1 Brief + blueprint approved: self-approved (autonomous). All answers marked in brief.md as brief/inferred/default.
+## D-2 Navigation: left rail tablist + top bar, single screen. [ia-nav.nav-model-by-count, ia-nav.url-as-state] Undo toast over confirm for fast flows [flows-forms.undo-over-confirm].
+## D-3 Direction: chosen by agent: C Strip Bay. Distinct from a generic issue tracker (grey table + dark ink) and from the ink-on-paper house style because the canvas is a tinted sage, strips are warm paper with priority tabs, primary is signal blue, display type is condensed signage. Brief line "from the keyboard" -> the cursor-strip model. A rejected (house style), B rejected (stage hides the rack). Files: directions/specs.md. Prototype pages skipped (no subagents).
+## D-4 Tokens: tokens.json (+dark, resolver) normalised with emit-tokens --format dtcg; fonts Barlow/Barlow Condensed/IBM Plex Mono via Google Fonts <link> (fontsource would add dependencies; autonomous never installs). 34 contrast pairs pass.
+## D-5 Components: no kit or primitives installed (detect: primitives []), Angular CDK not installed and not added -> scaffold from spec registry: button, field, menu, dialog, tabs, toast, via scaffold-component.mjs; style profile outlined/sharp/dense/balanced.
+## D-6 Motion: productive for repeats (<=150ms), balanced for dialogs; one hero moment (Bay clear). Reduced motion drops translation/scale.

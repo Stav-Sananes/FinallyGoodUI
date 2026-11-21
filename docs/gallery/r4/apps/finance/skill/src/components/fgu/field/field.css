@@ -1,0 +1,121 @@
+/* scoped: [data-c="field"] added by scripts/scope-fgu-css.mjs */
+/* Field reference: label, hint, control and error as one unit. Tokens only; load tokens.css first. */
+[data-part="root"][data-c="field"] {
+  display: grid;
+  gap: var(--space-1);
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-foreground);
+}
+[data-part="root"][data-c="field"][data-variant="inline"] {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--space-3);
+}
+[data-part="root"][data-c="field"][data-variant="inline"] > [data-part="hint"][data-c="field"],
+[data-part="root"][data-c="field"][data-variant="inline"] > [data-part="error"][data-c="field"] { grid-column: 2; }
+
+[data-part="label"][data-c="field"] { font-weight: inherit; }
+[data-part="hint"][data-c="field"] { margin: 0; color: var(--color-muted-foreground); }
+
+[data-part="control"][data-c="field"] {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--size-control-md);
+  padding-inline: var(--space-3);
+  border: var(--border-width-hairline) solid var(--color-input);
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: inherit;
+  /* keeps iOS from zooming on focus: never below the base text size */
+  font-size: max(var(--text-base), 1rem);
+  transition: border-color var(--duration-short) var(--ease-snappy);
+}
+[data-part="control"][data-c="field"]:focus-visible {
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+/* Invalid: colour plus a second ring drawn inside, so the box never changes size, plus the error text. */
+[data-part="control"][data-c="field"][aria-invalid="true"] {
+  border-color: var(--color-destructive);
+  box-shadow: inset 0 0 0 var(--border-width-hairline) var(--color-destructive);
+}
+[data-part="control"][data-c="field"]:disabled {
+  opacity: 0.5;
+  color: var(--color-muted-foreground);
+  cursor: not-allowed;
+}
+
+/* The error part is always in the DOM and always reserves one line, so showing a message moves nothing. */
+[data-part="error"][data-c="field"] {
+  margin: 0;
+  min-block-size: var(--text-sm--line-height);
+  display: flex;
+  gap: var(--space-1);
+  color: var(--color-destructive);
+}
+[data-part="error"][data-c="field"]:not(:empty)::before { content: "!"; font-weight: 700; }
+[data-part="error"][data-c="field"]:not(:empty) { animation: field-error-in var(--duration-short) var(--ease-enter); }
+@keyframes field-error-in { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part="control"][data-c="field"] { transition: none; }
+  [data-part="error"][data-c="field"]:not(:empty) { animation: none; }
+}
+
+/* field: radius=soft material=layered density=balanced motion=balanced motif="registration mark: circle and crosshair, CMYK colour bar" */
+
+[data-part][data-c="field"] {
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  border-style: none;
+  border-width: var(--border-width-hairline);
+  border-color: var(--color-border);
+  box-shadow: none;
+  transition-property: background-color, border-color, box-shadow, color, transform;
+  transition-duration: var(--duration-short);
+  transition-timing-function: var(--ease-enter);
+}
+
+[data-part="root"][data-c="field"] {
+  min-height: var(--size-control-md);
+  padding-inline: var(--space-3);
+  gap: var(--space-2);
+}
+
+[data-part][data-c="field"]:focus-visible {
+  outline-style: solid;
+  outline-width: var(--ring-width);
+  outline-color: var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+
+/* state: invalid */
+[data-part="root"][data-c="field"][aria-invalid]:not([aria-invalid="false"]) {
+  cursor: default;
+}
+
+/* state: disabled */
+[data-part="root"][data-c="field"][disabled]:not([disabled="false"]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part][data-c="field"] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}
+
+/* project fix: the profile layer sets border-style none on every part, which hides the control's edge */
+[data-part="control"][data-c="field"] {
+  border: var(--border-width-hairline) solid var(--color-input);
+  background: var(--color-card);
+  color: var(--color-card-foreground);
+  padding-inline: var(--space-3);
+}
+[data-part="control"][data-c="field"][aria-invalid="true"] { border-color: var(--color-destructive); border-width: var(--border-width-strong); }
+[data-part="error"][data-c="field"] { color: var(--color-destructive); }

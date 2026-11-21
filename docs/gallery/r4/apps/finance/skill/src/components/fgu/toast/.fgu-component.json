@@ -1,0 +1,5 @@
+{
+  "name": "toast",
+  "source": "primitives:radix",
+  "framework": "react"
+}

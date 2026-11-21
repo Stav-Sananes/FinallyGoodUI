@@ -1,0 +1,150 @@
+<header class="topbar">
+  <div class="wordmark">
+    <svg class="mark" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><rect x="4" y="3" width="16" height="5" /><rect x="4" y="10" width="16" height="5" /><rect x="4" y="17" width="16" height="4" /></svg>
+    <span class="name">Tracker</span>
+    <span class="tag">Harbor team, six desks</span>
+  </div>
+  <p class="sync" role="status" [class.bad]="store.saveFailed() || store.phase() === 'error'">{{ syncLabel() }}</p>
+  <fgu-button #helpOpener variant="ghost" dialogOpen="shortcuts" ariaKeyshortcuts="?">Keys <kbd>?</kbd></fgu-button>
+  <fgu-button #newOpener variant="primary" dialogOpen="new-issue" ariaKeyshortcuts="n">New issue <kbd>n</kbd></fgu-button>
+</header>
+
+<div class="bay">
+  <aside class="rail" aria-label="Triage summary">
+    <h2 class="rail-count">
+      <span class="figure">{{ store.untriagedCount() }}</span>
+      <span class="unit">untriaged</span>
+    </h2>
+    <p class="rail-note">No priority, or nobody on it yet.</p>
+
+    <fgu-field label="Search the rack" placeholder="id, title, area, name" inputType="search" #search
+      [value]="store.query()" (valueChange)="store.query.set($event)" />
+    <p class="hint-line"><kbd>/</kbd> to search</p>
+
+    <h3 class="rail-head">Open by priority</h3>
+    <ul class="histogram">
+      @for (p of priorities; track p) {
+        <li class="hist-row" [attr.data-priority]="p">
+          <span class="tab" aria-hidden="true"></span>
+          <span class="label">{{ priorityLabel[p] }}</span>
+          <span class="n">{{ store.priorityCounts()[p] }}</span>
+        </li>
+      }
+    </ul>
+  </aside>
+
+  <main class="work" id="main">
+    <h1 class="visually-hidden">Issues</h1>
+    <fgu-tabs label="Queue views" [tabs]="tabs()" [selected]="store.view()" (selectedChange)="onTabChange($event)">
+      <ng-template let-tab>
+        @switch (store.phase()) {
+          @case ('loading') {
+            <ul class="rack" aria-busy="true" aria-label="Loading issues">
+              @for (n of skeletonRows; track n) {
+                <li class="strip skeleton"><span class="tab"></span><span class="bone id"></span><span class="bone title"></span></li>
+              }
+            </ul>
+            <p class="visually-hidden" role="status">Loading issues</p>
+          }
+          @case ('error') {
+            <section class="state error" role="alert">
+              <h2>The rack did not load</h2>
+              <p>The server could not be reached. Check your connection; nothing you saw was lost.</p>
+              <fgu-button variant="primary" (click)="refresh()">Try again <kbd>r</kbd></fgu-button>
+            </section>
+          }
+          @default {
+            @if (store.visible().length === 0) {
+              @if (store.allCount() === 0) {
+                <section class="state"><h2>The bay is empty</h2><p>No issues yet. Press <kbd>n</kbd> to file the first one.</p></section>
+              } @else if (store.query()) {
+                <section class="state"><h2>No strip matches “{{ store.query() }}”</h2><p>Search covers id, title, area and assignee.</p>
+                  <fgu-button variant="secondary" (click)="clearSearch()">Clear search</fgu-button></section>
+              } @else if (tab.id === 'untriaged') {
+                <section class="state signature-clear"><h2>Bay clear.</h2><p>Every open issue has a priority and an owner.</p>
+                  <fgu-button variant="secondary" (click)="showAll()">See all issues</fgu-button></section>
+              } @else {
+                <section class="state"><h2>Nothing on your board</h2><p>Nothing open is assigned to you. Press <kbd>a</kbd> on any strip to take it.</p>
+                  <fgu-button variant="secondary" (click)="showAll()">See all issues</fgu-button></section>
+              }
+            } @else {
+              <ul class="rack" aria-label="Issues">
+                @for (issue of store.visible(); track issue.id) {
+                  <li class="strip" [attr.data-priority]="issue.priority" [attr.data-status]="issue.status"
+                    [attr.data-cursor]="issue.id === cursorId() ? 'true' : null" (focusin)="setCursor(issue.id, false)">
+                    <span class="tab" aria-hidden="true"></span>
+                    <span class="id">{{ issue.id }}</span>
+                    <button type="button" class="open-issue" data-dialog-open="issue-dialog"
+                      [attr.tabindex]="issue.id === cursorId() ? 0 : -1" (click)="openIssue(issue)">{{ issue.title }}</button>
+                    <span class="area">{{ issue.area }}</span>
+                    <span class="priority"><span class="word">{{ priorityLabel[issue.priority] }}</span></span>
+                    <fgu-menu class="assignee" [items]="menuItems" [current]="issue.assignee ?? 'unassigned'"
+                      [label]="'Assignee of ' + issue.id + ': ' + nameOf(issue.assignee)" (picked)="pickAssignee(issue, $event)">
+                      <span trigger class="who"><span class="monogram">{{ initialsOf(issue.assignee) }}</span><span class="who-name">{{ nameOf(issue.assignee) }}</span></span>
+                    </fgu-menu>
+                    <span class="status">{{ statusLabel[issue.status] }}</span>
+                    <time class="age" [attr.datetime]="issue.createdAt">{{ issue.createdAt | date: 'MMM d' }}</time>
+                  </li>
+                }
+              </ul>
+            }
+          }
+        }
+      </ng-template>
+    </fgu-tabs>
+    <p class="keys-footer" aria-hidden="true">
+      <span><kbd>j</kbd><kbd>k</kbd> move</span><span><kbd>1</kbd>-<kbd>4</kbd> priority</span><span><kbd>a</kbd> assign</span>
+      <span><kbd>s</kbd> status</span><span><kbd>x</kbd> close</span><span><kbd>u</kbd> undo</span><span><kbd>?</kbd> all keys</span>
+    </p>
+  </main>
+</div>
+
+<fgu-dialog #issueDialog dialogId="issue-dialog" [heading]="opened() ? opened()!.id + ' · ' + opened()!.area : 'Issue'" (closed)="openedId.set(null)">
+  @if (opened(); as issue) {
+    <div class="issue-body" [attr.data-priority]="issue.priority">
+      <fgu-field label="Title" [value]="renameDraft()" (valueChange)="renameDraft.set($event)" [required]="true" [minLength]="8"
+        messageMissing="Give the issue a title" messageTooShort="Use at least 8 characters so teammates can tell it apart" />
+      <dl class="facts">
+        <div><dt>Owner</dt><dd>{{ nameOf(issue.assignee) }}</dd></div>
+        <div><dt>Status</dt><dd>{{ statusLabel[issue.status] }}</dd></div>
+        <div><dt>Reported by</dt><dd>{{ issue.reporter }}</dd></div>
+        <div><dt>Filed</dt><dd>{{ issue.createdAt | date: 'MMM d, y' }}</dd></div>
+      </dl>
+      <p class="rail-head" id="dlg-priority">Priority</p>
+      <div class="priority-set" role="group" aria-labelledby="dlg-priority">
+        @for (p of priorities; track p) {
+          <fgu-button [variant]="issue.priority === p ? 'primary' : 'secondary'" (click)="setPriorityInDialog(issue, p)">{{ priorityLabel[p] }}</fgu-button>
+        }
+      </div>
+    </div>
+  }
+  <div actions>
+    <fgu-button variant="ghost" data-dialog-close>Cancel</fgu-button>
+    @if (opened(); as issue) {
+      <fgu-button variant="destructive" [disabled]="issue.status === 'closed'" (click)="closeFromDialog(issue)">Close issue</fgu-button>
+      <fgu-button variant="primary" (click)="saveRename(issue)">Save title</fgu-button>
+    }
+  </div>
+</fgu-dialog>
+
+<fgu-dialog #newDialog dialogId="new-issue" heading="New issue" description="It lands in Untriaged until it has a priority and an owner.">
+  <form class="new-form" (submit)="submitNew($event)" novalidate>
+    <fgu-field #newTitle label="Title" name="title" [autofocus]="true" [required]="true" [minLength]="8" placeholder="What is broken, for whom"
+      [value]="draftTitle()" (valueChange)="draftTitle.set($event)"
+      messageMissing="Give the issue a title" messageTooShort="Use at least 8 characters so teammates can tell it apart" />
+    <fgu-field label="Area" name="area" hint="Optional. Billing, Auth, Web app…" [value]="draftArea()" (valueChange)="draftArea.set($event)" />
+    <div class="form-actions">
+      <fgu-button variant="ghost" data-dialog-close>Cancel</fgu-button>
+      <fgu-button variant="primary" type="submit">Add to the bay</fgu-button>
+    </div>
+  </form>
+</fgu-dialog>
+
+<fgu-dialog dialogId="shortcuts" heading="Keyboard" description="Everything in triage works without the mouse.">
+  <ul class="key-list">
+    @for (s of shortcuts; track s.does) {
+      <li><span class="caps">@for (k of s.keys; track k) {<kbd>{{ k }}</kbd>}</span><span>{{ s.does }}</span></li>
+    }
+  </ul>
+  <div actions><fgu-button variant="primary" data-dialog-close>Done</fgu-button></div>
+</fgu-dialog>

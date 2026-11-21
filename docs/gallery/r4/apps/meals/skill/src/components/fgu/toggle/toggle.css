@@ -1,0 +1,116 @@
+/* Toggle reference (checkbox + switch). Tokens only; load tokens.css (emit-tokens.mjs --format css) first. */
+[data-part="root"] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  min-block-size: var(--size-control-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-foreground);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+[data-part="control"] {
+  appearance: none;
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  margin: 0;
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+  border: var(--border-width-hairline) solid var(--color-input);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-background);
+  color: var(--color-primary-foreground);
+  cursor: inherit;
+  transition:
+    background-color var(--duration-short) var(--ease-snappy),
+    border-color var(--duration-short) var(--ease-snappy);
+}
+/* Checkbox mark: always in the box, only its opacity changes, so the size never moves. */
+[data-part="control"]::after {
+  content: "\2713";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity var(--duration-micro) var(--ease-snappy);
+}
+[data-part="control"]:checked::after { opacity: 1; }
+[data-part="control"]:indeterminate::after { content: "\2212"; opacity: 1; }
+[data-part="control"]:checked,
+[data-part="control"]:indeterminate {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* Switch: a track with a thumb that only translates, so state is shown by position as well as colour. */
+[data-variant="switch"] [data-part="control"] {
+  inline-size: calc(var(--icon-md) * 2);
+  border-radius: var(--radius-full);
+  background-color: var(--color-input);
+}
+[data-variant="switch"] [data-part="control"]::after {
+  content: "";
+  inset: 0 auto 0 0;
+  inline-size: var(--icon-md);
+  border-radius: var(--radius-full);
+  background-color: var(--color-background);
+  opacity: 1;
+  transition: transform var(--duration-standard) var(--ease-move);
+}
+[data-variant="switch"] [data-part="control"]:checked::after { transform: translateX(var(--icon-md)); }
+[data-variant="switch"] [data-part="control"]:checked { background-color: var(--color-primary); }
+
+[data-part="control"]:focus-visible {
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+[data-part="control"][aria-invalid="true"] {
+  border-color: var(--color-destructive);
+  box-shadow: inset 0 0 0 var(--border-width-hairline) var(--color-destructive);
+}
+[data-part="control"]:disabled { cursor: not-allowed; opacity: 0.5; }
+[data-part="root"]:has([data-part="control"]:disabled) { cursor: not-allowed; color: var(--color-muted-foreground); }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part="control"], [data-part="control"]::after,
+  [data-variant="switch"] [data-part="control"]::after { transition: opacity var(--duration-micro) linear; }
+}
+
+/* toggle: Greengrocer's Board profile (hand-trimmed: the generated generic [data-part] layer removed, see README friction) */
+[data-part="root"] { gap: var(--space-3); font-size: var(--text-base); min-block-size: var(--size-control-lg); }
+[data-part="control"] { inline-size: var(--icon-lg); block-size: var(--icon-lg); border-width: var(--border-width-strong); background-color: var(--color-card); }
+[data-part="control"]:checked, [data-part="control"]:indeterminate { background-color: var(--color-success); border-color: var(--color-success); }
+[data-variant="switch"] [data-part="control"] { inline-size: calc(var(--icon-lg) * 2); background-color: var(--color-input); }
+[data-variant="switch"] [data-part="control"]::after { inline-size: var(--icon-lg); background-color: var(--color-card); }
+[data-variant="switch"] [data-part="control"]:checked::after { transform: translateX(var(--icon-lg)); }
+[data-variant="switch"] [data-part="control"]:checked { background-color: var(--color-success); }
+[data-part="control"]::after { color: var(--color-success-foreground); }
+
+/* state: checked */
+[data-part="root"][checked]:not([checked="false"]) {
+  cursor: default;
+}
+
+/* state: disabled */
+[data-part="root"][disabled]:not([disabled="false"]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* state: invalid */
+[data-part="root"][aria-invalid]:not([aria-invalid="false"]) {
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

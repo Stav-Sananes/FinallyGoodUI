@@ -1,0 +1,5 @@
+{
+  "name": "tabs",
+  "source": "shared",
+  "framework": "svelte"
+}

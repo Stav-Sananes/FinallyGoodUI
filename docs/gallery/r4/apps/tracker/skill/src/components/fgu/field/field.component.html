@@ -1,0 +1,14 @@
+<div data-part="root" [attr.data-variant]="variant">
+  <label data-part="label">{{ label }}</label>
+  @if (hint) {
+    <p data-part="hint">{{ hint }}</p>
+  }
+  <input data-part="control" #control
+    [attr.type]="inputType" [attr.name]="name || null" [attr.placeholder]="placeholder || null"
+    [value]="value" [required]="required" [disabled]="disabled" [attr.minlength]="minLength"
+    [attr.aria-invalid]="invalid ? 'true' : null"
+    [attr.data-msg-value-missing]="messageMissing || null" [attr.data-msg-too-short]="messageTooShort || null"
+    autocomplete="off" [attr.autofocus]="autofocus ? '' : null"
+    (input)="valueChange.emit(control.value)" />
+  <p data-part="error"></p>
+</div>
