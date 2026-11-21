@@ -1,0 +1,74 @@
+{
+  "name": "tabs",
+  "shapes": [
+    "underline"
+  ],
+  "props": [],
+  "events": [],
+  "slots": [
+    "default"
+  ],
+  "states": [
+    {
+      "name": "selected",
+      "attribute": "aria-selected"
+    }
+  ],
+  "a11y": {
+    "role": "tablist",
+    "rolePart": "list",
+    "aria": [
+      "aria-controls",
+      "aria-labelledby",
+      "aria-label",
+      "aria-orientation"
+    ],
+    "keys": {
+      "ArrowRight": "next tab",
+      "ArrowLeft": "previous tab",
+      "Home": "first tab",
+      "End": "last tab"
+    }
+  },
+  "tokens": [
+    "--color-foreground",
+    "--color-muted-foreground",
+    "--color-primary",
+    "--color-border",
+    "--color-ring",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--ring-width",
+    "--ring-offset",
+    "--size-control-sm",
+    "--size-control-md",
+    "--size-control-lg",
+    "--space-1",
+    "--space-2",
+    "--space-3",
+    "--space-4",
+    "--duration-micro",
+    "--duration-short",
+    "--duration-standard",
+    "--ease-move",
+    "--ease-snappy",
+    "--font-sans",
+    "--text-sm"
+  ],
+  "parts": [
+    "root",
+    "list",
+    "tab",
+    "indicator",
+    "panel"
+  ],
+  "tags": {
+    "tab": "button",
+    "panel": "div"
+  },
+  "pattern": "recipes/motion/tabs-indicator.md"
+}

@@ -8,7 +8,7 @@ import { loadSpec } from "../lib/component-spec.mjs";
 import { detectStack } from "../detect-stack.mjs";
 
 // End to end: scaffold a component into a fixture project, then the conformance checker must accept it.
-const COMPONENTS = ["field", "toggle", "disclosure", "dialog", "menu"];
+const COMPONENTS = ["field", "toggle", "disclosure", "dialog", "menu", "tabs"];
 const PROJECTS = ["plain", "react-radix", "vue-reka"];
 
 const scaffoldAndCheck = (component, project) => {
@@ -139,6 +139,25 @@ test("menu: role-missing fires when the list loses role=menu (negative control)"
   const text = readFileSync(file, "utf8");
   assert.match(text, /role="menu"/);
   writeFileSync(file, text.replace(' role="menu"', ""));
+  const check = run("check-components.mjs", ["--root", root]);
+  assert.ok(check.json.findings.some((f) => f.rule === "role-missing" && /list/.test(f.message)), JSON.stringify(check.json.findings));
+});
+
+test("tabs: the list part carries role=tablist, tabs are native buttons and panels are plain elements, in every fixture project", () => {
+  for (const project of PROJECTS) {
+    const text = markup(scaffoldAndCheck("tabs", project).root, "tabs", project);
+    assert.match(text, /<span data-part="list" role="tablist"/, project);
+    assert.match(text, /<button data-part="tab"/, project);
+    assert.match(text, /<div data-part="panel"/, project);
+  }
+});
+
+test("tabs: role-missing fires when the list loses role=tablist (negative control)", () => {
+  const { root } = scaffoldAndCheck("tabs", "react-radix");
+  const file = scaffoldedFile(root, "tabs", "tsx");
+  const text = readFileSync(file, "utf8");
+  assert.match(text, /role="tablist"/);
+  writeFileSync(file, text.replace(' role="tablist"', ""));
   const check = run("check-components.mjs", ["--root", root]);
   assert.ok(check.json.findings.some((f) => f.rule === "role-missing" && /list/.test(f.message)), JSON.stringify(check.json.findings));
 });

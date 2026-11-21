@@ -22,6 +22,7 @@ export class El {
   get tabIndex() { return Number(this.getAttribute("tabindex") ?? -1); }
   set tabIndex(v) { this.setAttribute("tabindex", v); }
   get isConnected() { return !this.removed && (this.parent ? this.parent.isConnected : true); }
+  get parentElement() { return this.parent; }
   get nextElementSibling() { return this.parent?.children[this.parent.children.indexOf(this) + 1] ?? null; }
   getAttribute(k) { return this.attrs.has(k) ? this.attrs.get(k) : null; }
   hasAttribute(k) { return this.attrs.has(k); }

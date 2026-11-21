@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tabs reference</title>
+<!-- tokens.css: node scripts/emit-tokens.mjs --in tokens/default.tokens.json --format css > tokens.css -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../tabs.css">
+</head>
+<body>
+<main id="demo">
+  <div data-part="root">
+    <div data-part="list" role="tablist" aria-label="Invoice views">
+      <button type="button" data-part="tab" role="tab" id="tab-open" aria-selected="true" aria-controls="panel-open">Open</button>
+      <button type="button" data-part="tab" role="tab" id="tab-paid" aria-selected="false" aria-controls="panel-paid" tabindex="-1">Paid</button>
+      <button type="button" data-part="tab" role="tab" id="tab-void" aria-selected="false" aria-controls="panel-void" tabindex="-1">Void</button>
+      <span data-part="indicator" aria-hidden="true"></span>
+    </div>
+    <div data-part="panel" role="tabpanel" id="panel-open" aria-labelledby="tab-open" tabindex="0"><p>Seven invoices are waiting for payment.</p></div>
+    <div data-part="panel" role="tabpanel" id="panel-paid" aria-labelledby="tab-paid" tabindex="0" hidden><p>Forty-two invoices were paid this year.</p></div>
+    <div data-part="panel" role="tabpanel" id="panel-void" aria-labelledby="tab-void" tabindex="0" hidden><p>Two invoices were voided.</p></div>
+  </div>
+</main>
+<script type="module">
+  import { attach } from "../tabs.js";
+  attach(document.getElementById("demo"));
+</script>
+</body>
+</html>

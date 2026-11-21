@@ -257,3 +257,128 @@ test("menu attach: detach removes every listener and stops reacting", async () =
   p.open();
   assert.equal(p.list.popoverOpen, false);
 });
+
+// ---- tabs
+const tabsPage = ({ controls = true, selected = null, orientation = null } = {}) => {
+  const doc = new Doc();
+  const root = make(doc, "div", { "data-part": "root" });
+  const list = make(doc, "div", { "data-part": "list", role: "tablist", "aria-label": "Views", ...(orientation ? { "aria-orientation": orientation } : {}) });
+  const names = ["open", "paid", "void"];
+  const tabs = names.map((n, i) => make(doc, "button", { "data-part": "tab", id: `tab-${n}`, ...(controls ? { "aria-controls": `panel-${n}` } : {}), ...(selected === i ? { "aria-selected": "true" } : {}) }, n));
+  const indicator = make(doc, "span", { "data-part": "indicator", "aria-hidden": "true" });
+  const panels = names.map((n) => make(doc, "div", { "data-part": "panel", id: `panel-${n}` }));
+  list.append(...tabs, indicator);
+  root.append(list, ...panels);
+  list.rect = { left: 10, width: 300, top: 0, height: 40, right: 310, bottom: 40 };
+  tabs.forEach((t, i) => { t.rect = { left: 10 + i * 100, width: 100, top: 0, height: 40, right: 110 + i * 100, bottom: 40 }; });
+  const key = (el, k) => el.dispatch("keydown", { bubbles: true, key: k });
+  const click = (el) => el.dispatch("click", { bubbles: true });
+  const state = () => ({ selected: tabs.map((t) => t.getAttribute("aria-selected")), tab: tabs.map((t) => t.getAttribute("tabindex")), hidden: panels.map((p) => p.hidden) });
+  return { doc, root, list, tabs, panels, indicator, key, click, state };
+};
+
+test("tabs attach: first tab selected by default, one tab stop, other panels hidden, roles and ids wired", async () => {
+  const { attach } = await load("tabs");
+  const p = tabsPage({ controls: false });
+  attach(p.root);
+  assert.deepEqual(p.state(), { selected: ["true", "false", "false"], tab: ["0", "-1", "-1"], hidden: [false, true, true] });
+  assert.ok(p.tabs.every((t) => t.getAttribute("role") === "tab"));
+  assert.ok(p.panels.every((q) => q.getAttribute("role") === "tabpanel" && q.getAttribute("tabindex") === "0"));
+  assert.equal(p.tabs[1].getAttribute("aria-controls"), "panel-paid", "paired by order when aria-controls is missing");
+  assert.equal(p.panels[1].getAttribute("aria-labelledby"), "tab-paid");
+  assert.equal(tabsPage().tabs[0].getAttribute("role"), null, "negative control: untouched without attach");
+});
+
+test("tabs attach: honours the tab the markup marks selected", async () => {
+  const { attach } = await load("tabs");
+  const p = tabsPage({ selected: 1 });
+  attach(p.root);
+  assert.deepEqual(p.state().selected, ["false", "true", "false"]);
+  assert.deepEqual(p.state().hidden, [true, false, true]);
+});
+
+test("tabs attach: click selects, shows its panel and focuses the tab", async () => {
+  const { attach } = await load("tabs");
+  const p = tabsPage();
+  attach(p.root);
+  p.click(p.tabs[2]);
+  assert.deepEqual(p.state(), { selected: ["false", "false", "true"], tab: ["-1", "-1", "0"], hidden: [true, true, false] });
+  assert.equal(p.doc.activeElement, p.tabs[2]);
+});
+
+test("tabs attach: arrows move and select with wrapping, Home and End jump (automatic activation)", async () => {
+  const { attach } = await load("tabs");
+  const p = tabsPage();
+  attach(p.root);
+  p.tabs[0].focus();
+  const ev = p.key(p.tabs[0], "ArrowRight");
+  assert.equal(ev.defaultPrevented, true);
+  assert.deepEqual([p.doc.activeElement, p.tabs[1].getAttribute("aria-selected"), p.panels[1].hidden], [p.tabs[1], "true", false]);
+  p.key(p.tabs[1], "ArrowLeft");
+  p.key(p.tabs[0], "ArrowLeft");
+  assert.equal(p.doc.activeElement, p.tabs[2], "ArrowLeft from the first wraps to the last");
+  p.key(p.tabs[2], "ArrowRight");
+  assert.equal(p.doc.activeElement, p.tabs[0], "ArrowRight from the last wraps to the first");
+  p.key(p.tabs[0], "End");
+  assert.equal(p.tabs[2].getAttribute("aria-selected"), "true");
+  p.key(p.tabs[2], "Home");
+  assert.deepEqual(p.state().selected, ["true", "false", "false"]);
+  const other = p.key(p.tabs[0], "ArrowDown");
+  assert.equal(other.defaultPrevented, false, "ArrowDown is not a horizontal tabs key");
+});
+
+test("tabs attach: a vertical tablist uses ArrowUp and ArrowDown only", async () => {
+  const { attach } = await load("tabs");
+  const p = tabsPage({ orientation: "vertical" });
+  attach(p.root);
+  p.key(p.tabs[0], "ArrowRight");
+  assert.equal(p.tabs[0].getAttribute("aria-selected"), "true", "ArrowRight ignored");
+  p.key(p.tabs[0], "ArrowDown");
+  assert.equal(p.tabs[1].getAttribute("aria-selected"), "true");
+  p.key(p.tabs[1], "ArrowUp");
+  assert.equal(p.tabs[0].getAttribute("aria-selected"), "true");
+});
+
+test("tabs attach: in a right-to-left list ArrowLeft goes to the next tab", async () => {
+  const { attach } = await load("tabs");
+  const p = tabsPage();
+  p.doc.defaultView.getComputedStyle = () => ({ direction: "rtl" });
+  attach(p.root);
+  p.key(p.tabs[0], "ArrowLeft");
+  assert.equal(p.tabs[1].getAttribute("aria-selected"), "true");
+});
+
+test("tabs attach: the indicator follows the selected tab with transform variables, ready after the first paint", async () => {
+  const { attach } = await load("tabs");
+  const frames = [];
+  const seen = { ro: null };
+  globalThis.requestAnimationFrame = (f) => { frames.push(f); return frames.length; };
+  globalThis.cancelAnimationFrame = () => {};
+  globalThis.ResizeObserver = class { constructor(f) { this.f = f; seen.ro = this; } observe(el) { this.el = el; } disconnect() { this.gone = true; } };
+  try {
+    const p = tabsPage();
+    const detach = attach(p.root);
+    assert.deepEqual([p.list.style.props["--indicator-x"], p.list.style.props["--indicator-scale"]], ["0px", String(100 / 300)]);
+    assert.equal(p.list.hasAttribute("data-ready"), false, "no transition on the first measure");
+    frames.forEach((f) => f());
+    assert.equal(p.list.hasAttribute("data-ready"), true);
+    p.click(p.tabs[2]);
+    assert.equal(p.list.style.props["--indicator-x"], "200px");
+    assert.equal(seen.ro.el, p.list, "resizes re-measure");
+    detach();
+    assert.equal(seen.ro.gone, true, "the observer is disconnected on detach");
+    assert.equal(p.root.listenerCount(), 0);
+  } finally {
+    delete globalThis.requestAnimationFrame; delete globalThis.cancelAnimationFrame; delete globalThis.ResizeObserver;
+  }
+});
+
+test("tabs attach: detach stops reacting", async () => {
+  const { attach } = await load("tabs");
+  const p = tabsPage();
+  const detach = attach(p.root);
+  assert.ok(p.root.listenerCount() > 0, "positive control");
+  detach();
+  p.click(p.tabs[1]);
+  assert.equal(p.tabs[1].getAttribute("aria-selected"), "false");
+});
