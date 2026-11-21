@@ -1,0 +1,55 @@
+{
+  "name": "button",
+  "shapes": [
+    "solid",
+    "outline"
+  ],
+  "props": [
+    {
+      "name": "variant",
+      "type": "string",
+      "default": "solid"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean"
+    }
+  ],
+  "events": [
+    "click"
+  ],
+  "slots": [
+    "default",
+    "icon"
+  ],
+  "states": [
+    {
+      "name": "disabled",
+      "attribute": "aria-disabled"
+    },
+    {
+      "name": "busy",
+      "attribute": "aria-busy"
+    }
+  ],
+  "a11y": {
+    "role": "button",
+    "aria": [
+      "aria-disabled",
+      "aria-busy"
+    ],
+    "keys": {
+      "Enter": "activate",
+      "Space": "activate"
+    }
+  },
+  "tokens": [
+    "--color-action",
+    "--radius-md"
+  ],
+  "parts": [
+    "root",
+    "root"
+  ],
+  "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/button/"
+}
