@@ -1,0 +1,1 @@
+{ "name": "fx-react-radix", "private": true, "dependencies": { "react": "^18.3.0", "@radix-ui/react-slot": "^1.1.0" }, "devDependencies": { "typescript": "^5.5.0" } }
