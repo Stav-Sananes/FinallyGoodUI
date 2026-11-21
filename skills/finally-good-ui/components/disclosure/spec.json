@@ -14,6 +14,7 @@
   ],
   "a11y": {
     "role": "region",
+    "rolePart": "panel",
     "aria": ["aria-expanded", "aria-controls", "aria-labelledby"],
     "keys": { "Enter": "toggle", "Space": "toggle" }
   },

@@ -57,6 +57,10 @@ export function validateSpec(spec) {
   else {
     if (!isText(spec.a11y.role)) errors.push("a11y.role: must be a non-empty string");
     textList(errors, "a11y.aria", spec.a11y.aria);
+    if (spec.a11y.rolePart !== undefined) {
+      if (!isText(spec.a11y.rolePart)) errors.push("a11y.rolePart: must be a non-empty string");
+      else if (Array.isArray(spec.parts) && !spec.parts.includes(spec.a11y.rolePart)) errors.push(`a11y.rolePart: "${spec.a11y.rolePart}" is not one of parts`);
+    }
     const keys = spec.a11y.keys;
     if (!isObj(keys)) errors.push("a11y.keys: must be an object");
     else for (const [k, v] of Object.entries(keys)) if (!isText(v)) errors.push(`a11y.keys.${k}: must be a non-empty string`);
@@ -73,3 +77,6 @@ export function loadSpec(componentDir) {
   if (!ok) throw new Error(`${file}: invalid spec\n${errors.join("\n")}`);
   return spec;
 }
+
+/** The part that carries the component's role (`a11y.rolePart`, default "root"). */
+export const rolePartOf = (spec) => spec.a11y.rolePart ?? "root";

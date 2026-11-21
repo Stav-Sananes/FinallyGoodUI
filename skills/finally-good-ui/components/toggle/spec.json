@@ -18,6 +18,7 @@
   ],
   "a11y": {
     "role": "checkbox",
+    "rolePart": "control",
     "aria": ["aria-label", "aria-describedby", "aria-invalid"],
     "keys": { "Space": "toggle" }
   },

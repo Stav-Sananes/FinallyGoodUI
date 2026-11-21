@@ -3,7 +3,7 @@
 import { join, dirname, basename } from "node:path";
 import { readdirSync } from "node:fs";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
-import { loadSpec } from "./lib/component-spec.mjs";
+import { loadSpec, rolePartOf } from "./lib/component-spec.mjs";
 import { walk, readText, readJson, isDir } from "./lib/fs.mjs";
 import { COMPONENTS_ROOT } from "./lib/scaffold.mjs";
 
@@ -18,6 +18,8 @@ Rules: role-missing, aria-missing, part-missing, state-unstyled, literal, key-ha
 spec-missing (a marker names a component that has no valid spec).
 
 Scope notes:
+  - role-missing checks the element of spec.a11y.rolePart (default root): role="x" or the native tag
+    (<button>, <a>, <input type=checkbox|text>, <textarea>).
   - aria-missing checks only aria attributes that are also a state attribute (aria-busy). Other
     spec aria (aria-label) is consumer-supplied and not checked.
   - The plain-html output (<name>.html, with no framework file) is a static demo page: only the root
@@ -52,6 +54,21 @@ const hasRole = (role, text) => {
   return new RegExp(`role=["']${r}["']|<${r}\\b|as=["']${r}["']|\\.${r}\\b|\\b${r}\\.Root\\b`, "i").test(text);
 };
 
+// Does the opening tag of the role part carry the role, as role="x" or through its native tag?
+const partHasRole = (role, part, text) => {
+  const r = escape(role);
+  for (const [, tag, attrs] of text.matchAll(new RegExp(`<([A-Za-z][\\w.]*)\\b([^<>]*data-part="${escape(part)}"[^<>]*)>`, "g"))) {
+    if (new RegExp(`role=["']${r}["']`, "i").test(attrs)) return true;
+    const t = tag.toLowerCase();
+    if (t === "input") {
+      const type = /type=["']([\w-]+)["']/i.exec(attrs)?.[1]?.toLowerCase() ?? "text";
+      if (role === "checkbox" ? type === "checkbox" : role === "textbox" && ["text", "email", "search", "tel", "url", "password"].includes(type)) return true;
+    }
+    if ((role === "button" && t === "button") || (role === "link" && t === "a") || (role === "textbox" && t === "textarea")) return true;
+  }
+  return false;
+};
+
 const isFrameworkFile = (name, spec) => !name.endsWith(".css") && name !== MARKER && name !== `${spec.name}.behaviour.js`;
 // The plain-html output is a static demo page: it renders only the root, with no state attributes.
 const isDemoPage = (files) => files.every((f) => /\.html$/.test(f) && !/\.component\.html$/.test(f));
@@ -74,7 +91,9 @@ function checkComponent(markerPath, root, notes) {
   const findings = [];
   const add = (file, rule, message) => findings.push({ file: rel(file), rule, message });
 
-  if (!hasRole(spec.a11y.role, code)) add(where, "role-missing", `role "${spec.a11y.role}" is not carried by the root element`);
+  const rolePart = rolePartOf(spec);
+  const roleOk = rolePart === "root" ? hasRole(spec.a11y.role, code) : partHasRole(spec.a11y.role, rolePart, code);
+  if (!roleOk) add(where, "role-missing", `role "${spec.a11y.role}" is not carried by the ${rolePart} element`);
   // aria listed in the spec but not tied to a state (aria-label) is supplied by the consumer.
   const stateAttrs = new Set(spec.states.map((s) => s.attribute));
   const demo = isDemoPage(frameworkFiles);

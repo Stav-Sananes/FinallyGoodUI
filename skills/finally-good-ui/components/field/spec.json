@@ -18,6 +18,7 @@
   ],
   "a11y": {
     "role": "textbox",
+    "rolePart": "control",
     "aria": ["aria-invalid", "aria-describedby", "aria-required", "aria-label"],
     "keys": {}
   },

@@ -57,3 +57,11 @@ test("loadSpec throws naming the file when invalid, unreadable or not JSON", () 
   mkdirSync(join(empty, "x"));
   assert.throws(() => loadSpec(empty), (e) => e.message.includes(join(empty, "spec.json")));
 });
+
+test("a11y.rolePart must be one of parts", () => {
+  const spec = read("spec-valid.json");
+  assert.equal(validateSpec({ ...spec, a11y: { ...spec.a11y, rolePart: spec.parts[0] } }).ok, true);
+  const bad = validateSpec({ ...spec, a11y: { ...spec.a11y, rolePart: "nope" } });
+  assert.equal(bad.ok, false);
+  assert.ok(bad.errors.some((e) => e.startsWith("a11y.rolePart")), bad.errors.join("\n"));
+});

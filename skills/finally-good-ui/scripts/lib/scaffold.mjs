@@ -8,6 +8,7 @@ import { readFileSync } from "node:fs";
 import { UsageError } from "./cli.mjs";
 import { profileCss } from "./style-profile.mjs";
 import { exists, readJson, isDir } from "./fs.mjs";
+import { rolePartOf } from "./component-spec.mjs";
 
 export const COMPONENTS_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "components");
 const NATIVE = new Set(["expo", "react-native", "flutter", "swiftui", "compose"]);
@@ -170,6 +171,21 @@ function plain(v, spec) {
   return [{ ext: ".html", content }];
 }
 
+// Roles an element has natively: emitted as the native tag, never as a redundant role attribute.
+const NATIVE_INPUT = { textbox: 'type="text"', checkbox: 'type="checkbox"' };
+
+/** Puts the spec's role on the element of a.rolePart: the native tag where one exists, else role="<role>". */
+function applyRole(files, spec) {
+  const role = spec.a11y.role, part = rolePartOf(spec);
+  if (part === "root") {
+    if (role in { button: 1, link: 1 }) return files;
+    return files.map((f) => ({ ...f, content: f.content.replace(' data-part="root"', ` data-part="root" role="${role}"`) }));
+  }
+  const span = new RegExp(`<span data-part="${part}"(?: aria-hidden="true")?>[\\s\\S]*?</span>`);
+  const el = role in NATIVE_INPUT ? `<input data-part="${part}" ${NATIVE_INPUT[role]} />` : `<span data-part="${part}" role="${role}"></span>`;
+  return files.map((f) => ({ ...f, content: f.content.replace(span, el) }));
+}
+
 const TEMPLATES = { react, vue, svelte, angular };
 
 /** Where the components go: src/components/fgu, or fgu under the shadcn components alias. */
@@ -213,7 +229,7 @@ export function planScaffold({ spec, stack, profile, root, force = false }) {
 
   const refDir = join(COMPONENTS_ROOT, spec.name);
   const css = `${readFileSync(join(refDir, `${spec.name}.css`), "utf8").trimEnd()}\n\n${profileCss(profile, spec).trimEnd()}\n`;
-  const rendered = family ? TEMPLATES[family](v, { shared, prim, typescript }) : plain(v, spec);
+  const rendered = applyRole(family ? TEMPLATES[family](v, { shared, prim, typescript }) : plain(v, spec), spec);
 
   const out = [
     { path: `${dir}/${spec.name}.css`, content: css },
