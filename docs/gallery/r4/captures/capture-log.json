@@ -1,0 +1,243 @@
+{
+  "finance-skill": {
+    "builtDir": "apps/finance/skill/dist",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 112891,
+        "pixelStdDev": 22.52
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 107650,
+        "pixelStdDev": 23.26
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 98764,
+        "pixelStdDev": 34.48
+      }
+    }
+  },
+  "finance-control": {
+    "builtDir": "apps/finance/control/dist",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 93016,
+        "pixelStdDev": 23.7
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 93016,
+        "pixelStdDev": 23.7
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 110055,
+        "pixelStdDev": 33.41
+      }
+    }
+  },
+  "booking-skill": {
+    "builtDir": "apps/booking/skill/dist",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 87607,
+        "pixelStdDev": 20.59
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 83755,
+        "pixelStdDev": 20.73
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 107957,
+        "pixelStdDev": 33.72
+      }
+    }
+  },
+  "booking-control": {
+    "builtDir": "apps/booking/control/dist",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [
+          "loading indicator present after 1.5s; waiting up to 4s",
+          "loading indicator STILL present at capture"
+        ],
+        "bytes": 39815,
+        "pixelStdDev": 22.7
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [
+          "loading indicator present after 1.5s; waiting up to 4s",
+          "loading indicator STILL present at capture"
+        ],
+        "bytes": 39815,
+        "pixelStdDev": 22.7
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [
+          "loading indicator present after 1.5s; waiting up to 4s",
+          "loading indicator STILL present at capture"
+        ],
+        "bytes": 65561,
+        "pixelStdDev": 44.61
+      }
+    }
+  },
+  "tracker-skill": {
+    "builtDir": "apps/tracker/skill/dist/tracker/browser",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 96463,
+        "pixelStdDev": 19.18
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 87408,
+        "pixelStdDev": 19.16
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 87973,
+        "pixelStdDev": 33.2
+      }
+    }
+  },
+  "tracker-control": {
+    "builtDir": "apps/tracker/control/dist/control/browser",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 73781,
+        "pixelStdDev": 14.48
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 71891,
+        "pixelStdDev": 16.31
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 65105,
+        "pixelStdDev": 26.38
+      }
+    }
+  },
+  "meals-skill": {
+    "builtDir": "apps/meals/skill/dist",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 82695,
+        "pixelStdDev": 24.06
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 76705,
+        "pixelStdDev": 22.44
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 102697,
+        "pixelStdDev": 47.21
+      }
+    }
+  },
+  "meals-control": {
+    "builtDir": "apps/meals/control/dist",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 99017,
+        "pixelStdDev": 18.08
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 99017,
+        "pixelStdDev": 18.08
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 85790,
+        "pixelStdDev": 28.36
+      }
+    }
+  }
+}

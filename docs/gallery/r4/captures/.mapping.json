@@ -1,0 +1,18 @@
+{
+  "finance": {
+    "A": "control",
+    "B": "skill"
+  },
+  "booking": {
+    "A": "skill",
+    "B": "control"
+  },
+  "tracker": {
+    "A": "skill",
+    "B": "control"
+  },
+  "meals": {
+    "A": "skill",
+    "B": "control"
+  }
+}
