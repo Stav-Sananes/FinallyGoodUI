@@ -70,6 +70,7 @@ export class El {
     if (ev.bubbles) for (const el of path.slice(1)) fire(el, false);
     return ev;
   }
+  dispatchEvent(ev) { return !this.dispatch(ev.type, { bubbles: ev.bubbles, cancelable: ev.cancelable, detail: ev.detail }).defaultPrevented; }
   listenerCount() { return this.descendants().concat(this).reduce((n, e) => n + e.listeners.length, 0); }
 }
 

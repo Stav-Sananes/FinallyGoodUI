@@ -382,3 +382,230 @@ test("tabs attach: detach stops reacting", async () => {
   p.click(p.tabs[1]);
   assert.equal(p.tabs[1].getAttribute("aria-selected"), "false");
 });
+
+// ---- toast
+// A controllable clock: attach reads setTimeout, clearTimeout and Date.now at call time.
+const withClock = async (fn) => {
+  const real = { setTimeout: globalThis.setTimeout, clearTimeout: globalThis.clearTimeout, now: Date.now, MutationObserver: globalThis.MutationObserver, CustomEvent: globalThis.CustomEvent };
+  let t = 0, id = 0;
+  const timers = new Map();
+  const observers = [];
+  globalThis.setTimeout = (f, ms) => { timers.set(++id, { f, at: t + ms }); return id; };
+  globalThis.clearTimeout = (h) => { timers.delete(h); };
+  Date.now = () => t;
+  globalThis.MutationObserver = class { constructor(f) { this.f = f; observers.push(this); } observe(el, o) { this.el = el; this.o = o; } disconnect() { this.gone = true; } };
+  const clock = {
+    pending: () => timers.size,
+    observer: () => observers[0],
+    advance(ms) {
+      const end = t + ms;
+      for (;;) {
+        const next = [...timers].filter(([, v]) => v.at <= end).sort((a, b) => a[1].at - b[1].at)[0];
+        if (!next) break;
+        timers.delete(next[0]); t = next[1].at; next[1].f();
+      }
+      t = end;
+    },
+  };
+  try { return await fn(clock); }
+  finally { Object.assign(globalThis, { setTimeout: real.setTimeout, clearTimeout: real.clearTimeout, MutationObserver: real.MutationObserver }); Date.now = real.now; if (!real.MutationObserver) delete globalThis.MutationObserver; }
+};
+
+const toastPage = ({ toasts = [{}], duration = "0s" } = {}) => {
+  const doc = new Doc();
+  doc.defaultView.getComputedStyle = () => ({ transitionDuration: duration });
+  const root = make(doc, "div", { "data-part": "root", role: "status" });
+  const outside = make(doc, "button", { id: "outside" });
+  const made = toasts.map((attrs, i) => {
+    const toast = make(doc, "div", { "data-part": "toast", ...attrs });
+    const message = make(doc, "p", { "data-part": "message" }, `message ${i}`);
+    const dismiss = make(doc, "button", { "data-part": "dismiss", "aria-label": "Dismiss" });
+    toast.append(message, dismiss);
+    root.append(toast);
+    return { toast, dismiss };
+  });
+  doc.body = make(doc, "body");
+  doc.body.append(outside, root);
+  const leaving = (i = 0) => made[i].toast.hasAttribute("data-leaving");
+  const gone = (i = 0) => made[i].toast.removed;
+  return { doc, root, outside, made, leaving, gone };
+};
+
+test("toast attach: auto-dismisses after the reading time, 5 seconds by default, and removes the toast", async () => {
+  const { attach } = await load("toast");
+  await withClock(async (clock) => {
+    const p = toastPage();
+    attach(p.root);
+    clock.advance(4999);
+    assert.equal(p.leaving(), false, "still there just before the timeout");
+    clock.advance(1);
+    assert.equal(p.gone(), true);
+  });
+});
+
+test("toast attach: data-timeout sets the delay, 0 keeps the toast until dismissed, an error never auto-dismisses", async () => {
+  const { attach } = await load("toast");
+  await withClock(async (clock) => {
+    const p = toastPage({ toasts: [{ "data-timeout": "8000" }, { "data-timeout": "0" }, { "data-variant": "error" }, { "data-variant": "error", "data-timeout": "9000" }] });
+    attach(p.root);
+    clock.advance(7999);
+    assert.deepEqual([0, 1, 2, 3].map((i) => p.gone(i)), [false, false, false, false]);
+    clock.advance(1);
+    assert.deepEqual([0, 1, 2, 3].map((i) => p.gone(i)), [true, false, false, false]);
+    clock.advance(1000);
+    assert.deepEqual([0, 1, 2, 3].map((i) => p.gone(i)), [true, false, false, true], "an explicit timeout wins for an error");
+    clock.advance(10 ** 7);
+    assert.deepEqual([1, 2].map((i) => p.gone(i)), [false, false]);
+  });
+});
+
+test("toast attach: an error toast is announced as an alert, a plain one is not", async () => {
+  const { attach } = await load("toast");
+  await withClock(async () => {
+    const p = toastPage({ toasts: [{}, { "data-variant": "error" }] });
+    attach(p.root);
+    assert.equal(p.made[1].toast.getAttribute("role"), "alert");
+    assert.equal(p.made[0].toast.getAttribute("role"), null);
+  });
+});
+
+test("toast attach: hovering pauses the countdown and leaving resumes it with the time that was left", async () => {
+  const { attach } = await load("toast");
+  await withClock(async (clock) => {
+    const p = toastPage();
+    attach(p.root);
+    clock.advance(3000);
+    p.root.dispatch("pointerenter");
+    clock.advance(60000);
+    assert.equal(p.gone(), false, "paused while hovered");
+    p.root.dispatch("pointerleave");
+    clock.advance(1999);
+    assert.equal(p.gone(), false, "2000 ms were left, not a fresh 5000");
+    clock.advance(1);
+    assert.equal(p.gone(), true);
+  });
+  await withClock(async (clock) => { // negative control: without a pause the toast is gone at 5000
+    const p = toastPage();
+    attach(p.root);
+    clock.advance(5000);
+    assert.equal(p.gone(), true);
+  });
+});
+
+test("toast attach: focus inside pauses too, and the countdown waits for both hover and focus to end", async () => {
+  const { attach } = await load("toast");
+  await withClock(async (clock) => {
+    const p = toastPage();
+    attach(p.root);
+    clock.advance(1000);
+    p.made[0].dismiss.dispatch("focusin", { bubbles: true, relatedTarget: p.outside });
+    p.root.dispatch("pointerenter");
+    clock.advance(20000);
+    assert.equal(p.gone(), false);
+    p.made[0].dismiss.dispatch("focusout", { bubbles: true, relatedTarget: p.outside });
+    clock.advance(20000);
+    assert.equal(p.gone(), false, "still hovered");
+    p.root.dispatch("pointerleave");
+    clock.advance(3999);
+    assert.equal(p.gone(), false);
+    clock.advance(1);
+    assert.equal(p.gone(), true);
+  });
+});
+
+test("toast attach: the dismiss button removes its toast at once and cancels its timer", async () => {
+  const { attach } = await load("toast");
+  await withClock(async (clock) => {
+    const p = toastPage({ toasts: [{}, {}] });
+    attach(p.root);
+    const before = clock.pending();
+    p.made[0].dismiss.dispatch("click", { bubbles: true });
+    assert.equal(p.gone(0), true);
+    assert.equal(p.gone(1), false, "the other toast stays");
+    assert.equal(clock.pending(), before - 1, "its timer is cleared");
+  });
+});
+
+test("toast attach: with a leave animation the toast is marked leaving, then removed on transitionend or the fallback", async () => {
+  const { attach } = await load("toast");
+  await withClock(async (clock) => {
+    const p = toastPage({ duration: "0.15s" });
+    attach(p.root);
+    p.made[0].dismiss.dispatch("click", { bubbles: true });
+    assert.equal(p.leaving(), true);
+    assert.equal(p.gone(), false, "kept while it animates out");
+    p.made[0].toast.dispatch("transitionend", { bubbles: true });
+    assert.equal(p.gone(), true);
+  });
+  await withClock(async (clock) => {
+    const p = toastPage({ duration: "0.15s" });
+    attach(p.root);
+    p.made[0].dismiss.dispatch("click", { bubbles: true });
+    clock.advance(150);
+    assert.equal(p.gone(), false, "grace period for transitionend");
+    clock.advance(100);
+    assert.equal(p.gone(), true, "fallback when no transition ever ends (reduced motion)");
+  });
+});
+
+test("toast attach: the app can cancel the dismiss event to own the removal", async () => {
+  const { attach } = await load("toast");
+  await withClock(async () => {
+    const p = toastPage();
+    attach(p.root);
+    let seen = 0;
+    p.root.addEventListener("dismiss", (e) => { seen++; e.preventDefault(); });
+    p.made[0].dismiss.dispatch("click", { bubbles: true });
+    assert.equal(seen, 1);
+    assert.equal(p.gone(), false, "the framework removes it from its own state");
+    assert.equal(p.leaving(), true);
+  });
+});
+
+test("toast attach: a toast added later gets its own countdown", async () => {
+  const { attach } = await load("toast");
+  await withClock(async (clock) => {
+    const p = toastPage({ toasts: [] });
+    attach(p.root);
+    const late = make(p.doc, "div", { "data-part": "toast" });
+    p.root.append(late);
+    clock.observer().f([{ addedNodes: [late] }]);
+    clock.advance(5000);
+    assert.equal(late.removed, true);
+    const missed = make(p.doc, "div", { "data-part": "toast" });
+    p.root.append(missed);
+    clock.advance(10 ** 6);
+    assert.equal(missed.removed, false, "negative control: a toast the observer never reported has no timer");
+  });
+});
+
+test("toast attach: dismissing a toast that held focus returns focus to where it came from, and never steals it otherwise", async () => {
+  const { attach } = await load("toast");
+  await withClock(async () => {
+    const p = toastPage({ toasts: [{}, {}] });
+    attach(p.root);
+    p.outside.focus();
+    p.made[0].dismiss.dispatch("focusin", { bubbles: true, relatedTarget: p.outside });
+    p.doc.activeElement = p.made[0].dismiss;
+    p.made[0].dismiss.dispatch("click", { bubbles: true });
+    assert.equal(p.doc.activeElement, p.outside);
+    p.doc.activeElement = p.outside;
+    p.made[1].dismiss.dispatch("click", { bubbles: true });
+    assert.equal(p.doc.activeElement, p.outside, "a toast without focus never moves focus");
+  });
+});
+
+test("toast attach: detach clears timers, disconnects the observer and removes every listener", async () => {
+  const { attach } = await load("toast");
+  await withClock(async (clock) => {
+    const p = toastPage();
+    const detach = attach(p.root);
+    assert.ok(p.root.listenerCount() > 0 && clock.pending() > 0, "positive control");
+    detach();
+    assert.equal(clock.observer().gone, true);
+    assert.equal(p.root.listenerCount(), 0);
+    assert.equal(clock.pending(), 0);
+    clock.advance(10 ** 6);
+    assert.equal(p.gone(), false);
+  });
+});

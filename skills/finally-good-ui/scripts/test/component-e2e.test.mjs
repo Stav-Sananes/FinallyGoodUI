@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, readdirSync, writeFileSync, readFileSync } from "node:fs";
+import { cpSync, readdirSync, writeFileSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fx, run, tmp, SR } from "./_h.mjs";
 import { planScaffold } from "../lib/scaffold.mjs";
@@ -8,7 +8,7 @@ import { loadSpec } from "../lib/component-spec.mjs";
 import { detectStack } from "../detect-stack.mjs";
 
 // End to end: scaffold a component into a fixture project, then the conformance checker must accept it.
-const COMPONENTS = ["field", "toggle", "disclosure", "dialog", "menu", "tabs"];
+const COMPONENTS = ["field", "toggle", "disclosure", "dialog", "menu", "tabs", "toast"];
 const PROJECTS = ["plain", "react-radix", "vue-reka"];
 
 const scaffoldAndCheck = (component, project) => {
@@ -160,4 +160,51 @@ test("tabs: role-missing fires when the list loses role=tablist (negative contro
   writeFileSync(file, text.replace(' role="tablist"', ""));
   const check = run("check-components.mjs", ["--root", root]);
   assert.ok(check.json.findings.some((f) => f.rule === "role-missing" && /list/.test(f.message)), JSON.stringify(check.json.findings));
+});
+
+test("toast: the root is a role=status region and the parts are real elements, in every fixture project", () => {
+  for (const project of PROJECTS) {
+    const text = markup(scaffoldAndCheck("toast", project).root, "toast", project);
+    assert.match(text, /data-part="root"[^>]*role="status"|role="status"[^>]*data-part="root"/, project);
+    assert.match(text, /<div data-part="toast"/, project);
+    assert.match(text, /<p data-part="message"/, project);
+    assert.match(text, /<button data-part="dismiss"/, project);
+  }
+});
+
+test("toast: role-missing fires when the region loses role=status (negative control)", () => {
+  const { root } = scaffoldAndCheck("toast", "plain");
+  const file = scaffoldedFile(root, "toast", "html");
+  const text = readFileSync(file, "utf8");
+  assert.match(text, /role="status"/);
+  writeFileSync(file, text.replace(' role="status"', ""));
+  const check = run("check-components.mjs", ["--root", root]);
+  assert.ok(check.json.findings.some((f) => f.rule === "role-missing"), JSON.stringify(check.json.findings));
+});
+
+// All eight components together: one project, every component scaffolded, one clean check, and the index lists them all.
+const ALL = ["button", "field", "toggle", "disclosure", "dialog", "menu", "tabs", "toast"];
+const missingFromIndex = (index, names) => names.filter((n) => !new RegExp(`components/${n}/spec\\.md`).test(index));
+
+test("all eight components scaffold into the plain fixture, check ok:true, and INDEX.md lists exactly those eight", () => {
+  const root = tmp();
+  cpSync(fx("components/projects/plain"), root, { recursive: true });
+  for (const name of ALL) {
+    const s = run("scaffold-component.mjs", ["--name", name, "--root", root]);
+    assert.equal(s.code, 0, `scaffold ${name}: ${s.stderr}`);
+  }
+  const check = run("check-components.mjs", ["--root", root]);
+  assert.equal(check.json.ok, true, JSON.stringify(check.json.findings));
+  assert.equal(readdirSync(join(root, "src/components/fgu")).length, ALL.length);
+
+  const components = join(SR, "components");
+  const dirs = readdirSync(components).filter((d) => d !== "adapters" && statSync(join(components, d)).isDirectory());
+  assert.deepEqual([...dirs].sort(), [...ALL].sort(), "the component set is exactly the eight");
+  const index = readFileSync(join(components, "INDEX.md"), "utf8");
+  assert.deepEqual(missingFromIndex(index, ALL), []);
+});
+
+test("the INDEX check fails when an entry is missing (negative control)", () => {
+  const index = readFileSync(join(SR, "components/INDEX.md"), "utf8");
+  assert.deepEqual(missingFromIndex(index.replace("components/toast/spec.md", "components/x/spec.md"), ALL), ["toast"]);
 });

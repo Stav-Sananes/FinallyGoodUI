@@ -7,5 +7,6 @@
 - [dialog](components/dialog/spec.md) — native `<dialog>` + `showModal()`: focus trap and Escape from the platform, named by its title, focus back to the opener; enter/exit per the dialog recipe.
 - [menu](components/menu/spec.md) — menu button + native `popover` list: roving focus, typeahead, Escape returns focus to the trigger, `aria-disabled` items; keys per the menu pattern.
 - [tabs](components/tabs/spec.md) — tablist of native buttons with panels: one tab stop, arrows/Home/End, selection follows focus, sliding indicator per the tabs recipe.
+- [toast](components/toast/spec.md) — always-present `role="status"` region with plain toast elements: auto-dismiss that pauses on hover and focus, dismiss button, never focus-stealing; errors never the only signal.
 
 Framework adapters (load the one that matches the project's stack, on demand): `components/adapters/{plain,react,vue,svelte,angular}.md`, and `components/adapters/light/{solid,lit}.md` for stacks the scaffold has no template for. Each says how props, state attributes, slots and the behaviour source (installed primitive, else the shared `<name>.behaviour.js`) map onto that framework.
