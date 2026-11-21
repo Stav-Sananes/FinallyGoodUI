@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fx, run, tmp, SR } from "./_h.mjs";
 import { loadSpec } from "../lib/component-spec.mjs";
@@ -82,4 +82,68 @@ test("scopeCss prefixes each selector of a list, recurses into media and leaves 
   assert.match(out, /\[s\] a,\n\[s\] :is\(b, c\) > d \{/);
   assert.match(out, /@media \(hover: hover\) \{\n\[s\] e:hover \{ y: 2; \}/);
   assert.match(out, /@keyframes k \{ to \{ z: 3; \} \}/);
+});
+
+// ---- lint-skill validates components/
+const skillWithComponents = () => {
+  const root = tmp();
+  mkdirSync(join(root, "components/adapters"), { recursive: true });
+  writeFileSync(join(root, "components/adapters/react.md"), "# Adapter\n");
+  cpSync(join(COMPONENTS, "button"), join(root, "components/button"), { recursive: true });
+  return root;
+};
+const lint = (root) => run("lint-skill.mjs", ["--root", root]).json;
+const componentErrors = (out) => out.errors.filter((e) => e.file.startsWith("components/"));
+
+test("lint-skill accepts a valid component and skips components/adapters", () => {
+  assert.deepEqual(componentErrors(lint(skillWithComponents())), []);
+});
+
+test("lint-skill flags a component directory without spec.json", () => {
+  const root = skillWithComponents();
+  mkdirSync(join(root, "components/orphan"));
+  writeFileSync(join(root, "components/orphan/spec.md"), "# Orphan\n");
+  const errs = componentErrors(lint(root));
+  assert.ok(errs.some((e) => e.file === "components/orphan" && /spec\.json/.test(e.message)), JSON.stringify(errs));
+});
+
+test("lint-skill flags an invalid spec.json, a missing spec.md and a missing reference page", () => {
+  const root = skillWithComponents();
+  const spec = JSON.parse(readFileSync(join(root, "components/button/spec.json"), "utf8"));
+  spec.tokens = ["no-dashes"];
+  writeFileSync(join(root, "components/button/spec.json"), JSON.stringify(spec));
+  rmSync(join(root, "components/button/spec.md"));
+  rmSync(join(root, "components/button/reference"), { recursive: true });
+  const messages = componentErrors(lint(root)).map((e) => `${e.file}: ${e.message}`);
+  assert.ok(messages.some((m) => /spec\.json.*token/.test(m)), messages.join("\n"));
+  assert.ok(messages.some((m) => /components\/button.*spec\.md/.test(m)), messages.join("\n"));
+  assert.ok(messages.some((m) => /components\/button.*reference\/index\.html/.test(m)), messages.join("\n"));
+});
+
+test("lint-skill reports unparsable spec.json", () => {
+  const root = skillWithComponents();
+  writeFileSync(join(root, "components/button/spec.json"), "{ nope");
+  assert.ok(componentErrors(lint(root)).some((e) => /spec\.json/.test(e.message)));
+});
+
+test("the real skill's components lint clean", () => {
+  const out = lint(SR);
+  assert.deepEqual(componentErrors(out), []);
+});
+
+// ---- build step 2 and SKILL.md
+test("build.md step 2 states the three-source order and scaffold-component, and did not grow", () => {
+  const build = readFileSync(join(SR, "modules/build.md"), "utf8");
+  const step = build.split("\n").find((l) => l.startsWith("2. **Shared components"));
+  assert.ok(step, "step 2 present");
+  assert.match(step, /scaffold-component\.mjs/);
+  assert.match(step, /check-components\.mjs/);
+  assert.match(step, /component-style\.json/);
+  const order = ["reuse", "adapters/<framework>.md", "scaffold-component"].map((w) => step.indexOf(w));
+  assert.ok(order.every((i) => i >= 0) && order[0] < order[1] && order[1] < order[2], `order: ${order}`);
+  assert.ok(build.replace(/\n$/, "").split("\n").length <= 60, "build.md must not grow");
+});
+
+test("SKILL.md points at components/INDEX.md", () => {
+  assert.match(readFileSync(join(SR, "SKILL.md"), "utf8"), /components\/INDEX\.md/);
 });

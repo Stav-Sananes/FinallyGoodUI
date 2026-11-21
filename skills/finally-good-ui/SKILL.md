@@ -76,7 +76,7 @@ Load each module **only when you reach its step**. Keep context lean.
 3. **Blueprint**: `modules/blueprint.md`. IA, navigation model, key flows, screen inventory, state matrix and decision records. Its digest is shown with the brief for **one explicit approval** (checkpoint 1).
 4. **Directions**: `modules/directions.md`. Three animated directions of the key screen built by parallel `direction-builder` subagents, shown on a comparison page. The user picks or mixes (checkpoint 2). Skip if `directions` is `off` (`one` builds only A).
 5. **System**: `modules/system.md`. Lock the tokens and motion language, then emit them to the stack's native format.
-6. **Build**: `modules/build.md`. Shell and navigation, then shared components, then screens by flow priority, then every state-matrix cell, then transitions. Use `recipes/INDEX.md`.
+6. **Build**: `modules/build.md`. Shell and navigation, then shared components, then screens by flow priority, then every state-matrix cell, then transitions. Use `recipes/INDEX.md`; component specs: `components/INDEX.md`.
 7. **Verify**: `modules/verify.md`. Static hook, flow walk (viewports × themes × reduced motion, forced states, motion probe), independent `ui-reviewer`, at most 2 fix rounds.
 8. **Hand-off** (checkpoint 3): summarise what was built, the verify scorecard (`.design/reports/`), open issues, and where the decision log is.
 
