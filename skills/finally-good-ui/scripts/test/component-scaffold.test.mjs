@@ -221,3 +221,34 @@ test("css is the reference rules followed by the profile layer", () => {
   assert.ok(profileAt >= reference.length, "profile layer must come after the reference rules");
   assert.ok(css.indexOf("border-radius", profileAt) > profileAt);
 });
+
+test("plain demo renders every part of the button and a busy and a disabled variant", () => {
+  const root = copy("plain");
+  assert.equal(scaffold(root).code, 0);
+  const html = read(root, "button.html");
+  assert.match(html, /data-part="icon"/);
+  assert.match(html, /data-part="spinner"/);
+  assert.match(html, /aria-busy="true"/);
+  assert.match(html, /<button[^>]* disabled/);
+});
+
+test("every framework template always renders the button spinner (the CSS toggles its opacity)", () => {
+  const files = { "react-radix": "button.tsx", "vue-reka": "button.vue", "svelte-bits": "button.svelte", "angular-cdk": "button.component.html" };
+  for (const [project, file] of Object.entries(files)) {
+    const root = copy(project);
+    assert.equal(scaffold(root).code, 0);
+    const text = read(root, file);
+    assert.match(text, /data-part="spinner"/, `${project}: spinner missing`);
+    const line = text.split("\n").find((l) => l.includes('data-part="spinner"')) ?? "";
+    assert.doesNotMatch(line, /\?|v-if|\{#if/, `${project}: spinner rendered conditionally: ${line}`);
+    assert.doesNotMatch(text, /@if \(loading\)|\{#if loading\}|v-if="loading"/, `${project}: spinner guarded by loading`);
+  }
+});
+
+test("adapter docs say the spinner is always rendered", () => {
+  for (const f of ["react.md", "angular.md"]) {
+    const text = readFileSync(join(SR, "components/adapters", f), "utf8");
+    assert.doesNotMatch(text, /render conditionally|@if \(busy\)/, `${f} still claims a conditional spinner`);
+  }
+  assert.match(readFileSync(join(SR, "components/adapters/react.md"), "utf8"), /spinner.*always render/i);
+});

@@ -43,10 +43,9 @@ function viewModel(spec) {
     if (st) attrs.push({ name: st.attribute, prop: p.name, kind: st.attribute.startsWith("aria-") ? "aria" : "bool" });
     else attrs.push({ name: p.name === "variant" ? "data-variant" : p.name, prop: p.name, kind: "value" });
   }
-  const busy = spec.states.find((s) => s.attribute === "aria-busy" && stateProps.has(s.name))?.name ?? null;
   const parts = spec.parts.filter((p) => p !== "root").map((part) => {
     const slot = spec.slots.find((s) => s === part || (part === "label" && s === "default"));
-    return slot ? { part, slot, optional: slot !== "default" } : { part, when: part === "spinner" ? busy : null };
+    return slot ? { part, slot, optional: slot !== "default" } : { part };
   });
   if (!spec.parts.includes("label") && spec.slots.includes("default")) parts.push({ slot: "default", bare: true });
   return { name: spec.name, Name: pascal(spec.name), tag: tagFor(spec), props: spec.props, slots: spec.slots, attrs, parts };
@@ -78,7 +77,7 @@ function react(v, c) {
       const inner = `<span data-part="${p.part}">{${slotName(p.slot)}}</span>`;
       return p.optional ? `{${slotName(p.slot)} ? ${SPAN(p.part, `{${slotName(p.slot)}}`)} : null}` : inner;
     }
-    return p.when ? `{${camel(p.when)} ? ${SPAN(p.part)} : null}` : SPAN(p.part);
+    return SPAN(p.part);
   });
   const types = c.typescript
     ? `\nexport type ${v.Name}Props = {\n${[...v.props.map((p) => `  ${camel(p.name)}?: ${ts(p)};`), ...v.slots.map((s) => `  ${slotName(s)}?: ReactNode;`)].join("\n")}\n} & Omit<ComponentPropsWithoutRef<"${v.tag}">, ${[...v.props.map((p) => p.name), "children"].map((n) => `"${n}"`).join(" | ")}>;\n`
@@ -105,7 +104,7 @@ function vue(v, c) {
     if (p.bare) return "<slot />";
     const slot = p.slot === "default" ? "<slot />" : `<slot name="${p.slot}" />`;
     if (p.slot) return p.optional ? `<span v-if="$slots.${p.slot}" data-part="${p.part}" aria-hidden="true">${slot}</span>` : `<span data-part="${p.part}">${slot}</span>`;
-    return p.when ? `<span v-if="${p.when}" data-part="${p.part}" aria-hidden="true"></span>` : SPAN(p.part);
+    return SPAN(p.part);
   });
   const defaults = v.props.filter((p) => p.default !== undefined).map((p) => `${camel(p.name)}: ${lit(p)}`);
   const script = [
@@ -129,7 +128,7 @@ function svelte(v, c) {
       const inner = `{@render ${slotName(p.slot)}?.()}`;
       return p.optional ? `{#if ${slotName(p.slot)}}${SPAN(p.part, inner)}{/if}` : `<span data-part="${p.part}">${inner}</span>`;
     }
-    return p.when ? `{#if ${camel(p.when)}}${SPAN(p.part)}{/if}` : SPAN(p.part);
+    return SPAN(p.part);
   });
   const props = [...v.props.map((p) => `${camel(p.name)}${p.default === undefined ? "" : ` = ${lit(p)}`}`), ...v.slots.map(slotName), "...rest"];
   const script = [
@@ -152,7 +151,7 @@ function angular(v, c) {
       const slot = p.slot === "default" ? "<ng-content />" : `<ng-content select="[${p.slot}]" />`;
       return p.optional ? SPAN(p.part, slot) : `<span data-part="${p.part}">${slot}</span>`;
     }
-    return p.when ? `@if (${camel(p.when)}) {\n    ${SPAN(p.part)}\n  }` : SPAN(p.part);
+    return SPAN(p.part);
   });
   const inputs = v.props.map((p) => `  @Input() ${camel(p.name)}: ${ts(p)}${p.default === undefined ? " | undefined" : ""}${p.default === undefined ? "" : ` = ${lit(p)}`};`);
   const core = ["Component", "Input", ...(c.shared ? ["ElementRef", "AfterViewInit", "OnDestroy", "inject"] : [])];
@@ -164,10 +163,15 @@ function angular(v, c) {
   return [{ ext: ".component.ts", content: ts_ }, { ext: ".component.html", content: html }];
 }
 
+// Plain demo: the first shape with every part (the always-rendered ones such as the spinner and icon
+// included), plus one element per state a control root can show on its own (busy, disabled).
+const DEMO_STATES = [["aria-busy", 'aria-busy="true"'], ["disabled", "disabled"]];
 function plain(v, spec) {
-  const first = spec.shapes[0];
-  const kids = v.parts.map((p) => (p.bare ? "Label" : p.slot === "default" ? `<span data-part="${p.part}">${spec.name}</span>` : p.slot ? "" : p.when ? "" : SPAN(p.part))).filter(Boolean);
-  const content = `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<link rel="stylesheet" href="./${v.name}.css">\n</head>\n<body>\n<div id="demo">\n  <${v.tag} data-part="root" data-variant="${first}"${v.tag === "button" ? ' type="button"' : ""}>${kids.join("")}</${v.tag}>\n</div>\n<script type="module">\n  import { attach } from "./${v.name}.behaviour.js";\n  attach(document.getElementById("demo"));\n</script>\n</body>\n</html>\n`;
+  const kids = v.parts.map((p) => (p.bare ? "Label" : p.slot === "default" ? `<span data-part="${p.part}">${spec.name}</span>` : SPAN(p.part))).join("");
+  const element = (extra = "") => `<${v.tag} data-part="root" data-variant="${spec.shapes[0]}"${v.tag === "button" ? ' type="button"' : ""}${extra}>${kids}</${v.tag}>`;
+  const states = rolePartOf(spec) === "root" ? DEMO_STATES.filter(([attr]) => spec.states.some((s) => s.attribute === attr)) : [];
+  const demo = [element(), ...states.map(([, attr]) => element(` ${attr}`))].map((e) => `  ${e}`).join("\n");
+  const content = `<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<link rel="stylesheet" href="./${v.name}.css">\n</head>\n<body>\n<div id="demo">\n${demo}\n</div>\n<script type="module">\n  import { attach } from "./${v.name}.behaviour.js";\n  attach(document.getElementById("demo"));\n</script>\n</body>\n</html>\n`;
   return [{ ext: ".html", content }];
 }
 
@@ -191,7 +195,7 @@ function applyRole(files, spec) {
   const role = spec.a11y.role, part = rolePartOf(spec);
   if (part === "root") {
     if (role in { button: 1, link: 1 } || NATIVE_ROOT_ROLE[tagFor(spec)] === role) return files;
-    return rewrite(files, ' data-part="root"', ` data-part="root" role="${role}"`, `put role "${role}" on the root`);
+    return rewrite(files, / data-part="root"/g, ` data-part="root" role="${role}"`, `put role "${role}" on the root`);
   }
   const span = new RegExp(`<span data-part="${part}"(?: aria-hidden="true")?>[\\s\\S]*?</span>`);
   const el = role in NATIVE_INPUT ? `<input data-part="${part}" ${NATIVE_INPUT[role]} />` : `<span data-part="${part}" role="${role}"></span>`;

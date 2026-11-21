@@ -11,7 +11,7 @@ The scaffold writes `<Name>.tsx` (or `.jsx`) with `import "./<name>.css"`, and `
 - With a primitive wired, the scaffold adds `onClickCapture` that stops a click while `busy`; the control stays focusable.
 
 ## Slots and children
-- Default slot is `children`; named slots are `ReactNode` props in camelCase (`icon`). Optional parts render only when passed (`{icon ? <span data-part="icon" aria-hidden="true">{icon}</span> : null}`). Always-present parts (spinner) render conditionally on the state only if the spec says so; keep them in flow-free CSS.
+- Default slot is `children`; named slots are `ReactNode` props in camelCase (`icon`). Optional parts render only when passed (`{icon ? <span data-part="icon" aria-hidden="true">{icon}</span> : null}`). Always-present parts (spinner) always render; the CSS toggles their opacity from the state attribute, so the control keeps its width.
 - Every spec part keeps its `data-part`.
 
 ## Behaviour source

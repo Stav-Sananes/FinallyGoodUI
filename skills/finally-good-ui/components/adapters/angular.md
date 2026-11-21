@@ -10,7 +10,7 @@ The scaffold writes a standalone `<name>.component.ts` (selector `fgu-<name>`), 
 - Bind attributes, not properties: `[attr.aria-busy]="busy ? 'true' : null"`, booleans as `[attr.disabled]="disabled ? '' : null"`, values as `[attr.data-variant]="variant"`. `null` removes the attribute.
 
 ## Slots and children
-- Default slot is `<ng-content />`; named slots project by attribute: `<ng-content select="[icon]" />`. Optional parts wrap the slot in their `data-part` span. Conditional parts use `@if (busy) { ... }`. Keep each `data-part` inside the component template.
+- Default slot is `<ng-content />`; named slots project by attribute: `<ng-content select="[icon]" />`. Optional parts wrap the slot in their `data-part` span. Always-present parts (spinner) are always in the template; the CSS toggles them from the state attribute. Keep each `data-part` inside the component template.
 
 ## Behaviour source
 1. Project already has the Angular CDK or another kit: use it where it has a primitive for the part (overlay, listbox, focus trap, a11y utilities) and wire the spec's parts, states and tokens onto it. The CDK has no button primitive, so Button is not wired to it: the scaffold uses the shared module.
