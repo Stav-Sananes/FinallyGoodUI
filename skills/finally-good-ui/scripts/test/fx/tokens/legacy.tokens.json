@@ -736,5 +736,24 @@
       "$value": [0, 0, 1, 1],
       "$description": "Progress, opacity-only loops"
     }
+  },
+  "border-width": {
+    "hairline": { "$type": "dimension", "$value": { "value": 1, "unit": "px" }, "$description": "Dividers, input and card borders" },
+    "strong": { "$type": "dimension", "$value": { "value": 2, "unit": "px" }, "$description": "Selected or emphasised borders" }
+  },
+  "ring": {
+    "width": { "$type": "dimension", "$value": { "value": 2, "unit": "px" }, "$description": "Focus ring thickness (2px minimum)" },
+    "offset": { "$type": "dimension", "$value": { "value": 2, "unit": "px" }, "$description": "Gap between element edge and focus ring" }
+  },
+  "size": {
+    "control": {
+      "sm": { "$type": "dimension", "$value": { "value": 32, "unit": "px" }, "$description": "Compact control height" },
+      "md": { "$type": "dimension", "$value": { "value": 40, "unit": "px" }, "$description": "Default control height" },
+      "lg": { "$type": "dimension", "$value": { "value": 44, "unit": "px" }, "$description": "Touch-target control height (44px minimum)" }
+    }
+  },
+  "z": {
+    "overlay": { "$type": "number", "$value": 50, "$description": "Dialogs, sheets, popovers" },
+    "toast": { "$type": "number", "$value": 100, "$description": "Toasts above overlays" }
   }
 }

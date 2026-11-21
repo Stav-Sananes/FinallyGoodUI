@@ -3,11 +3,14 @@
 // (colour/shadow objects, dark in a resolver context); toDtcg converts the first into the second.
 import { parseColor, toHex } from "./contrast.mjs";
 
-export const GROUPS = ["color", "font", "text", "tracking", "space", "radius", "shadow", "icon", "duration", "easing"];
+export const GROUPS = ["color", "font", "text", "tracking", "space", "radius", "shadow", "icon", "duration", "easing",
+  "border-width", "ring", "size", "z"];
 export const VAR_PREFIX = { color: "color", font: "font", text: "text", tracking: "tracking", space: "space", radius: "radius",
-  shadow: "shadow", icon: "icon", duration: "duration", easing: "ease" };
+  shadow: "shadow", icon: "icon", duration: "duration", easing: "ease",
+  "border-width": "border-width", ring: "ring", size: "size", z: "z" };
 export const TYPES = { color: "color", font: "fontFamily", text: "dimension", tracking: "dimension", space: "dimension",
-  radius: "dimension", shadow: "shadow", icon: "dimension", duration: "duration", easing: "cubicBezier" };
+  radius: "dimension", shadow: "shadow", icon: "dimension", duration: "duration", easing: "cubicBezier",
+  "border-width": "dimension", ring: "dimension", size: "dimension", z: "number" };
 
 export const EASING_KEYWORDS = {
   linear: [0, 0, 1, 1], ease: [0.25, 0.1, 0.25, 1], "ease-in": [0.42, 0, 1, 1],
@@ -75,7 +78,7 @@ export function cssValue(group, value) {
     case "icon":
       if (typeof value === "number") return fmtNum(value); // stroke width, in the icon's own grid units
     // falls through
-    case "text": case "space": case "radius": {
+    case "text": case "space": case "radius": case "border-width": case "ring": case "size": {
       const d = parseDimension(value);
       return d ? `${fmtNum(d.value)}${d.unit}` : String(value);
     }

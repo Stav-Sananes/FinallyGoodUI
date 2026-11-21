@@ -145,11 +145,16 @@ const TYPES_FOR = {
   tracking: ["dimension", "number"], shadow: ["shadow"], duration: ["duration"], easing: ["cubicBezier"], icon: ["dimension", "number"],
 };
 const BY_TYPE = { color: "color", fontFamily: "font", duration: "duration", cubicBezier: "easing", shadow: "shadow", typography: "text" };
+// Component groups are matched by their exact root key (a "size" root is ours only as size.control.*;
+// elsewhere "size" is a spacing alias).
+const COMPONENT_TYPES = { "border-width": ["dimension"], ring: ["dimension"], size: ["dimension"], z: ["number"] };
 const aliasGroup = (seg) => Object.keys(ALIASES).find((g) => ALIASES[g].includes(String(seg).toLowerCase()));
 
 /** {group, name} for a token, or {reason} when it doesn't fit any group. */
 function placement(path, tok) {
   const type = tok.$type;
+  if (COMPONENT_TYPES[path[0]]?.includes(type) && path.length > 1 && (path[0] !== "size" || path[1] === "control"))
+    return { group: path[0], name: path.slice(1).join("-") };
   const first = aliasGroup(path[0]);
   const rest = path.length > 1 && first ? path.slice(1) : path;
   const name = rest.join("-");
@@ -169,9 +174,10 @@ function convert(group, tok) {
     case "easing": { const e = parseEasing(v); return e && { value: e }; }
     case "shadow": return { value: toShadow(v) };
     case "tracking": return typeof v === "number" ? { value: v } : (() => { const d = toDimension(v); return d && { value: d }; })();
+    case "z": return typeof v === "number" ? { value: v } : null;
     case "icon": if (typeof v === "number") return { value: v };
     // falls through
-    case "space": case "radius": case "text": {
+    case "space": case "radius": case "text": case "border-width": case "ring": case "size": {
       if (tok.$type === "typography") { const t = fromTypography(v); return t && { value: t.value, fgu: t.fgu }; }
       const d = toDimension(v);
       return d && { value: d, fgu: tok.$extensions?.fgu };
