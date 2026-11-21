@@ -8,7 +8,7 @@ import { loadSpec } from "../lib/component-spec.mjs";
 import { detectStack } from "../detect-stack.mjs";
 
 // End to end: scaffold a component into a fixture project, then the conformance checker must accept it.
-const COMPONENTS = ["field", "toggle", "disclosure", "dialog"];
+const COMPONENTS = ["field", "toggle", "disclosure", "dialog", "menu"];
 const PROJECTS = ["plain", "react-radix", "vue-reka"];
 
 const scaffoldAndCheck = (component, project) => {
@@ -122,4 +122,23 @@ test("dialog: role-missing fires when the root is no longer a <dialog> (negative
   writeFileSync(file, text.replace("<dialog ", "<div ").replace("</dialog>", "</div>"));
   const check = run("check-components.mjs", ["--root", root]);
   assert.ok(check.json.findings.some((f) => f.rule === "role-missing"), JSON.stringify(check.json.findings));
+});
+
+test("menu: the list part carries role=menu, trigger and items are native buttons, in every fixture project", () => {
+  for (const project of PROJECTS) {
+    const text = markup(scaffoldAndCheck("menu", project).root, "menu", project);
+    assert.match(text, /<span data-part="list" role="menu"/, project);
+    assert.match(text, /<button data-part="trigger"/, project);
+    assert.match(text, /<button data-part="item"/, project);
+  }
+});
+
+test("menu: role-missing fires when the list loses role=menu (negative control)", () => {
+  const { root } = scaffoldAndCheck("menu", "vue-reka");
+  const file = scaffoldedFile(root, "menu", "vue");
+  const text = readFileSync(file, "utf8");
+  assert.match(text, /role="menu"/);
+  writeFileSync(file, text.replace(' role="menu"', ""));
+  const check = run("check-components.mjs", ["--root", root]);
+  assert.ok(check.json.findings.some((f) => f.rule === "role-missing" && /list/.test(f.message)), JSON.stringify(check.json.findings));
 });

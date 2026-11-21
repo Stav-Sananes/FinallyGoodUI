@@ -96,3 +96,164 @@ test("dialog attach: detach removes every listener and stops reacting", async ()
   p.click(p.opener);
   assert.equal(p.dlg.hasAttribute("open"), false);
 });
+
+// ---- menu
+const menuPage = () => {
+  const doc = new Doc();
+  const root = make(doc, "div", { "data-part": "root" });
+  const trigger = make(doc, "button", { "data-part": "trigger", id: "t1" });
+  const list = make(doc, "div", { "data-part": "list", role: "menu", id: "m1" });
+  const labels = ["Rename", "Duplicate", "Move", "Delete"];
+  const items = labels.map((l) => make(doc, "button", { "data-part": "item", ...(l === "Move" ? { "aria-disabled": "true" } : {}) }, l));
+  list.append(...items);
+  root.append(trigger, list);
+  trigger.rect = { left: 40, bottom: 80, top: 50, right: 120, width: 80, height: 30 };
+  const key = (el, k, init = {}) => el.dispatch("keydown", { bubbles: true, key: k, timeStamp: 0, ...init });
+  const click = (el) => el.dispatch("click", { bubbles: true });
+  const open = () => click(trigger);
+  return { doc, root, trigger, list, items, key, click, open };
+};
+
+test("menu attach: wires the trigger, the list and the items where the markup left them out", async () => {
+  const { attach } = await load("menu");
+  const p = menuPage();
+  attach(p.root);
+  assert.equal(p.trigger.getAttribute("aria-haspopup"), "menu");
+  assert.equal(p.trigger.getAttribute("aria-expanded"), "false");
+  assert.equal(p.trigger.getAttribute("aria-controls"), "m1");
+  assert.equal(p.list.getAttribute("aria-labelledby"), "t1");
+  assert.equal(p.list.hasAttribute("popover"), true);
+  for (const item of p.items) { assert.equal(item.getAttribute("role"), "menuitem"); assert.equal(item.getAttribute("tabindex"), "-1"); }
+  assert.equal(menuPage().list.hasAttribute("popover"), false, "negative control: untouched without attach");
+});
+
+test("menu attach: opening focuses the first item, places the list under the trigger and sets aria-expanded", async () => {
+  const { attach } = await load("menu");
+  const p = menuPage();
+  attach(p.root);
+  p.open();
+  assert.equal(p.list.popoverOpen, true);
+  assert.equal(p.trigger.getAttribute("aria-expanded"), "true");
+  assert.equal(p.doc.activeElement, p.items[0]);
+  assert.deepEqual([p.list.style.props["--menu-x"], p.list.style.props["--menu-y"]], ["40px", "80px"]);
+});
+
+test("menu attach: ArrowDown on the trigger opens on the first item, ArrowUp on the last", async () => {
+  const { attach } = await load("menu");
+  for (const [k, at] of [["ArrowDown", 0], ["ArrowUp", 3]]) {
+    const p = menuPage();
+    attach(p.root);
+    const ev = p.key(p.trigger, k);
+    assert.equal(ev.defaultPrevented, true);
+    assert.equal(p.doc.activeElement, p.items[at], k);
+  }
+});
+
+test("menu attach: arrows wrap, Home and End jump, and the focused item is the only tab stop", async () => {
+  const { attach } = await load("menu");
+  const p = menuPage();
+  attach(p.root);
+  p.open();
+  p.key(p.items[0], "ArrowUp");
+  assert.equal(p.doc.activeElement, p.items[3], "ArrowUp from the first wraps to the last");
+  p.key(p.items[3], "ArrowDown");
+  assert.equal(p.doc.activeElement, p.items[0], "ArrowDown from the last wraps to the first");
+  p.key(p.items[0], "End");
+  assert.equal(p.doc.activeElement, p.items[3]);
+  p.key(p.items[3], "Home");
+  assert.equal(p.doc.activeElement, p.items[0]);
+  p.key(p.items[0], "ArrowDown");
+  assert.deepEqual(p.items.map((i) => i.getAttribute("tabindex")), ["-1", "0", "-1", "-1"], "roving tabindex");
+  assert.equal(p.items[2].getAttribute("aria-disabled"), "true");
+  p.key(p.items[1], "ArrowDown");
+  assert.equal(p.doc.activeElement, p.items[2], "a disabled item still receives focus");
+});
+
+test("menu attach: typeahead jumps by prefix, extends within the window, cycles on a repeated letter", async () => {
+  const { attach } = await load("menu");
+  const p = menuPage();
+  attach(p.root);
+  p.open();
+  const type = (k, t) => p.key(p.doc.activeElement, k, { timeStamp: t });
+  type("d", 1000);
+  assert.equal(p.doc.activeElement, p.items[1], "d -> Duplicate");
+  type("e", 1200);
+  assert.equal(p.doc.activeElement, p.items[3], "de -> Delete (typed within the window)");
+  type("r", 5000);
+  assert.equal(p.doc.activeElement, p.items[0], "after the window the search restarts: r -> Rename");
+  type("d", 9000);
+  assert.equal(p.doc.activeElement, p.items[1]);
+  type("d", 9100);
+  assert.equal(p.doc.activeElement, p.items[3], "dd cycles to the next item starting with d");
+  type("z", 9200);
+  assert.equal(p.doc.activeElement, p.items[3], "no match keeps focus");
+});
+
+test("menu attach: Escape closes, returns focus to the trigger and stays inside the menu", async () => {
+  const { attach } = await load("menu");
+  const p = menuPage();
+  attach(p.root);
+  p.open();
+  p.key(p.items[1], "ArrowDown");
+  const ev = p.key(p.items[2], "Escape");
+  assert.equal(p.list.popoverOpen, false);
+  assert.equal(p.trigger.getAttribute("aria-expanded"), "false");
+  assert.equal(p.doc.activeElement, p.trigger);
+  assert.equal(ev.defaultPrevented, true);
+  assert.equal(ev.stopped, true, "an enclosing dialog must not also close");
+  const idle = menuPage();
+  idle.list.showPopover();
+  const e2 = idle.key(idle.items[0], "Escape");
+  assert.equal(idle.list.popoverOpen, true, "negative control: nothing happens without attach");
+  assert.equal(e2.stopped, false);
+});
+
+test("menu attach: Tab closes without pulling focus back to the trigger", async () => {
+  const { attach } = await load("menu");
+  const p = menuPage();
+  attach(p.root);
+  p.open();
+  const ev = p.key(p.items[0], "Tab");
+  assert.equal(p.list.popoverOpen, false);
+  assert.equal(ev.defaultPrevented, false, "Tab keeps its native move");
+  assert.notEqual(p.doc.activeElement, p.trigger);
+});
+
+test("menu attach: activating an item closes and returns focus; a disabled item is swallowed and keeps the menu open", async () => {
+  const { attach } = await load("menu");
+  const p = menuPage();
+  attach(p.root);
+  let reached = 0;
+  p.items[2].addEventListener("click", () => reached++);
+  p.items[0].addEventListener("click", () => reached += 10);
+  p.open();
+  const dead = p.click(p.items[2]);
+  assert.equal(p.list.popoverOpen, true, "disabled item does not close");
+  assert.equal(dead.defaultPrevented, true);
+  assert.equal(reached, 0, "the item's own handler never ran");
+  p.click(p.items[0]);
+  assert.equal(reached, 10, "an enabled item's own handler still runs");
+  assert.equal(p.list.popoverOpen, false);
+  assert.equal(p.doc.activeElement, p.trigger);
+});
+
+test("menu attach: native light dismiss (toggle to closed) syncs aria-expanded", async () => {
+  const { attach } = await load("menu");
+  const p = menuPage();
+  attach(p.root);
+  p.open();
+  assert.equal(p.trigger.getAttribute("aria-expanded"), "true");
+  p.list.hidePopover(); // outside click closes natively
+  assert.equal(p.trigger.getAttribute("aria-expanded"), "false");
+});
+
+test("menu attach: detach removes every listener and stops reacting", async () => {
+  const { attach } = await load("menu");
+  const p = menuPage();
+  const detach = attach(p.root);
+  assert.ok(p.root.listenerCount() > 0, "positive control");
+  detach();
+  assert.equal(p.root.listenerCount(), 0);
+  p.open();
+  assert.equal(p.list.popoverOpen, false);
+});
