@@ -1,0 +1,120 @@
+// Component gallery: every reference component on one static page, styled with the project's profile.
+// Reference CSS is unscoped ([data-part="root"] means a different thing per component), so each
+// component's rules are prefixed with its own section selector. Behaviour is inlined, one block per
+// component, so the page opens from disk with no server and no relative files.
+import { join } from "node:path";
+import { readdirSync, readFileSync } from "node:fs";
+import { COMPONENTS_ROOT } from "./scaffold.mjs";
+import { loadSpec } from "./component-spec.mjs";
+import { profileCss } from "./style-profile.mjs";
+import { isFile } from "./fs.mjs";
+
+const read = (file) => readFileSync(file, "utf8");
+
+/** Names of the components that have a spec, in a stable order. */
+export const galleryComponents = () => readdirSync(COMPONENTS_ROOT).filter((d) => isFile(join(COMPONENTS_ROOT, d, "spec.json"))).sort();
+
+/** Splits at commas that are not inside (), [] or quotes. */
+function splitTop(list) {
+  const parts = [];
+  let depth = 0, quote = null, start = 0;
+  for (let i = 0; i < list.length; i++) {
+    const c = list[i];
+    if (quote) { if (c === quote) quote = null; continue; }
+    if (c === '"' || c === "'") quote = c;
+    else if (c === "(" || c === "[") depth++;
+    else if (c === ")" || c === "]") depth--;
+    else if (c === "," && depth === 0) { parts.push(list.slice(start, i)); start = i + 1; }
+  }
+  parts.push(list.slice(start));
+  return parts.map((p) => p.trim()).filter(Boolean);
+}
+
+/** Index of the brace closing the one opened at `open`. */
+function closeOf(css, open) {
+  let depth = 0, quote = null;
+  for (let i = open; i < css.length; i++) {
+    const c = css[i];
+    if (quote) { if (c === quote) quote = null; continue; }
+    if (c === '"' || c === "'") quote = c;
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) return i;
+  }
+  throw new Error("gallery: unbalanced braces in component css");
+}
+
+const GROUPING = /^@(media|supports|starting-style|layer|container)\b/;
+
+/** Prefixes every style rule's selectors with `scope `; @keyframes and other at-rules pass through. */
+export function scopeCss(text, scope) {
+  let out = "", i = 0;
+  while (i < text.length) {
+    const rest = text.slice(i);
+    const lead = rest.match(/^\s*(\/\*[\s\S]*?\*\/)\s*/); // comments between rules are kept (the profile layer's header is one)
+    if (lead) { out += `${lead[1]}\n`; i += lead[0].length; continue; }
+    const open = text.indexOf("{", i);
+    if (open < 0) break;
+    const head = text.slice(i, open).replace(/\/\*[\s\S]*?\*\//g, "").trim();
+    const end = closeOf(text, open);
+    const body = text.slice(open + 1, end);
+    if (head.startsWith("@")) out += GROUPING.test(head) ? `${head} {\n${scopeCss(body, scope)}}\n` : `${head} {${body}}\n`;
+    else out += `${splitTop(head).map((s) => `${scope} ${s}`).join(",\n")} {${body}}\n`;
+    i = end + 1;
+  }
+  return out;
+}
+
+/** One component: its section markup, scoped css and inline behaviour block. */
+function section(name, profile) {
+  const dir = join(COMPONENTS_ROOT, name);
+  const spec = loadSpec(dir);
+  const scope = `[data-fgu="${name}"]`;
+  const css = scopeCss(`${read(join(dir, `${name}.css`))}\n${profileCss(profile, spec)}`, scope);
+  const ref = read(join(dir, "reference/index.html"));
+  const demoId = `fgu-${name}-demo`;
+  const markup = ref.slice(ref.indexOf("<body>") + 6, ref.indexOf('<script type="module">'))
+    .replace('<main id="demo">', `<div id="${demoId}">`).replace("<main>", "<div>").replace("</main>", "</div>").trim();
+  const refScript = ref.slice(ref.indexOf('<script type="module">') + 22, ref.indexOf("</script>", ref.indexOf('<script type="module">')))
+    .replace(/^\s*import \{ attach \} from [^\n]*\n/m, "").replace('getElementById("demo")', `getElementById("${demoId}")`);
+  const behaviour = read(join(dir, `${name}.js`)).replace(/^export /gm, "");
+  return {
+    css,
+    html: `<section data-fgu="${name}" id="fgu-${name}">\n<h2>${name}</h2>\n${markup}\n</section>`,
+    script: `{\n${behaviour}\n${refScript}}`,
+  };
+}
+
+/** The whole page. `tokensCss` is the project's tokens as CSS custom properties. */
+export function buildGallery({ profile, tokensCss, components = galleryComponents() }) {
+  const parts = components.map((n) => section(n, profile));
+  const page = `body { margin: 0; padding: 2rem; background: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans, system-ui, sans-serif); }
+.fgu-gallery > section { margin-block: 0 2.5rem; padding-block-end: 2rem; border-block-end: 1px solid var(--color-border); }
+.fgu-gallery h2 { margin: 0 0 1rem; font-size: 0.875rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--color-muted-foreground); }`;
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Components</title>
+<!-- Generated by scripts/scaffold-component.mjs --gallery from components/ and .design/component-style.json. Do not edit. -->
+<style>
+${tokensCss.trim()}
+</style>
+<style>
+${page}
+</style>
+<style>
+${parts.map((p) => p.css).join("\n")}
+</style>
+</head>
+<body>
+<main class="fgu-gallery">
+${parts.map((p) => p.html).join("\n")}
+</main>
+<script type="module">
+${parts.map((p) => p.script).join("\n")}
+</script>
+</body>
+</html>
+`;
+}
