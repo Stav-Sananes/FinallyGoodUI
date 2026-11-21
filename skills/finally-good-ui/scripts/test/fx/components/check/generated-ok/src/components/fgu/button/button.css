@@ -1,0 +1,3 @@
+[data-part="root"] { min-height: var(--size-control-md); transition: opacity var(--duration-short) var(--ease-snappy); }
+[data-part="root"]:disabled { opacity: 0.5; }
+[data-part="root"][aria-busy="true"] { cursor: progress; }

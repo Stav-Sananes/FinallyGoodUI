@@ -1,0 +1,5 @@
+{
+  "name": "button",
+  "source": "primitives:radix",
+  "framework": "react"
+}
