@@ -172,6 +172,7 @@ function plain(v, spec) {
 }
 
 // Roles an element has natively: emitted as the native tag, never as a redundant role attribute.
+const NATIVE_ROOT_ROLE = { button: "button", a: "link", dialog: "dialog" };
 const NATIVE_INPUT = { textbox: 'type="text"', checkbox: 'type="checkbox"' };
 
 /** Replaces `pattern` in the generated files, or throws: a silent no-op would ship markup without the role or tag. */
@@ -189,7 +190,7 @@ function rewrite(files, pattern, replacement, what) {
 function applyRole(files, spec) {
   const role = spec.a11y.role, part = rolePartOf(spec);
   if (part === "root") {
-    if (role in { button: 1, link: 1 }) return files;
+    if (role in { button: 1, link: 1 } || NATIVE_ROOT_ROLE[tagFor(spec)] === role) return files;
     return rewrite(files, ' data-part="root"', ` data-part="root" role="${role}"`, `put role "${role}" on the root`);
   }
   const span = new RegExp(`<span data-part="${part}"(?: aria-hidden="true")?>[\\s\\S]*?</span>`);

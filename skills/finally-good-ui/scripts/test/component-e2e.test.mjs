@@ -8,7 +8,7 @@ import { loadSpec } from "../lib/component-spec.mjs";
 import { detectStack } from "../detect-stack.mjs";
 
 // End to end: scaffold a component into a fixture project, then the conformance checker must accept it.
-const COMPONENTS = ["field", "toggle", "disclosure"];
+const COMPONENTS = ["field", "toggle", "disclosure", "dialog"];
 const PROJECTS = ["plain", "react-radix", "vue-reka"];
 
 const scaffoldAndCheck = (component, project) => {
@@ -102,4 +102,24 @@ test("scaffold fails loudly when the role part has no element in the markup", ()
   const plan = (rolePart) => planScaffold({ spec: { ...spec, a11y: { ...spec.a11y, rolePart } }, stack: detectStack(root), profile: JSON.parse(readFileSync(join(root, ".design/component-style.json"), "utf8")), root });
   assert.ok(plan("control").files.length > 0, "positive control: a real part plans fine");
   assert.throws(() => plan("knob"), /knob/);
+});
+
+test("dialog: the scaffolded root is a native <dialog> with no redundant role, title and close are real elements", () => {
+  for (const project of PROJECTS) {
+    const text = markup(scaffoldAndCheck("dialog", project).root, "dialog", project);
+    assert.match(text, /(?:<dialog\b|<Primitive\.dialog\b|<Primitive as="dialog")[^>]*data-part="root"/, project);
+    assert.doesNotMatch(text, /role="dialog"/, project);
+    assert.match(text, /<h2 data-part="title"/, project);
+    assert.match(text, /<button data-part="close"/, project);
+  }
+});
+
+test("dialog: role-missing fires when the root is no longer a <dialog> (negative control)", () => {
+  const { root } = scaffoldAndCheck("dialog", "plain");
+  const file = scaffoldedFile(root, "dialog", "html");
+  const text = readFileSync(file, "utf8");
+  assert.match(text, /<dialog data-part="root"/);
+  writeFileSync(file, text.replace("<dialog ", "<div ").replace("</dialog>", "</div>"));
+  const check = run("check-components.mjs", ["--root", root]);
+  assert.ok(check.json.findings.some((f) => f.rule === "role-missing"), JSON.stringify(check.json.findings));
 });
