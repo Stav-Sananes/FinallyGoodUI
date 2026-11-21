@@ -4,7 +4,7 @@
 const ATTR = /^\[([\w-]+)(?:(\^?)=["']([^"']*)["'])?\]$/;
 
 export class Doc {
-  constructor() { this.activeElement = null; this.ids = new Map(); this.defaultView = { getComputedStyle: () => ({ direction: "ltr", transitionDuration: "0s" }) }; }
+  constructor() { this.activeElement = null; this.popovers = new Set(); this.ids = new Map(); this.defaultView = { getComputedStyle: () => ({ direction: "ltr", transitionDuration: "0s" }) }; }
   getElementById(id) { return this.ids.get(id) ?? null; }
 }
 
@@ -49,8 +49,16 @@ export class El {
   querySelector(sel) { return this.querySelectorAll(sel)[0] ?? null; }
   focus() { this.doc.activeElement = this; this.dispatch("focusin", { bubbles: true }); }
   getBoundingClientRect() { return this.rect; }
-  showPopover() { this.popoverOpen = true; this.dispatch("toggle", { newState: "open" }); }
-  hidePopover() { this.popoverOpen = false; this.dispatch("toggle", { newState: "closed" }); }
+  showPopover() { this.dispatch("beforetoggle", { newState: "open" }); this.popoverOpen = true; this.doc.popovers.add(this); this.dispatch("toggle", { newState: "open" }); }
+  hidePopover() { this.popoverOpen = false; this.doc.popovers.delete(this); this.dispatch("toggle", { newState: "closed" }); }
+  /** A real mouse click: pointerup first (light dismiss), then click, then the invoker's default action. */
+  mouseClick() {
+    this.dispatch("pointerup", { bubbles: true });
+    const ev = this.dispatch("click", { bubbles: true });
+    const target = this.getAttribute("popovertarget") && this.doc.getElementById(this.getAttribute("popovertarget"));
+    if (target && !ev.defaultPrevented) target.popoverOpen ? target.hidePopover() : target.showPopover();
+    return ev;
+  }
   showModal() { this.setAttribute("open", ""); this.modal = true; }
   close() { if (!this.hasAttribute("open")) return; this.removeAttribute("open"); this.dispatch("close"); }
   addEventListener(type, fn, opts) { this.listeners.push({ type, fn, capture: opts === true || opts?.capture === true }); }
@@ -62,6 +70,10 @@ export class El {
   /** Real capture then bubble dispatch. Non-bubbling events reach only capture listeners on ancestors. */
   dispatch(type, init = {}) {
     const path = []; for (let e = this; e; e = e.parent) path.push(e);
+    if (type === "pointerup") for (const pop of [...this.doc.popovers]) { // light dismiss, unless inside the popover or on its invoker
+      const invoker = this.closest("[popovertarget]");
+      if (!pop.contains(this) && !(invoker && this.doc.getElementById(invoker.getAttribute("popovertarget")) === pop)) pop.hidePopover();
+    }
     const ev = { type, target: this, defaultPrevented: false, stopped: false, bubbles: false, ...init,
       preventDefault() { this.defaultPrevented = true; }, stopPropagation() { this.stopped = true; }, stopImmediatePropagation() { this.stopped = true; } };
     const fire = (el, capture) => { for (const l of [...el.listeners]) if (!ev.stopped && l.type === type && l.capture === capture) { ev.currentTarget = el; l.fn(ev); } };

@@ -3,7 +3,9 @@
 // platform's. attach adds: roles and ids where the markup left them out, real focus moving into the list
 // with a roving tabindex, ArrowUp/Down/Home/End, typeahead, Escape returning focus to the trigger,
 // and aria-disabled items that stay focusable but cannot be activated.
-// Enter and Space on the trigger are its native click: no key listener for them here.
+// The trigger is the popover's invoker (popovertarget): the platform toggles on click and exempts the trigger
+// from light dismiss, so there is no click handler for it (a click handler would reopen a menu that light
+// dismiss had just closed). Enter and Space are that native click: no key listener for them here.
 const TRIGGER = '[data-part="trigger"]';
 const LIST = '[data-part="list"]';
 const ITEM = '[data-part="item"]';
@@ -36,6 +38,7 @@ export function attach(root) {
     if (!trigger.hasAttribute("aria-expanded")) trigger.setAttribute("aria-expanded", String(isOpen(list)));
     if (!list.hasAttribute("aria-labelledby")) list.setAttribute("aria-labelledby", trigger.id);
     if (!list.hasAttribute("popover")) list.setAttribute("popover", "");
+    trigger.setAttribute("popovertarget", list.id);
     prepareItems(list);
     triggerOf.set(list, trigger);
   }
@@ -50,11 +53,6 @@ export function attach(root) {
   const focusAt = (list, index) => { const items = itemsOf(list); focusItem(list, items.at(index % items.length)); };
 
   const open = (list, start) => {
-    const trigger = triggerOf.get(list);
-    prepareItems(list);
-    const box = trigger.getBoundingClientRect();
-    list.style.setProperty("--menu-x", `${box.left}px`);
-    list.style.setProperty("--menu-y", `${box.bottom}px`);
     if (!isOpen(list)) list.showPopover();
     setExpanded(list, true);
     focusAt(list, start);
@@ -100,12 +98,6 @@ export function attach(root) {
 
   // Capture phase, so a disabled item is stopped before any handler on or inside it.
   const onClick = (event) => {
-    const trigger = event.target.closest?.(TRIGGER);
-    if (trigger) {
-      const list = trigger.ownerDocument.getElementById(trigger.getAttribute("aria-controls"));
-      if (list && triggerOf.has(list)) isOpen(list) ? close(list, { restoreFocus: true }) : open(list, 0);
-      return;
-    }
     const item = event.target.closest?.(ITEM);
     const list = item?.closest(LIST);
     if (!item || !list || !triggerOf.has(list)) return;
@@ -113,15 +105,30 @@ export function attach(root) {
     close(list, { restoreFocus: true });
   };
 
-  // `toggle` does not bubble and also fires for light dismiss and Escape handled by the platform.
-  const onToggle = (event) => setExpanded(event.target, event.newState === "open");
+  // `beforetoggle` and `toggle` do not bubble; they also fire for the invoker, light dismiss and Escape.
+  const onBeforeToggle = (event) => {
+    const list = event.target;
+    const trigger = triggerOf.get(list);
+    if (event.newState !== "open" || !trigger) return;
+    prepareItems(list);
+    const box = trigger.getBoundingClientRect();
+    list.style.setProperty("--menu-x", `${box.left}px`);
+    list.style.setProperty("--menu-y", `${box.bottom}px`);
+  };
+  const onToggle = (event) => {
+    const list = event.target;
+    setExpanded(list, event.newState === "open");
+    if (event.newState === "open" && triggerOf.has(list) && !list.contains(list.ownerDocument.activeElement)) focusAt(list, 0);
+  };
 
   root.addEventListener("keydown", onKeydown);
   root.addEventListener("click", onClick, true);
+  root.addEventListener("beforetoggle", onBeforeToggle, true);
   root.addEventListener("toggle", onToggle, true);
   return () => {
     root.removeEventListener("keydown", onKeydown);
     root.removeEventListener("click", onClick, true);
+    root.removeEventListener("beforetoggle", onBeforeToggle, true);
     root.removeEventListener("toggle", onToggle, true);
   };
 }

@@ -110,8 +110,10 @@ const menuPage = () => {
   trigger.rect = { left: 40, bottom: 80, top: 50, right: 120, width: 80, height: 30 };
   const key = (el, k, init = {}) => el.dispatch("keydown", { bubbles: true, key: k, timeStamp: 0, ...init });
   const click = (el) => el.dispatch("click", { bubbles: true });
-  const open = () => click(trigger);
-  return { doc, root, trigger, list, items, key, click, open };
+  const open = () => trigger.mouseClick();
+  const outside = make(doc, "button", { id: "outside" });
+  doc.body = make(doc, "body"); doc.body.append(outside, root);
+  return { doc, root, trigger, list, items, key, click, open, outside };
 };
 
 test("menu attach: wires the trigger, the list and the items where the markup left them out", async () => {
@@ -123,6 +125,7 @@ test("menu attach: wires the trigger, the list and the items where the markup le
   assert.equal(p.trigger.getAttribute("aria-controls"), "m1");
   assert.equal(p.list.getAttribute("aria-labelledby"), "t1");
   assert.equal(p.list.hasAttribute("popover"), true);
+  assert.equal(p.trigger.getAttribute("popovertarget"), "m1", "the trigger is the popover's invoker");
   for (const item of p.items) { assert.equal(item.getAttribute("role"), "menuitem"); assert.equal(item.getAttribute("tabindex"), "-1"); }
   assert.equal(menuPage().list.hasAttribute("popover"), false, "negative control: untouched without attach");
 });
@@ -247,6 +250,33 @@ test("menu attach: native light dismiss (toggle to closed) syncs aria-expanded",
   assert.equal(p.trigger.getAttribute("aria-expanded"), "false");
 });
 
+test("menu attach: clicking the trigger of an open menu closes it and it stays closed; clicking when closed opens it", async () => {
+  const { attach } = await load("menu");
+  const p = menuPage();
+  attach(p.root);
+  p.open();
+  assert.equal(p.list.popoverOpen, true, "closed -> open");
+  assert.equal(p.doc.activeElement, p.items[0]);
+  p.open();
+  assert.equal(p.list.popoverOpen, false, "open -> closed, not reopened after light dismiss");
+  assert.equal(p.trigger.getAttribute("aria-expanded"), "false");
+  p.open();
+  assert.equal(p.list.popoverOpen, true, "and it opens again");
+});
+
+test("menu attach: a click outside still closes the menu", async () => {
+  const { attach } = await load("menu");
+  const p = menuPage();
+  attach(p.root);
+  p.open();
+  p.outside.mouseClick();
+  assert.equal(p.list.popoverOpen, false);
+  assert.equal(p.trigger.getAttribute("aria-expanded"), "false");
+  p.open();
+  p.items[0].dispatch("pointerup", { bubbles: true });
+  assert.equal(p.list.popoverOpen, true, "a pointer inside the list is not outside");
+});
+
 test("menu attach: detach removes every listener and stops reacting", async () => {
   const { attach } = await load("menu");
   const p = menuPage();
@@ -254,7 +284,7 @@ test("menu attach: detach removes every listener and stops reacting", async () =
   assert.ok(p.root.listenerCount() > 0, "positive control");
   detach();
   assert.equal(p.root.listenerCount(), 0);
-  p.open();
+  p.key(p.trigger, "ArrowDown");
   assert.equal(p.list.popoverOpen, false);
 });
 

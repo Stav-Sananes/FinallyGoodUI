@@ -17,13 +17,13 @@
 | Part (`data-part`) | Role |
 |---|---|
 | `root` | wrapper holding the trigger and the list |
-| `trigger` | native `<button>` with `aria-haspopup="menu"`, `aria-expanded` and `aria-controls`; its visible label names the menu |
+| `trigger` | native `<button>` that is the popover's invoker: `popovertarget` the list, `aria-haspopup="menu"`, `aria-expanded`, `aria-controls`; its label names the menu |
 | `list` | the element with `role="menu"`, `popover`, `aria-labelledby` the trigger; opens in the top layer under the trigger |
 | `item` | native `<button role="menuitem" tabindex="-1">` holding one command (slot `default` of the list is the items) |
 
 Items that the user cannot run right now stay in the list with `aria-disabled="true"`: they keep their place so people learn they exist.
 
-`attach` fills what the markup left out: `role="menuitem"`, `tabindex="-1"`, `aria-haspopup`, `aria-controls`, `aria-labelledby`, `popover`, and writes `--menu-x` and `--menu-y` (the trigger's left and bottom edge) before showing the list.
+`attach` fills what the markup left out: `role="menuitem"`, `tabindex="-1"`, `aria-haspopup`, `aria-controls`, `aria-labelledby`, `popover`, `popovertarget` (on the trigger, pointing at the list; the scaffold does not emit it), and writes `--menu-x` and `--menu-y` (the trigger's left and bottom edge) before showing the list.
 
 ## States
 | State | How it shows | Attribute / selector |
@@ -38,7 +38,7 @@ Open and disabled have attributes, so they are in `states` in `spec.json`; the h
 ## Keyboard
 The key table (trigger and list, typeahead, wrap, Escape, Tab) is the menu column of `recipes/patterns/menu-select-combobox.md`; this spec does not repeat it. `spec.json` `a11y.keys` lists the keys a scaffold must not re-handle.
 
-- Enter and Space on the trigger are its native click: no key listener for them.
+- Enter and Space on the trigger are its native click, and the click is the platform's invoker toggle: no key or click listener for the trigger. A click handler would reopen a menu that light dismiss had just closed (it treats the trigger as outside).
 - `attach` roves `tabindex` (one tab stop, the focused item), wraps at both ends, and calls `stopPropagation` on Escape so an enclosing dialog stays open.
 - A click on a disabled item is swallowed in the capture phase, so handlers on the item never run.
 
@@ -48,7 +48,7 @@ The key table (trigger and list, typeahead, wrap, Escape, Tab) is the menu colum
 ## Markup
 ```html
 <div data-part="root">
-  <button type="button" data-part="trigger" id="row-actions" aria-haspopup="menu" aria-expanded="false" aria-controls="row-menu">Actions</button>
+  <button type="button" data-part="trigger" id="row-actions" aria-haspopup="menu" aria-expanded="false" aria-controls="row-menu" popovertarget="row-menu">Actions</button>
   <div data-part="list" id="row-menu" role="menu" aria-labelledby="row-actions" popover>
     <button type="button" data-part="item" role="menuitem" tabindex="-1">Rename</button>
     <button type="button" data-part="item" role="menuitem" tabindex="-1" aria-disabled="true">Move</button>
