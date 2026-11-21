@@ -14,7 +14,16 @@ Finds components written by scaffold-component.mjs (a .fgu-component.json marker
 loads components/<name>/spec.json and checks the generated files against it. Prints
 {tool, ok, findings:[{file, rule, message}]}.
 
-Rules: role-missing, aria-missing, part-missing, state-unstyled, literal, key-handler-reimplemented.
+Rules: role-missing, aria-missing, part-missing, state-unstyled, literal, key-handler-reimplemented,
+spec-missing (a marker names a component that has no valid spec).
+
+Scope notes:
+  - aria-missing checks only aria attributes that are also a state attribute (aria-busy). Other
+    spec aria (aria-label) is consumer-supplied and not checked.
+  - The plain-html output (<name>.html, with no framework file) is a static demo page: only the root
+    part is required, and state aria is not checked. Each such component adds a "notes" entry.
+  - key-handler-reimplemented applies when the marker source is shared or primitives:<name>;
+    <name>.behaviour.js is never scanned.
 
 Options:
   --root <dir>   project to scan (default: cwd); node_modules is skipped
@@ -23,10 +32,17 @@ Options:
 
 const MARKER = ".fgu-component.json";
 const LITERAL = /#[0-9a-f]{3,8}\b|\d*\.?\d+\s*(?:px|ms)\b/gi;
-const KEY_HANDLER = /\bon(?:key(?:down|up|press))\b|@key(?:down|up|press)\b|on:key(?:down|up|press)\b|\(key(?:down|up|press)\)|addEventListener\(\s*["']key(?:down|up|press)["']/i;
-// How each key name shows up in handler code ("Space" is also written as " ").
-const KEY_PATTERN = { Space: /\bSpace\b|["'] ["']/ };
-const keyPattern = (key) => KEY_PATTERN[key] ?? new RegExp(`\\b${key}\\b`);
+// Key listeners in every framework syntax; modifier suffixes (@keydown.enter, (keydown.enter), onKeyDownCapture)
+// are part of the match. onClick and friends never match.
+const KEY_HANDLER = /\bonkey(?:down|up|press)\w*|@key(?:down|up|press)[.\w-]*|\bon:key(?:down|up|press)[.\w:|-]*|\(key(?:down|up|press)[.\w-]*\)|addEventListener\(\s*["']key(?:down|up|press)["']/i;
+// Spellings of a spec key in handler code, lower-cased ("Space" is also written " "; Escape is also "esc").
+const KEY_ALIASES = { space: ["space"], escape: ["escape", "esc"], arrowdown: ["arrowdown", "down"], arrowup: ["arrowup", "up"], arrowleft: ["arrowleft", "left"], arrowright: ["arrowright", "right"] };
+const keyPattern = (key) => {
+  const k = key.toLowerCase();
+  const names = (KEY_ALIASES[k] ?? [k]).map((n) => `(?<![a-z])${n}(?![a-z])`);
+  if (k === "space") names.push(`["'] ["']`);
+  return new RegExp(names.join("|"));
+};
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -40,7 +56,7 @@ const isFrameworkFile = (name, spec) => !name.endsWith(".css") && name !== MARKE
 // The plain-html output is a static demo page: it renders only the root, with no state attributes.
 const isDemoPage = (files) => files.every((f) => /\.html$/.test(f) && !/\.component\.html$/.test(f));
 
-function checkComponent(markerPath, root) {
+function checkComponent(markerPath, root, notes) {
   const dir = dirname(markerPath);
   const rel = (name) => join(relativeDir(root, dir), name).split("\\").join("/");
   const marker = readJson(markerPath);
@@ -62,6 +78,7 @@ function checkComponent(markerPath, root) {
   // aria listed in the spec but not tied to a state (aria-label) is supplied by the consumer.
   const stateAttrs = new Set(spec.states.map((s) => s.attribute));
   const demo = isDemoPage(frameworkFiles);
+  if (demo) notes.push({ file: rel(where), note: "plain-html demo page: only the root part is required and state aria is not checked" });
   for (const aria of demo ? [] : spec.a11y.aria.filter((a) => stateAttrs.has(a))) {
     if (!code.includes(aria)) add(where, "aria-missing", `${aria} is never set on the ${spec.name}`);
   }
@@ -80,7 +97,7 @@ function checkComponent(markerPath, root) {
       const text = readText(join(dir, file)) ?? "";
       if (!KEY_HANDLER.test(text)) continue;
       for (const key of Object.keys(spec.a11y.keys)) {
-        if (keyPattern(key).test(text)) add(file, "key-handler-reimplemented", `key "${key}" is handled in ${file}: the ${marker.source} behaviour already does it`);
+        if (keyPattern(key).test(text.toLowerCase())) add(file, "key-handler-reimplemented", `key "${key}" is handled in ${file}: the ${marker.source} behaviour already does it`);
       }
     }
   }
@@ -90,8 +107,10 @@ function checkComponent(markerPath, root) {
 const relativeDir = (root, dir) => dir.slice(root.length).replace(/^[\\/]+/, "");
 
 export function checkComponents(root) {
+  const notes = [];
   const markers = walk(root, root).filter((f) => basename(f) === MARKER);
-  return markers.flatMap((m) => checkComponent(join(root, m), root));
+  const findings = markers.flatMap((m) => checkComponent(join(root, m), root, notes));
+  return { findings, notes };
 }
 
 if (isMain(import.meta.url)) {
@@ -101,9 +120,9 @@ if (isMain(import.meta.url)) {
     main: ({ flags }) => {
       const root = (flags.root || ".").replace(/[\\/]+$/, "") || ".";
       if (!isDir(root)) throw new UsageError(`--root ${root}: not a directory`);
-      const findings = checkComponents(root);
+      const { findings, notes } = checkComponents(root);
       if (flags.strict && findings.length) process.exitCode = 1;
-      return { tool: "check-components", ok: findings.length === 0, findings };
+      return { tool: "check-components", ok: findings.length === 0, findings, notes };
     },
   });
 }
