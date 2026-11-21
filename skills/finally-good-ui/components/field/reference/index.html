@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field reference</title>
+<!-- tokens.css: node scripts/emit-tokens.mjs --in tokens/default.tokens.json --format css > tokens.css -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../field.css">
+</head>
+<body>
+<main id="demo">
+  <form novalidate>
+    <div data-part="root" data-variant="stacked">
+      <label data-part="label" for="email">Work email</label>
+      <p data-part="hint" id="email-hint">We send the invoice copy here.</p>
+      <input data-part="control" id="email" name="email" type="email" required autocomplete="email"
+             aria-describedby="email-hint email-err"
+             data-msg-value-missing="Enter your work email"
+             data-msg-type-mismatch="Enter an email like name@company.com">
+      <p data-part="error" id="email-err" aria-live="polite"></p>
+    </div>
+    <div data-part="root" data-variant="stacked">
+      <label data-part="label" for="name">Full name</label>
+      <input data-part="control" id="name" name="name" type="text" aria-invalid="true" aria-describedby="name-err" value="">
+      <p data-part="error" id="name-err" aria-live="polite">Enter your full name</p>
+    </div>
+    <div data-part="root" data-variant="inline">
+      <label data-part="label" for="code">Code</label>
+      <input data-part="control" id="code" name="code" type="text" disabled aria-describedby="code-err">
+      <p data-part="error" id="code-err" aria-live="polite"></p>
+    </div>
+  </form>
+</main>
+<script type="module">
+  import { attach } from "../field.js";
+  attach(document.getElementById("demo"));
+</script>
+</body>
+</html>

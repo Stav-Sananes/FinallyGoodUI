@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fx, run, tmp } from "./_h.mjs";
 
 // End to end: scaffold a component into a fixture project, then the conformance checker must accept it.
-const COMPONENTS = ["toggle"];
+const COMPONENTS = ["field", "toggle"];
 const PROJECTS = ["plain", "react-radix", "vue-reka"];
 
 const scaffoldAndCheck = (component, project) => {
