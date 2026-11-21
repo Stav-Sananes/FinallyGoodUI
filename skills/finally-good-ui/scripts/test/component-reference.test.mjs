@@ -47,6 +47,28 @@ test("reference css uses tokens only and respects reduced motion", () => {
   }
 });
 
+// Busy must not change layout: the spinner is always in flow-free (absolute) and only fades; no rule may toggle its display.
+const spinnerLayoutProblems = (cssText) => {
+  const src = cssText.replace(/\/\*[\s\S]*?\*\//g, "");
+  const problems = [];
+  for (const [, sel, body] of src.matchAll(/([^{}@]+)\{([^{}]*)\}/g)) {
+    if (!/data-part="spinner"/.test(sel)) continue;
+    if (/\bdisplay\s*:/.test(body)) problems.push(`${sel.trim()}: sets display`);
+  }
+  const base = [...src.matchAll(/([^{}@]+)\{([^{}]*)\}/g)].find(([, sel]) => sel.trim() === '[data-part="spinner"]');
+  if (!base || !/position\s*:\s*absolute/.test(base[2])) problems.push("spinner base rule is not position:absolute");
+  return problems;
+};
+
+test("loading keeps the button width: the spinner never toggles display", () => {
+  assert.deepEqual(spinnerLayoutProblems(readFileSync(join(COMPONENTS, "button/button.css"), "utf8")), []);
+});
+
+test("the spinner layout check fails for a display toggle", () => {
+  const bad = '[data-part="spinner"] { display: none; }\n[aria-busy="true"] [data-part="spinner"] { display: inline-block; }';
+  assert.ok(spinnerLayoutProblems(bad).length >= 2);
+});
+
 test("every reference attaches and detaches", async () => {
   for (const d of dirs()) {
     const mod = await import(join(COMPONENTS, d, `${d}.js`));

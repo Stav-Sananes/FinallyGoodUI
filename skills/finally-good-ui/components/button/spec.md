@@ -24,7 +24,7 @@ One primary per view. A destructive button never sits where the primary would.
 | `root` | the `<button>` itself; carries `data-variant`, `disabled`, `aria-busy` |
 | `icon` | optional leading icon (slot `icon`), `aria-hidden` |
 | `label` | visible text (slot `default`) |
-| `spinner` | shown only while `aria-busy="true"`, `aria-hidden` |
+| `spinner` | always rendered, absolutely centred, `opacity` 1 only while `aria-busy="true"`, `aria-hidden` |
 
 An icon-only button needs `aria-label`; its target stays at least `--size-control-md`.
 
@@ -36,7 +36,7 @@ An icon-only button needs `aria-label`; its target stays at least `--size-contro
 | active | `scale(0.97)`, interruptible | `:active` |
 | focus-visible | ring of `--ring-width`, offset `--ring-offset`, never removed | `:focus-visible` |
 | disabled | dimmed, `not-allowed` cursor, out of the tab order | native `disabled` (not `aria-disabled`) |
-| loading | spinner shown, width kept, label stays readable, activation ignored but focus kept | `aria-busy="true"` |
+| loading | spinner overlays the centre, label fades out but stays in flow and the accessible name, so the width never changes; activation ignored, focus kept | `aria-busy="true"` |
 
 Only disabled and loading have attributes, so only they are in `states` in `spec.json`; the rest are pseudo-classes the style profile layer already covers.
 
@@ -61,7 +61,7 @@ Press feedback is `transform` and `opacity` only (`motion.compositor-only`), 100
   <span data-part="label">Save</span>
 </button>
 
-<!-- loading: same width, still focusable -->
+<!-- loading: spinner is always in the markup (opacity 0 when idle), same width, still focusable -->
 <button type="button" data-part="root" data-variant="primary" aria-busy="true">
   <span data-part="spinner" aria-hidden="true"></span>
   <span data-part="label">Saving</span>

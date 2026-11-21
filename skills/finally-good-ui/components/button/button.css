@@ -1,5 +1,6 @@
 /* Button reference. Tokens only; load tokens.css (emit-tokens.mjs --format css) first. */
 [data-part="root"] {
+  position: relative;
   --btn-bg: var(--color-primary);
   --btn-fg: var(--color-primary-foreground);
   display: inline-flex;
@@ -27,9 +28,13 @@
 [data-part="root"][data-variant="ghost"] { --btn-bg: transparent; --btn-fg: var(--color-foreground); }
 [data-part="root"][data-variant="destructive"] { --btn-bg: var(--color-destructive); --btn-fg: var(--color-destructive-foreground); }
 
+[data-part="label"], [data-part="icon"] { transition: opacity var(--duration-short) var(--ease-snappy); }
 [data-part="icon"] { display: inline-flex; width: var(--icon-md); height: var(--icon-md); }
 [data-part="spinner"] {
-  display: none;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  opacity: 0;
   box-sizing: border-box;
   width: var(--icon-md);
   height: var(--icon-md);
@@ -38,7 +43,9 @@
   border-radius: var(--radius-full);
   animation: btn-spin var(--duration-hero) linear infinite;
 }
-[data-part="root"][aria-busy="true"] [data-part="spinner"] { display: inline-block; }
+[data-part="root"][aria-busy="true"] [data-part="spinner"] { opacity: 1; }
+[data-part="root"][aria-busy="true"] [data-part="label"],
+[data-part="root"][aria-busy="true"] [data-part="icon"] { opacity: 0; }
 [data-part="root"][aria-busy="true"] { cursor: progress; }
 
 @media (hover: hover) and (pointer: fine) {
@@ -61,4 +68,5 @@
   [data-part="root"] { transition: opacity var(--duration-short) linear; }
   [data-part="root"]:active:not(:disabled):not([aria-busy="true"]) { transform: none; opacity: 0.85; }
   [data-part="spinner"] { animation: none; }
+  [data-part="label"], [data-part="icon"] { transition: none; }
 }
