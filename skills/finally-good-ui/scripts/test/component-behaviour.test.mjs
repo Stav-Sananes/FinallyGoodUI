@@ -639,3 +639,125 @@ test("toast attach: detach clears timers, disconnects the observer and removes e
     assert.equal(p.gone(), false);
   });
 });
+
+// ---- scoping, root-itself wiring and the programmatic API
+test("field attach on the field element itself wires it (the root is not only a container)", async () => {
+  const { attach } = await load("field");
+  const doc = new Doc();
+  const field = make(doc, "div", { "data-fgu": "field", "data-part": "root" });
+  const label = make(doc, "label", { "data-part": "label" });
+  const control = make(doc, "input", { "data-part": "control" });
+  const hint = make(doc, "p", { "data-part": "hint" });
+  field.append(label, control, hint);
+  attach(field);
+  assert.ok(control.id, "control got an id");
+  assert.equal(label.getAttribute("for"), control.id);
+  assert.equal(control.getAttribute("aria-describedby"), hint.id);
+  const plain = make(new Doc(), "div", { "data-fgu": "field", "data-part": "root" });
+  assert.equal(plain.querySelector("label"), null, "negative control");
+});
+
+test("field attach on a whole page ignores controls of other components", async () => {
+  const { attach } = await load("field");
+  const doc = new Doc();
+  const page = make(doc, "main");
+  const toggle = make(doc, "label", { "data-fgu": "toggle", "data-part": "root" });
+  const box = make(doc, "input", { "data-part": "control" });
+  box.validity = { valid: false, valueMissing: true }; box.validationMessage = "required";
+  toggle.append(box);
+  const field = make(doc, "div", { "data-fgu": "field", "data-part": "root" });
+  const input = make(doc, "input", { "data-part": "control" });
+  input.validity = { valid: false, valueMissing: true }; input.validationMessage = "required"; input.dataset = {};
+  field.append(input);
+  page.append(toggle, field);
+  attach(page);
+  box.dispatch("focusout", { bubbles: true });
+  assert.equal(box.getAttribute("aria-invalid"), null, "the checkbox is not validated as a field");
+  input.dispatch("focusout", { bubbles: true });
+  assert.equal(input.getAttribute("aria-invalid"), "true", "positive control: the field is");
+});
+
+test("dialog: an opener outside the attached root opens the dialog, focus returns to a focusable inside a non-focusable host", async () => {
+  const { attach } = await load("dialog");
+  const doc = new Doc();
+  const page = make(doc, "main");
+  const host = make(doc, "div", { "data-dialog-open": "d9" }); // like <fgu-button>: not focusable itself
+  const inner = make(doc, "button");
+  host.append(inner);
+  const dlg = make(doc, "dialog", { "data-fgu": "dialog", "data-part": "root", id: "d9" });
+  const close = make(doc, "button", { "data-part": "close" });
+  dlg.append(close);
+  page.append(host, dlg);
+  attach(dlg); // the root is the dialog itself; the opener is outside it
+  inner.focus();
+  inner.dispatch("click", { bubbles: true });
+  assert.equal(dlg.hasAttribute("open"), true);
+  close.focus();
+  close.dispatch("click", { bubbles: true });
+  assert.equal(dlg.hasAttribute("open"), false);
+  assert.equal(doc.activeElement, inner, "focus lands on the focusable inside the host");
+});
+
+test("dialog: openDialog / closeDialog are the programmatic API and return focus to what had it", async () => {
+  const { attach, openDialog, closeDialog } = await load("dialog");
+  const doc = new Doc();
+  const page = make(doc, "main");
+  const before = make(doc, "button");
+  const dlg = make(doc, "dialog", { "data-fgu": "dialog", "data-part": "root" });
+  page.append(before, dlg);
+  attach(page);
+  before.focus();
+  openDialog(dlg);
+  assert.equal(dlg.modal, true);
+  openDialog(dlg); // already open: no throw
+  closeDialog(dlg);
+  assert.equal(dlg.hasAttribute("open"), false);
+  assert.equal(doc.activeElement, before);
+});
+
+test("tabs: selectTab selects by index or element; attach works on the tabs root itself", async () => {
+  const { attach, selectTab } = await load("tabs");
+  const p = tabsPage();
+  attach(p.root);
+  selectTab(p.root, 2);
+  assert.deepEqual(p.state().selected, ["false", "false", "true"]);
+  selectTab(p.list, p.tabs[1]);
+  assert.deepEqual(p.state().selected, ["false", "true", "false"]);
+  assert.deepEqual(p.state().hidden, [true, false, true]);
+  selectTab(p.root, 9); // out of range: no change, no throw
+  assert.deepEqual(p.state().selected, ["false", "true", "false"]);
+});
+
+test("menu: openMenu / closeMenu open from code and return focus to the trigger", async () => {
+  const { attach, openMenu, closeMenu } = await load("menu");
+  const p = menuPage();
+  attach(p.root);
+  openMenu(p.root);
+  assert.equal(p.list.popoverOpen, true);
+  assert.equal(p.trigger.getAttribute("aria-expanded"), "true");
+  assert.equal(p.doc.activeElement, p.items[0]);
+  closeMenu(p.trigger);
+  assert.equal(p.list.popoverOpen, false);
+  assert.equal(p.doc.activeElement, p.trigger);
+  openMenu(p.list, -1);
+  assert.equal(p.doc.activeElement, p.items[3], "start -1 opens on the last item");
+});
+
+test("disclosure: a wrapping [data-disclosure-group] makes separate disclosures single-open", async () => {
+  const { attach } = await load("disclosure");
+  const doc = new Doc();
+  const group = make(doc, "div", { "data-disclosure-group": "", "data-variant": "single" });
+  const mk = (id, open) => {
+    const root = make(doc, "div", { "data-fgu": "disclosure", "data-part": "root" });
+    const trigger = make(doc, "button", { "data-part": "trigger", "aria-controls": `p-${id}`, "aria-expanded": String(open) });
+    const panel = make(doc, "div", { "data-part": "panel", id: `p-${id}` });
+    root.append(trigger, panel);
+    return { root, trigger, panel };
+  };
+  const a = mk("a", true), b = mk("b", false);
+  group.append(a.root, b.root);
+  attach(group);
+  b.trigger.dispatch("click", { bubbles: true });
+  assert.equal(b.trigger.getAttribute("aria-expanded"), "true");
+  assert.equal(a.trigger.getAttribute("aria-expanded"), "false", "the other one closed");
+});
