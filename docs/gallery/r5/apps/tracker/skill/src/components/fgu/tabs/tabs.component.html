@@ -1,0 +1,30 @@
+<div data-fgu="tabs" data-part="root">
+  <div data-part="list" role="tablist" [attr.aria-label]="label">
+    @for (tab of tabs; track $index; let i = $index) {
+      <button
+        data-part="tab"
+        type="button"
+        role="tab"
+        [attr.id]="uid + '-tab-' + i"
+        [attr.aria-selected]="i === 0 ? 'true' : 'false'"
+        [attr.aria-controls]="uid + '-panel-' + i"
+        [attr.tabindex]="i === 0 ? 0 : -1"
+      >
+        {{ tab }}
+      </button>
+    }
+    <span data-part="indicator" aria-hidden="true"></span>
+  </div>
+  @for (tab of tabs; track $index; let i = $index) {
+    <div
+      data-part="panel"
+      [attr.id]="uid + '-panel-' + i"
+      role="tabpanel"
+      [attr.aria-labelledby]="uid + '-tab-' + i"
+      tabindex="0"
+      [attr.hidden]="i !== 0 ? '' : null"
+    >
+      <ng-container [ngTemplateOutlet]="panel" [ngTemplateOutletContext]="{ $implicit: tab, index: i }" />
+    </div>
+  }
+</div>

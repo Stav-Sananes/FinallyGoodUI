@@ -1,0 +1,99 @@
+/* Disclosure / accordion reference. Tokens only; load tokens.css (emit-tokens.mjs --format css) first. */
+[data-fgu="disclosure"][data-part="root"] {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-foreground);
+}
+[data-fgu="disclosure"] [data-part="item"] { border-block-end: var(--border-width-hairline) solid var(--color-border); }
+[data-fgu="disclosure"] [data-part="heading"] { margin: 0; font: inherit; }
+[data-fgu="disclosure"] [data-part="trigger"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--size-control-md);
+  padding-inline: var(--space-2);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+[data-fgu="disclosure"] [data-part="trigger"]:focus-visible {
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: calc(var(--ring-offset) * -1);
+}
+[data-fgu="disclosure"] [data-part="trigger"]:disabled { opacity: 0.5; color: var(--color-muted-foreground); cursor: not-allowed; }
+/* The chevron is always in the box; opening only rotates it, so the trigger keeps its size. */
+[data-fgu="disclosure"] [data-part="indicator"] {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--icon-md);
+  block-size: var(--icon-md);
+  transition: transform var(--duration-short) var(--ease-exit);
+}
+[data-fgu="disclosure"] [data-part="indicator"]::before { content: "\2304"; }
+[data-fgu="disclosure"] [data-part="trigger"][aria-expanded="true"] [data-part="indicator"] {
+  transform: rotate(0.5turn);
+  transition-duration: var(--duration-standard);
+  transition-timing-function: var(--ease-move);
+}
+/* Panel: grid rows 0fr to 1fr is the all-browsers auto-height animation (recipes/motion/accordion-auto-height.md). */
+[data-fgu="disclosure"] [data-part="panel"] {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--duration-short) var(--ease-exit), /* fgu-allow: animate-layout-prop */
+    opacity var(--duration-short) var(--ease-exit);
+}
+[data-fgu="disclosure"] [data-part="heading"]:has([aria-expanded="true"]) + [data-part="panel"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition-duration: var(--duration-standard);
+  transition-timing-function: var(--ease-move);
+}
+[data-fgu="disclosure"] [data-part="content"] {
+  overflow: hidden;
+  min-block-size: 0;
+  padding-inline: var(--space-2);
+}
+@media (prefers-reduced-motion: reduce) {
+[data-fgu="disclosure"] [data-part="panel"] { transition-property: opacity; }
+[data-fgu="disclosure"] [data-part="indicator"] { transition: none; }
+}
+
+/* disclosure: radius=soft material=layered density=balanced motion=productive motif="punched hang-tag: notched corner, round punch hole and a string loop, as on a greengrocer's price tag" */
+
+[data-fgu="disclosure"] [data-part="trigger"] {
+  min-height: var(--size-control-md);
+  padding-inline: var(--space-3);
+  gap: var(--space-2);
+}
+
+[data-fgu="disclosure"] [data-part="trigger"] {
+  transition-property: background-color, border-color, box-shadow, color, opacity, transform;
+  transition-duration: var(--duration-short);
+  transition-timing-function: var(--ease-snappy);
+}
+
+/* state: disabled */
+[data-fgu="disclosure"][disabled]:not([disabled="false"]),
+[data-fgu="disclosure"] [disabled]:not([disabled="false"]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="disclosure"] [data-part="trigger"] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

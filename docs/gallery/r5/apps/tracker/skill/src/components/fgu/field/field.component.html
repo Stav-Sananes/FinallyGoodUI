@@ -1,0 +1,23 @@
+<div data-fgu="field" data-part="root" [attr.data-variant]="variant">
+  <label data-part="label" [attr.for]="(id ? id : uid + '-control')">
+    {{ label }}
+  </label>
+  @if (hint) {
+    <p data-part="hint" [attr.id]="uid + '-hint'">
+      {{ hint }}
+    </p>
+  }
+  <input
+    data-part="control"
+    [attr.id]="(id ? id : uid + '-control')"
+    [attr.type]="type"
+    [attr.name]="name"
+    [attr.placeholder]="placeholder"
+    [attr.autocomplete]="autocomplete"
+    [attr.required]="required ? '' : null"
+    [attr.disabled]="disabled ? '' : null"
+    [attr.aria-invalid]="invalid ? 'true' : null"
+    [attr.aria-describedby]="(hint ? uid + '-hint ' : '') + uid + '-error'"
+  />
+  <p data-part="error" [attr.id]="uid + '-error'" aria-live="polite">{{ error }}</p>
+</div>

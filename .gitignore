@@ -30,3 +30,8 @@ Thumbs.db
 docs/gallery/r4/apps/**/dist/
 docs/gallery/r4/apps/**/.angular/
 docs/gallery/r4/apps/**/.svelte-kit/
+
+# gallery round 5
+docs/gallery/r5/apps/**/dist/
+docs/gallery/r5/apps/**/.angular/
+docs/gallery/r5/apps/**/.svelte-kit/

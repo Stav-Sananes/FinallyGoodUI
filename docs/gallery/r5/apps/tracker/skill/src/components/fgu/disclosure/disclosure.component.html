@@ -1,0 +1,24 @@
+<div data-fgu="disclosure" data-part="root" [attr.data-variant]="variant">
+  <div data-part="item">
+    <h3 data-part="heading">
+      <button
+        data-part="trigger"
+        type="button"
+        [attr.id]="uid + '-trigger'"
+        [attr.aria-expanded]="open ? 'true' : 'false'"
+        [attr.aria-controls]="uid + '-panel'"
+        [attr.disabled]="disabled ? '' : null"
+      >
+        <span>
+          <ng-content select="[slot=trigger]" />
+        </span>
+        <span data-part="indicator" aria-hidden="true"></span>
+      </button>
+    </h3>
+    <div data-part="panel" [attr.id]="uid + '-panel'" role="region" [attr.aria-labelledby]="uid + '-trigger'">
+      <div data-part="content">
+        <ng-content />
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,11 @@
+# Decisions (all self-approved, autonomous)
+- D1 Nav: top bar / bottom tabs, 3 destinations. [ia-nav.nav-model-by-count, ia-nav.visible-destinations] fact: mixed devices.
+- D2 Home = Week with "Tonight" focal. [layout.hierarchy-by-weight] fact: daily glance at tonight.
+- D3 Undo toast over confirm for night removal; confirm only for Clear week. [usability.user-control-undo]
+- D4 Shop list derived from plan, never stored. [usability.mental-model] fact: trust breaker is a stale list.
+- D5 Spatial model: peers cross-fade, dialogs from opener. [motion.spatial-continuity]
+- D6 Brief + blueprint approved: self-approved (autonomous).
+- D7 Direction (chosen by agent: C "Greengrocer's Board"): see directions.md. Unlike a generic meal app: lettuce-tinted canvas, beet primary (not ink, not blue), Fraunces display, hang-tag motif. Unlike the ink-on-paper house style: canvas L .955 C .035 H 118, coloured primary. Quiet direction A not chosen: brief has no line demanding restraint.
+- D8 Components: scaffolded button, field, toggle, disclosure, dialog, menu, tabs, toast from the shared spec registry (no primitive kit installed); style profile radius=soft material=layered density=balanced motion=productive.
+- D9 Tokens: emitted css; fonts Figtree + Fraunces via fontsource (self-hosted).
+- D10 Motif placements (craft.identity-motif): hang-tag on day labels (Week), aisle headings (Shop), the week-complete badge, the brand mark in the top bar, empty slots.

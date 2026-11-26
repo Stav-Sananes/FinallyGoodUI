@@ -1,0 +1,27 @@
+<div data-fgu="menu" data-part="root">
+  <button
+    data-part="trigger"
+    type="button"
+    [attr.id]="uid + '-trigger'"
+    aria-haspopup="menu"
+    aria-expanded="false"
+    [attr.aria-controls]="uid + '-list'"
+    [attr.popovertarget]="uid + '-list'"
+  >
+    <ng-content />
+  </button>
+  <div data-part="list" [attr.id]="uid + '-list'" role="menu" [attr.aria-labelledby]="uid + '-trigger'" popover>
+    @for (item of items; track $index; let i = $index) {
+      <button
+        data-part="item"
+        type="button"
+        role="menuitem"
+        tabindex="-1"
+        [attr.aria-disabled]="item.disabled ? 'true' : null"
+        (click)="item.onSelect && item.onSelect(item)"
+      >
+        {{ item.label }}
+      </button>
+    }
+  </div>
+</div>

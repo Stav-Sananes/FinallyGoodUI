@@ -1,0 +1,21 @@
+<dialog
+  data-fgu="dialog"
+  data-part="root"
+  [attr.data-variant]="variant"
+  [attr.aria-labelledby]="uid + '-title'"
+  (close)="closed.emit($event)"
+>
+  <h2 data-part="title" [attr.id]="uid + '-title'">
+    <ng-content select="[slot=title]" />
+  </h2>
+  <p data-part="description">
+    <ng-content select="[slot=description]" />
+  </p>
+  <button data-part="close" type="button" aria-label="Close">
+    &times;
+  </button>
+  <ng-content />
+  <div data-part="actions">
+    <ng-content select="[slot=actions]" />
+  </div>
+</dialog>

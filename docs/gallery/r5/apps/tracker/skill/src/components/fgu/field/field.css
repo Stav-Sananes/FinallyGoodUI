@@ -1,0 +1,96 @@
+/* Field reference: label, hint, control and error as one unit. Tokens only; load tokens.css first. */
+[data-fgu="field"][data-part="root"] {
+  display: grid;
+  gap: var(--space-1);
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-foreground);
+}
+[data-fgu="field"][data-part="root"][data-variant="inline"] {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--space-3);
+}
+[data-fgu="field"][data-part="root"][data-variant="inline"] > [data-part="hint"],
+[data-fgu="field"][data-part="root"][data-variant="inline"] > [data-part="error"] { grid-column: 2; }
+[data-fgu="field"] [data-part="label"] { font-weight: inherit; }
+[data-fgu="field"] [data-part="hint"] { margin: 0; color: var(--color-muted-foreground); }
+[data-fgu="field"] [data-part="control"] {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--size-control-md);
+  padding-inline: var(--space-3);
+  border: var(--border-width-hairline) solid var(--color-input);
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: inherit;
+  /* keeps iOS from zooming on focus: never below the base text size */
+  font-size: max(var(--text-base), 1rem);
+  transition: border-color var(--duration-short) var(--ease-snappy);
+}
+[data-fgu="field"] [data-part="control"]:focus-visible {
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+/* Invalid: colour plus a second ring drawn inside, so the box never changes size, plus the error text. */
+[data-fgu="field"] [data-part="control"][aria-invalid="true"] {
+  border-color: var(--color-destructive);
+  box-shadow: inset 0 0 0 var(--border-width-hairline) var(--color-destructive);
+}
+[data-fgu="field"] [data-part="control"]:disabled {
+  opacity: 0.5;
+  color: var(--color-muted-foreground);
+  cursor: not-allowed;
+}
+/* The error part is always in the DOM and always reserves one line, so showing a message moves nothing. */
+[data-fgu="field"] [data-part="error"] {
+  margin: 0;
+  min-block-size: var(--text-sm--line-height);
+  display: flex;
+  gap: var(--space-1);
+  color: var(--color-destructive);
+}
+[data-fgu="field"] [data-part="error"]:not(:empty)::before { content: "!"; font-weight: 700; }
+[data-fgu="field"] [data-part="error"]:not(:empty) { animation: field-error-in var(--duration-short) var(--ease-enter); }
+@keyframes field-error-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+[data-fgu="field"] [data-part="control"] { transition: none; }
+[data-fgu="field"] [data-part="error"]:not(:empty) { animation: none; }
+}
+
+/* field: radius=sharp material=layered density=dense motion=productive motif="postmark: a round cancellation ring stamped on every sorted letter, plus a perforated stamp edge on the intake tray" */
+
+[data-fgu="field"] [data-part="control"] {
+  border-radius: var(--radius-none);
+  border-width: var(--border-width-hairline);
+  border-color: var(--color-input);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-fgu="field"] [data-part="control"] {
+  min-height: var(--size-control-sm);
+  padding-inline: var(--space-2);
+  gap: var(--space-1);
+}
+
+[data-fgu="field"] [data-part="control"] {
+  transition-property: background-color, border-color, box-shadow, color, opacity, transform;
+  transition-duration: var(--duration-micro);
+  transition-timing-function: var(--ease-snappy);
+}
+
+/* state: disabled */
+[data-fgu="field"][disabled]:not([disabled="false"]),
+[data-fgu="field"] [disabled]:not([disabled="false"]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="field"] [data-part="control"] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}
