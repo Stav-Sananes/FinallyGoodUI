@@ -6,7 +6,8 @@
 //  - focus goes back to the opener on `close` (Escape, buttons, form method=dialog); an opener that is not
 //    itself focusable (a custom element host) hands focus to the first focusable element inside it;
 //  - aria-labelledby / aria-describedby from the title and description parts, only where the markup left them out;
-//  - a click on the backdrop closes a dialog that says data-backdrop-close.
+//  - a click on the backdrop closes a dialog that says data-backdrop-close;
+//  - initial focus: data-initial-focus="<selector>", else the first [autofocus], else the platform's first focusable.
 // attach may be given the dialog itself or any ancestor. openDialog / closeDialog are the programmatic API.
 const DIALOG = '[data-fgu="dialog"][data-part="root"]';
 const CLOSE = '[data-fgu="dialog"] [data-part="close"], [data-dialog-close]';
@@ -36,6 +37,10 @@ export function openDialog(dialog, opener = null) {
   const from = opener ?? (active && active !== dialog.ownerDocument.body ? active : null);
   if (from) openers.set(dialog, from);
   dialog.showModal();
+  // Initial focus: data-initial-focus="<selector>" on the dialog, else the first [autofocus]; with neither the platform focuses the first focusable.
+  const selector = dialog.getAttribute("data-initial-focus");
+  const target = (selector && dialog.querySelector(selector)) || dialog.querySelector("[autofocus]");
+  if (target) target.focus();
 }
 
 /** Closes the dialog (a no-op when it is closed); the platform fires `close`. */

@@ -91,7 +91,10 @@
   "profile": {
     "surface": "list",
     "interactive": "item",
-    "density": "item"
+    "density": "item",
+    "also": [
+      "trigger"
+    ]
   },
   "api": [
     "openMenu(scope: Element, start?: number): void",

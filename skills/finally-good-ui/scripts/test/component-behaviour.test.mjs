@@ -761,3 +761,49 @@ test("disclosure: a wrapping [data-disclosure-group] makes separate disclosures 
   assert.equal(b.trigger.getAttribute("aria-expanded"), "true");
   assert.equal(a.trigger.getAttribute("aria-expanded"), "false", "the other one closed");
 });
+
+// ---- round 5
+test("tabs: a change by the user or by selectTab fires tabchange with the new index; the first render and a no-op do not", async () => {
+  const { attach, selectTab } = await load("tabs");
+  const p = tabsPage();
+  const seen = [];
+  p.root.addEventListener("tabchange", (e) => seen.push(e.detail));
+  attach(p.root);
+  assert.deepEqual(seen, [], "attach selects the first tab silently");
+  p.click(p.tabs[2]);
+  selectTab(p.root, 1);
+  selectTab(p.root, 1); // already selected
+  assert.deepEqual(seen, [2, 1]);
+});
+
+test("dialog: initial focus goes to data-initial-focus, else [autofocus]", async () => {
+  const { attach, openDialog } = await load("dialog");
+  const mk = (initial) => {
+    const doc = new Doc();
+    const dlg = make(doc, "dialog", { "data-fgu": "dialog", "data-part": "root", ...(initial ? { "data-initial-focus": '[data-part="close"]' } : {}) });
+    const close = make(doc, "button", { "data-part": "close" });
+    const auto = make(doc, "button", { autofocus: "" });
+    dlg.append(close, auto);
+    attach(dlg);
+    return { doc, dlg, close, auto };
+  };
+  const a = mk(true); openDialog(a.dlg); assert.equal(a.doc.activeElement, a.close);
+  const b = mk(false); openDialog(b.dlg); assert.equal(b.doc.activeElement, b.auto);
+});
+
+test("field: while a framework marks the error line data-controlled, validation does not write it", async () => {
+  const { attach } = await load("field");
+  const doc = new Doc();
+  const field = make(doc, "div", { "data-fgu": "field", "data-part": "root" });
+  const input = make(doc, "input", { "data-part": "control" });
+  input.validity = { valid: false, valueMissing: true }; input.validationMessage = "required"; input.dataset = {};
+  const error = make(doc, "p", { "data-part": "error", "data-controlled": "" }, "from the prop");
+  field.append(input, error);
+  attach(field);
+  input.dispatch("focusout", { bubbles: true });
+  assert.equal(error.textContent, "from the prop");
+  assert.equal(input.getAttribute("aria-invalid"), null);
+  error.removeAttribute("data-controlled");
+  input.dispatch("focusout", { bubbles: true });
+  assert.equal(error.textContent, "required", "positive control: without the marker validation writes");
+});

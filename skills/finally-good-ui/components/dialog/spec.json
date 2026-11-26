@@ -14,6 +14,10 @@
       "name": "open",
       "type": "boolean",
       "default": "false"
+    },
+    {
+      "name": "initialFocus",
+      "type": "string"
     }
   ],
   "events": [
@@ -89,6 +93,7 @@
     "title",
     "description",
     "close",
+    "form",
     "actions"
   ],
   "tags": {
@@ -96,7 +101,8 @@
     "title": "h2",
     "description": "p",
     "close": "button",
-    "actions": "div"
+    "actions": "div",
+    "form": "form"
   },
   "pattern": "recipes/motion/dialog-enter-exit.md",
   "profile": {

@@ -6,6 +6,7 @@ import { runCli, isMain, UsageError } from "./lib/cli.mjs";
 import { loadSpec, rolePartOf } from "./lib/component-spec.mjs";
 import { walk, readText, readJson, isDir } from "./lib/fs.mjs";
 import { COMPONENTS_ROOT } from "./lib/scaffold.mjs";
+import { mapSelectors } from "./lib/css-scope.mjs";
 
 const HELP = `
 Usage: check-components.mjs --root <dir> [--strict]
@@ -15,6 +16,8 @@ loads components/<name>/spec.json and checks the generated files against it. Pri
 {tool, ok, findings:[{file, rule, message}]}.
 
 Rules: role-missing, aria-missing, part-missing, state-unstyled, literal, key-handler-reimplemented,
+css-selector-unmatched (a selector in the component CSS that the generated markup can never match: an unknown
+part, a variant the spec does not list, or a descendant [data-variant] when the variant sits on the root),
 empty-skeleton (the parts are there but the component renders no content slot, or a shared-behaviour
 component never calls attach: markup alone is not a working component),
 spec-missing (a marker names a component that has no valid spec).
@@ -77,6 +80,39 @@ const partHasRole = (role, part, text) => {
 // Any way a framework renders the content the caller passes in.
 const CONTENT_SLOT = /\bchildren\b|<slot\b|<ng-content\b|@render\b|\$slots\b|ngTemplateOutlet|<Slot\b/;
 
+// Compounds of a selector, split at combinators outside brackets and parentheses.
+function compoundsOf(selector) {
+  const out = []; let depth = 0, at = 0;
+  for (let i = 0; i <= selector.length; i++) {
+    const ch = selector[i];
+    if (ch === "[" || ch === "(") depth++; else if (ch === "]" || ch === ")") depth--;
+    if (i === selector.length || (depth === 0 && /[\s>+~]/.test(ch))) { if (i > at) out.push(selector.slice(at, i)); at = i + 1; }
+  }
+  return out;
+}
+
+/** Selectors in `css` that can never match markup built from `spec`: [{ selector, why }]. */
+export function selectorProblems(spec, css) {
+  const problems = [];
+  mapSelectors(css, (selector) => {
+    const compounds = compoundsOf(selector.trim());
+    compounds.forEach((compound, i) => {
+      for (const [, part] of compound.matchAll(/\[data-part="([\w-]+)"\]/g)) {
+        if (!spec.parts.includes(part)) problems.push({ selector: selector.trim(), why: `part "${part}" is not a part of ${spec.name}` });
+      }
+      for (const [, v] of compound.matchAll(/\[data-variant="([\w-]+)"\]/g)) {
+        if (!spec.shapes.includes(v)) problems.push({ selector: selector.trim(), why: `variant "${v}" is not a shape of ${spec.name} (${spec.shapes.join(", ")})` });
+      }
+      // The variant is an attribute of the root element, which is also the scope: below the scope it can only match on a nested part.
+      if (i > 0 && /\[data-variant/.test(compound) && !/\[data-part=/.test(compound)) {
+        problems.push({ selector: selector.trim(), why: "a descendant [data-variant] never matches: data-variant is on the root, so write it in the root's compound ([data-fgu][data-variant])" });
+      }
+    });
+    return selector;
+  });
+  return problems;
+}
+
 const isFrameworkFile = (name, spec) => !name.endsWith(".css") && name !== MARKER && name !== `${spec.name}.behaviour.js` && name !== `${spec.name}.behaviour.d.ts`;
 // The plain-html output is a static demo page: it renders only the root, with no state attributes.
 const isDemoPage = (files) => files.every((f) => /\.html$/.test(f) && !/\.component\.html$/.test(f));
@@ -116,6 +152,7 @@ function checkComponent(markerPath, root, notes) {
     if (!new RegExp(`(?<![\\w-])${escape(attribute)}(?![\\w-])`).test(css)) add(cssFiles[0] ?? where, "state-unstyled", `state "${state}" (${attribute}) has no CSS rule`);
   }
   for (const css_ of cssFiles) {
+    for (const { selector, why } of selectorProblems(spec, readText(join(dir, css_)) ?? "")) add(css_, "css-selector-unmatched", `${selector}: ${why}`);
     const seen = new Set((readText(join(dir, css_)) ?? "").match(LITERAL)?.map((l) => l.replace(/\s+/g, "")));
     for (const lit of seen) add(css_, "literal", `literal "${lit}" in CSS: use a token`);
   }

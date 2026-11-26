@@ -36,12 +36,21 @@ function wire(field) {
   if (control.required && !control.hasAttribute("aria-required")) control.setAttribute("aria-required", "true");
 }
 
+// Write into the existing text node when there is one, so a framework that owns that node keeps a live reference to it.
+function setText(el, text) {
+  const node = el.firstChild;
+  if (node && node.nodeType === 3) node.data = text; else el.textContent = text;
+}
+
 function show(field, control) {
-  const text = message(control);
   const error = field.querySelector('[data-part="error"]');
+  // A framework wrapper marks the error line data-controlled while its `error` prop has a message: the prop wins,
+  // validation stays out of the way until the prop is cleared.
+  if (error?.hasAttribute("data-controlled")) return;
+  const text = message(control);
   if (text) control.setAttribute("aria-invalid", "true");
   else control.removeAttribute("aria-invalid");
-  if (error && error.textContent !== text) error.textContent = text;
+  if (error && error.textContent !== text) setText(error, text);
 }
 
 export function attach(root) {

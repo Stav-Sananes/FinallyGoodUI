@@ -14,7 +14,7 @@ const playwrightRoot = () => {
   return null;
 };
 const PW = playwrightRoot();
-const SKIP = "playwright not resolvable (npm i playwright in a project and set FGU_PLAYWRIGHT_ROOT to it)";
+const SKIP = "playwright not resolvable: npm i playwright (the full package, not playwright-core) in a project and set FGU_PLAYWRIGHT_ROOT to it";
 
 function gallery() {
   const root = tmp();

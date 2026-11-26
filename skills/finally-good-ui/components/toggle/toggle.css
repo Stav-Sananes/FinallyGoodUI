@@ -18,8 +18,8 @@
   flex: none;
   box-sizing: border-box;
   margin: 0;
-  inline-size: var(--icon-md);
-  block-size: var(--icon-md);
+  inline-size: var(--icon-lg);
+  block-size: var(--icon-lg);
   border: var(--border-width-hairline) solid var(--color-input);
   border-radius: var(--radius-sm);
   background-color: var(--color-background);
@@ -48,22 +48,22 @@
   border-color: var(--color-primary);
 }
 /* Switch: a track with a thumb that only translates, so state is shown by position as well as colour. */
-[data-fgu="toggle"] [data-variant="switch"] [data-part="control"] {
-  inline-size: calc(var(--icon-md) * 2);
+[data-fgu="toggle"][data-variant="switch"] [data-part="control"] {
+  inline-size: calc(var(--icon-lg) * 2);
   border-radius: var(--radius-full);
   background-color: var(--color-input);
 }
-[data-fgu="toggle"] [data-variant="switch"] [data-part="control"]::after {
+[data-fgu="toggle"][data-variant="switch"] [data-part="control"]::after {
   content: "";
   inset: 0 auto 0 0;
-  inline-size: var(--icon-md);
+  inline-size: var(--icon-lg);
   border-radius: var(--radius-full);
   background-color: var(--color-background);
   opacity: 1;
   transition: transform var(--duration-standard) var(--ease-move);
 }
-[data-fgu="toggle"] [data-variant="switch"] [data-part="control"]:checked::after { transform: translateX(var(--icon-md)); }
-[data-fgu="toggle"] [data-variant="switch"] [data-part="control"]:checked { background-color: var(--color-primary); }
+[data-fgu="toggle"][data-variant="switch"] [data-part="control"]:checked::after { transform: translateX(var(--icon-lg)); }
+[data-fgu="toggle"][data-variant="switch"] [data-part="control"]:checked { background-color: var(--color-primary); }
 [data-fgu="toggle"] [data-part="control"]:focus-visible {
   outline: var(--ring-width) solid var(--color-ring);
   outline-offset: var(--ring-offset);
@@ -77,5 +77,5 @@
 @media (prefers-reduced-motion: reduce) {
 [data-fgu="toggle"] [data-part="control"],
 [data-fgu="toggle"] [data-part="control"]::after,
-[data-fgu="toggle"] [data-variant="switch"] [data-part="control"]::after { transition: opacity var(--duration-micro) linear; }
+[data-fgu="toggle"][data-variant="switch"] [data-part="control"]::after { transition: opacity var(--duration-micro) linear; }
 }

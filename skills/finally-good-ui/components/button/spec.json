@@ -1,36 +1,109 @@
 {
   "name": "button",
-  "shapes": ["primary", "secondary", "ghost", "destructive"],
-  "props": [
-    { "name": "variant", "type": "string", "default": "primary" },
-    { "name": "disabled", "type": "boolean", "default": "false" },
-    { "name": "loading", "type": "boolean", "default": "false" },
-    { "name": "type", "type": "string", "default": "button" }
+  "shapes": [
+    "primary",
+    "secondary",
+    "ghost",
+    "destructive"
   ],
-  "events": ["click"],
-  "slots": ["default", "icon"],
+  "props": [
+    {
+      "name": "variant",
+      "type": "string",
+      "default": "primary"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "loading",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "type",
+      "type": "string",
+      "default": "button",
+      "ts": "\"button\" | \"submit\" | \"reset\""
+    }
+  ],
+  "events": [
+    "click"
+  ],
+  "slots": [
+    "default",
+    "icon"
+  ],
   "states": [
-    { "name": "disabled", "attribute": "disabled" },
-    { "name": "loading", "attribute": "aria-busy" }
+    {
+      "name": "disabled",
+      "attribute": "disabled"
+    },
+    {
+      "name": "loading",
+      "attribute": "aria-busy"
+    }
   ],
   "a11y": {
     "role": "button",
-    "aria": ["aria-busy", "aria-label"],
-    "keys": { "Enter": "activate", "Space": "activate" }
+    "aria": [
+      "aria-busy",
+      "aria-label"
+    ],
+    "keys": {
+      "Enter": "activate",
+      "Space": "activate"
+    }
   },
   "tokens": [
-    "--color-primary", "--color-primary-foreground", "--color-accent", "--color-accent-foreground",
-    "--color-destructive", "--color-destructive-foreground", "--color-foreground", "--color-muted-foreground",
-    "--color-border", "--color-input", "--color-ring",
-    "--radius-none", "--radius-sm", "--radius-md", "--radius-lg", "--radius-xl", "--radius-full",
-    "--shadow-sm", "--shadow-md",
-    "--border-width-hairline", "--border-width-strong", "--ring-width", "--ring-offset",
-    "--size-control-sm", "--size-control-md", "--size-control-lg", "--icon-md",
-    "--space-1", "--space-2", "--space-3", "--space-4",
-    "--duration-micro", "--duration-short", "--duration-standard", "--duration-hero",
-    "--ease-snappy", "--ease-enter", "--ease-enter-emphasized",
-    "--font-sans", "--text-sm"
+    "--color-primary",
+    "--color-primary-foreground",
+    "--color-accent",
+    "--color-accent-foreground",
+    "--color-destructive",
+    "--color-destructive-foreground",
+    "--color-foreground",
+    "--color-muted-foreground",
+    "--color-border",
+    "--color-input",
+    "--color-ring",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--radius-xl",
+    "--radius-full",
+    "--shadow-sm",
+    "--shadow-md",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--ring-width",
+    "--ring-offset",
+    "--size-control-sm",
+    "--size-control-md",
+    "--size-control-lg",
+    "--icon-md",
+    "--space-1",
+    "--space-2",
+    "--space-3",
+    "--space-4",
+    "--duration-micro",
+    "--duration-short",
+    "--duration-standard",
+    "--duration-hero",
+    "--ease-snappy",
+    "--ease-enter",
+    "--ease-enter-emphasized",
+    "--font-sans",
+    "--text-sm"
   ],
-  "parts": ["root", "icon", "label", "spinner"],
+  "parts": [
+    "root",
+    "icon",
+    "label",
+    "spinner"
+  ],
   "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/button/"
 }

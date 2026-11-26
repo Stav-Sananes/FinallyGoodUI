@@ -83,7 +83,7 @@ test("components with a programmatic API wire it into the framework lifecycle", 
   assert.match(code(plan("dialog", "svelte")), /use:behaviour=\{open\}/);
   const ng = plan("dialog", "angular").files.map((f) => f.content).join("\n");
   assert.match(ng, /ngOnChanges\(\)/);
-  assert.match(ng, /@Output\(\) closed/);
+  assert.match(ng, /@Output\(\) openChange/);
 });
 
 test("toast hands the leaving id to the owner of the list instead of letting the node vanish", () => {
@@ -115,4 +115,110 @@ test("a primitive is wired for the button only; every other component keeps the 
   assert.equal(dialog.source, "shared");
   assert.ok(dialog.notes.some((n) => /button only/.test(n)));
   assert.ok(dialog.files.some((f) => f.path.endsWith("dialog.behaviour.js")));
+});
+
+// ---- round 5: what real compilers and browsers found
+const joined = (name, fw, extra) => plan(name, fw, extra).files.filter((f) => !/\.(css|json|d\.ts)$|behaviour\.js$/.test(f.path)).map((f) => f.content).join("\n");
+import { readFileSync } from "node:fs";
+import { profileCss } from "../lib/style-profile.mjs";
+
+test("TypeScript output: button type is the native union, no null role, no unused ReactNode import", () => {
+  assert.match(joined("button", "react"), /type\?: "button" \| "submit" \| "reset";/);
+  assert.match(joined("button", "vue"), /type\?: "button" \| "submit" \| "reset"/);
+  assert.match(joined("button", "svelte"), /type\?: "button" \| "submit" \| "reset"/);
+  for (const fw of ["react", "vue", "svelte", "angular"]) assert.doesNotMatch(joined("toggle", fw), /'switch' : null/, fw);
+  assert.doesNotMatch(joined("field", "react"), /ReactNode/, "field has no slots: nothing to import");
+  assert.match(joined("button", "react"), /ReactNode/, "positive control: button has slots");
+});
+
+test("React spells popoverTarget (React 19) and only React", () => {
+  assert.match(joined("menu", "react"), /popoverTarget:/);
+  assert.doesNotMatch(joined("menu", "react"), /popovertarget/);
+  for (const fw of ["vue", "svelte", "angular"]) assert.match(joined("menu", fw), /popovertarget/, fw);
+});
+
+test("a JavaScript Svelte project gets no lang=ts and no type annotations", () => {
+  for (const name of NAMES) {
+    const text = joined(name, "svelte", { typescript: false });
+    assert.doesNotMatch(text, /lang="ts"/, name);
+    assert.doesNotMatch(text, /: (HTMLElement|Event|boolean|number \| undefined)\b|Snippet|\bas HTMLElement/, name);
+  }
+  assert.match(joined("button", "svelte"), /lang="ts"/, "positive control: a TypeScript project still gets it");
+});
+
+test("Vue field and toggle support v-model; the attrs still reach the control", () => {
+  const field = joined("field", "vue");
+  assert.match(field, /modelValue\?: string/);
+  assert.match(field, /"update:modelValue": \[value: string\]/);
+  assert.match(field, /:value="modelValue"/);
+  assert.match(field, /defineOptions\(\{ inheritAttrs: false \}\)/);
+  const toggle = joined("toggle", "vue");
+  assert.match(toggle, /modelValue\?: boolean/);
+  assert.match(toggle, /:checked="modelValue \?\? checked"/);
+  assert.doesNotMatch(toggle, /:checked="checked"/, "one checked binding");
+});
+
+test("Svelte binds value and checked, open and selected", () => {
+  assert.match(joined("field", "svelte"), /value = \$bindable\(\)/);
+  assert.match(joined("toggle", "svelte"), /checked = \$bindable\(false\)/);
+  assert.match(joined("dialog", "svelte"), /open = \$bindable\(false\)/);
+  assert.match(joined("dialog", "svelte"), /open = false;/);
+  assert.match(joined("tabs", "svelte"), /selected = \$bindable\(\)/);
+  assert.match(joined("tabs", "svelte"), /selected = event\.detail|selected = \(event as CustomEvent<number>\)\.detail/);
+});
+
+test("tabs take a controlled selected and say when it changes; dialog open follows close", () => {
+  assert.match(joined("tabs", "react"), /selectTab\(ref\.current, selected\)/);
+  assert.match(joined("tabs", "react"), /onSelectedChange/);
+  assert.match(joined("tabs", "vue"), /"update:selected": \[value: number\]/);
+  assert.match(joined("tabs", "vue"), /change: \[value: number\]/);
+  assert.match(joined("tabs", "angular"), /@Output\(\) selectedChange/);
+  assert.match(joined("dialog", "react"), /onOpenChange\?\.\(false\)/);
+  assert.match(joined("dialog", "vue"), /emit\("update:open", false\)/);
+  assert.match(joined("dialog", "angular"), /@Output\(\) openChange/);
+});
+
+test("field is multiline-capable in every framework: a textarea sibling with rows", () => {
+  for (const fw of ["react", "vue", "svelte", "angular", "html"]) {
+    const text = joined("field", fw);
+    assert.match(text, /<textarea\b/, fw);
+    if (fw !== "html") assert.match(text, /rows/, fw);
+  }
+  assert.doesNotMatch(joined("field", "svelte"), /<textarea[^>]*\/>/, "Svelte refuses a self-closing textarea");
+});
+
+test("Angular strict-template details: transforms, readonly arrays, controlId, value output, error inline", () => {
+  const ng = joined("field", "angular");
+  assert.match(ng, /@Input\(\{ transform: booleanAttribute \}\) required/);
+  assert.match(ng, /@Input\(\{ alias: "controlId" \}\) controlId|@Input\(\{ alias: "controlId"/);
+  assert.match(ng, /@Output\(\) valueChange/);
+  assert.match(ng, /<p\s+data-part="error"[\s\S]*?>\{\{ error \}\}<\/p>/, "no whitespace around the message");
+  assert.match(joined("menu", "angular"), /readonly \{ label/);
+  assert.match(joined("toggle", "angular"), /@Output\(\) checkedChange/);
+  assert.match(joined("tabs", "angular"), /\| null = null;/);
+});
+
+test("dialog: body and actions sit in a method=dialog form; an initial-focus prop reaches the root", () => {
+  for (const fw of ["react", "vue", "svelte", "angular", "html"]) assert.match(joined("dialog", fw), /<form[^>]*method="dialog"|<form\s+(?:data-part="form"\s+)?method="dialog"|method="dialog"/, fw);
+  for (const fw of ["react", "vue", "svelte", "angular"]) assert.match(joined("dialog", fw), /data-initial-focus/, fw);
+});
+
+test("component css: spinner spins only while busy, toggle controls are 24px, disabled buttons keep their text, toast offset hook", () => {
+  const css = (n) => readFileSync(join(COMPONENTS_ROOT, n, `${n}.css`), "utf8");
+  const spinnerBase = css("button").match(/\[data-part="spinner"\] \{[^}]*\}/)[0];
+  assert.doesNotMatch(spinnerBase, /animation/, "the idle spinner has no animation");
+  assert.match(css("button"), /aria-busy="true"\] \[data-part="spinner"\] \{ opacity: 1; animation: btn-spin/);
+  assert.match(css("button"), /:disabled \{[^}]*--btn-fg: var\(--color-muted-foreground\)/);
+  assert.doesNotMatch(css("button").match(/:disabled \{[^}]*\}/)[0], /opacity/);
+  assert.match(css("toggle"), /inline-size: var\(--icon-lg\)/);
+  assert.doesNotMatch(css("toggle"), /--icon-md/);
+  assert.match(css("toast"), /var\(--toast-offset, var\(--space-4\)\)/);
+});
+
+test("profile: a coarse-pointer block raises dense and balanced controls to 44px; the menu trigger takes the radius", () => {
+  const dense = profileCss({ ...PROFILE, density: "dense" }, spec("button"));
+  assert.match(dense, /@media \(pointer: coarse\) \{\s*\[data-fgu="button"\]\[data-part="root"\] \{\s*min-height: var\(--size-control-lg\)/);
+  assert.doesNotMatch(profileCss({ ...PROFILE, density: "airy" }, spec("button")), /pointer: coarse/, "airy is already 44px");
+  const menu = profileCss(PROFILE, spec("menu"));
+  assert.match(menu, /\[data-fgu="menu"\] \[data-part="trigger"\] \{\s*border-radius: var\(--radius-/);
 });

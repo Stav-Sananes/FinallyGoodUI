@@ -13,9 +13,15 @@
     {
       "name": "label",
       "type": "string"
+    },
+    {
+      "name": "selected",
+      "type": "number"
     }
   ],
-  "events": [],
+  "events": [
+    "tabchange"
+  ],
   "slots": [
     "panel"
   ],

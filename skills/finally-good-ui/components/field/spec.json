@@ -56,7 +56,17 @@
     },
     {
       "name": "autocomplete",
-      "type": "string"
+      "type": "string",
+      "ts": "AutoFill"
+    },
+    {
+      "name": "rows",
+      "type": "number"
+    },
+    {
+      "name": "multiline",
+      "type": "boolean",
+      "default": "false"
     }
   ],
   "events": [

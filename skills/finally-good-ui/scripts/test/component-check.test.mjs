@@ -237,3 +237,34 @@ test("findings carry the full relative path, from any spelling of --root", () =>
   const dotted = run("check-components.mjs", ["--root", "./"], { cwd: root });
   assert.ok(dotted.json.findings.some((f) => f.file === full), JSON.stringify(dotted.json.findings));
 });
+
+// ---- selectors the markup can never match
+import { selectorProblems } from "../check-components.mjs";
+import { loadSpec } from "../lib/component-spec.mjs";
+import { readdirSync } from "node:fs";
+import { SR } from "./_h.mjs";
+
+test("every selector in every reference stylesheet can match the generated markup", () => {
+  for (const name of readdirSync(join(SR, "components")).filter((d) => !d.includes("."))) {
+    if (name === "adapters") continue;
+    const css = readFileSync(join(SR, "components", name, `${name}.css`), "utf8");
+    assert.deepEqual(selectorProblems(loadSpec(join(SR, "components", name)), css), [], name);
+  }
+});
+
+test("selectorProblems flags a descendant [data-variant] (the toggle switch bug), an unknown part and an unknown variant", () => {
+  const spec = loadSpec(join(SR, "components/toggle"));
+  const bad = selectorProblems(spec, '[data-fgu="toggle"] [data-variant="switch"] [data-part="control"] { a: 1 }\n[data-fgu="toggle"] [data-part="knob"] { a: 1 }\n[data-fgu="toggle"][data-variant="slider"] { a: 1 }');
+  assert.equal(bad.length, 3, JSON.stringify(bad));
+  assert.ok(bad[0].why.includes("descendant"));
+  assert.deepEqual(selectorProblems(spec, '[data-fgu="toggle"][data-variant="switch"] [data-part="control"]:checked::after { a: 1 }'), [], "positive control: the compound form is fine");
+});
+
+test("check-components reports css-selector-unmatched in a scaffolded component's stylesheet", () => {
+  const root = copy(fixture("generated-ok"));
+  const css = join(root, "src/components/fgu/button/button.css");
+  writeFileSync(css, `${readFileSync(css, "utf8")}\n[data-fgu="button"] [data-variant="ghost"] { color: red; }\n`);
+  const hits = check(root).json.findings.filter((f) => f.rule === "css-selector-unmatched");
+  assert.equal(hits.length, 1);
+  assert.match(hits[0].message, /descendant/);
+});

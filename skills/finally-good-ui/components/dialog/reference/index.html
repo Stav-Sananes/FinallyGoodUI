@@ -15,10 +15,12 @@
     <h2 data-part="title">Archive 3 projects?</h2>
     <p data-part="description">They leave the sidebar but stay searchable.</p>
     <button type="button" data-part="close" aria-label="Close">&times;</button>
-    <div data-part="actions">
-      <button type="button" data-dialog-close autofocus>Cancel</button>
-      <button type="button" data-dialog-close>Archive</button>
-    </div>
+    <form method="dialog" data-part="form">
+      <div data-part="actions">
+        <button type="button" data-dialog-close autofocus>Cancel</button>
+        <button type="submit">Archive</button>
+      </div>
+    </form>
   </dialog>
 </main>
 <script type="module">

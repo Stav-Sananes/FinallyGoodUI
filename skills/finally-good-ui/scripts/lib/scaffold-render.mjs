@@ -4,13 +4,14 @@
 // <name>.behaviour.js (attach(root) -> detach) from its lifecycle. Behaviour is never written per framework.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { partsOf } from "./scaffold-markup.mjs";
+import { partsOf, EVENTS } from "./scaffold-markup.mjs";
 
 const pascal = (s) => s.split(/[-_]/).map((w) => w[0].toUpperCase() + w.slice(1)).join("");
 const camel = (s) => s.replace(/-(\w)/g, (_, c) => c.toUpperCase());
 const ind = (lines, n = 1) => lines.map((l) => (l === "" ? l : `${"  ".repeat(n)}${l}`));
 const VOID = new Set(["input", "br", "img", "hr"]);
-const NONSTANDARD = new Set(["popover", "popovertarget"]); // not in the typings of React 18 / older TS DOM libs
+const NONSTANDARD = new Set(["popover", "popovertarget"]); // not in the typings of older React / TS DOM libs: spread, so they type-check everywhere
+const REACT_SPREAD_NAME = { popovertarget: "popoverTarget" }; // React 19 only knows the camelCase spelling
 
 export const tagFor = (spec) => spec.tags?.root ?? ({ button: "button", link: "a" })[spec.a11y.role] ?? "div";
 const tagOfPart = (spec, part) => (part === "root" ? tagFor(spec) : spec.tags?.[part] ?? "span");
@@ -27,10 +28,12 @@ export function viewOf(spec, markup) {
   if (extra.length) throw new Error(`scaffold: markup for "${spec.name}" renders part(s) the spec does not list: ${extra.join(", ")}`);
   const slots = new Set(), scopedSlots = new Map();
   let usesUid = false, restPart = "root";
+  const models = new Set();
   const visit = (n, list) => {
     if (n.k === "slot" || n.k === "whenSlot") slots.add(n.name);
     if (n.k === "scoped") { scopedSlots.set(n.name, { args: n.args, list }); slots.add(n.name); }
     if (n.k === "el" && n.rest) restPart = n.part;
+    if (n.k === "el" && n.model) models.add(n.model);
     if (n.k === "el") for (const v of Object.values(n.attrs)) if (JSON.stringify(v).includes("uid")) usesUid = true;
     for (const kid of n.kids ?? []) visit(kid, n.k === "each" ? n.list : list);
   };
@@ -41,7 +44,8 @@ export function viewOf(spec, markup) {
   const listProp = (name) => props.find((p) => p.name === name);
   return {
     name: spec.name, Name: pascal(spec.name), spec, tree, props, usesUid, restPart,
-    slots: spec.slots, scopedSlots, listProp, openProp: markup.openProp ?? null, dismissEvent: Boolean(markup.dismissEvent),
+    slots: spec.slots, scopedSlots, listProp, openProp: markup.openProp ?? null, selectProp: markup.selectProp ?? null,
+    syncProp: markup.openProp ?? markup.selectProp ?? null, models, events: (markup.events ?? []).map((k) => ({ key: k, ...EVENTS[k] })),
     tagOf: (node) => node.tag ?? tagOfPart(spec, node.part ?? "span"),
     restTag: tagOfPart(spec, restPart),
     rootTag: tagFor(spec),
@@ -57,8 +61,14 @@ function names(view, node, c) {
 }
 const ELEMENT_TYPE = { button: "HTMLButtonElement", dialog: "HTMLDialogElement", div: "HTMLDivElement", label: "HTMLLabelElement", input: "HTMLInputElement" };
 
-const lit = (p) => (p.type === "array" ? "[]" : p.default === undefined ? "undefined" : p.type === "boolean" ? String(p.default === "true" || p.default === true) : JSON.stringify(String(p.default)));
-const tsType = (p) => p.ts ?? (p.type === "boolean" ? "boolean" : p.type === "string" ? "string" : "unknown");
+const lit = (p) => (p.type === "array" ? "[]" : p.default === undefined ? "undefined" : p.type === "boolean" ? String(p.default === "true" || p.default === true) : p.type === "number" ? String(p.default) : JSON.stringify(String(p.default)));
+const tsType = (p) => p.ts ?? (p.type === "boolean" ? "boolean" : p.type === "string" ? "string" : p.type === "number" ? "number" : "unknown");
+const hasDefault = (p) => p.type === "array" || p.default !== undefined;
+const cap = (s) => s[0].toUpperCase() + s.slice(1);
+const handlerName = (e) => `on${cap(e.dom)}`;
+const usesEvent = (e, c) => Boolean(e.prevent) || /\bevent\b/.test(c.typescript ? e.payload.ts : e.payload.js);
+const payloadOf = (e, c) => (c.typescript ? e.payload.ts : e.payload.js);
+const T = (c, ts) => (c.typescript ? ts : "");
 const slotName = (s) => (s === "default" ? "children" : camel(s));
 
 // Whether the loop body refers to its index `i` (the key counts): unused loop variables are lint errors in strict projects.
@@ -74,7 +84,9 @@ function openTag(tag, attrs, selfClose = false) {
 
 // Joins "<tag attrs>" , kids, "</tag>" for the element; `head` is the opening-tag lines.
 function wrap(head, kids, closer) {
-  if (!kids.length) return head.length === 1 ? [`${head[0]}${closer}`] : [...head, closer];
+  // A single expression or entity stays on the opening line: whitespace around {{ error }} would make an empty element never :empty.
+  const inline = kids.length === 1 && (/^\{\{[^}]*\}\}$/.test(kids[0]) || /^\{[\w.]+\}$/.test(kids[0]) || /^&\w+;$/.test(kids[0]));
+  if (inline || !kids.length) return [...head.slice(0, -1), `${head.at(-1)}${kids[0] ?? ""}${closer}`]; // nothing between the tags, not even whitespace (a <textarea> has a value, not children)
   return [...head, ...ind(kids), closer];
 }
 
@@ -88,11 +100,11 @@ const baseAttrs = (view, node) => [
 // ===================================================================== React
 const REACT_NAME = { for: "htmlFor", tabindex: "tabIndex", autocomplete: "autoComplete", checked: "defaultChecked" };
 
-function reactAttrs(view, node, c) {
+function reactAttrs(view, node) {
   const out = [], spread = [];
   for (const [name, v] of baseAttrs(view, node)) {
     const n = REACT_NAME[name] ?? name;
-    if (NONSTANDARD.has(name)) { spread.push(`${name}: ${v === true ? '""' : typeof v === "string" ? JSON.stringify(v) : v.js}`); continue; }
+    if (NONSTANDARD.has(name)) { spread.push(`${REACT_SPREAD_NAME[name] ?? name}: ${v === true ? '""' : typeof v === "string" ? JSON.stringify(v) : v.js}`); continue; }
     if (typeof v === "string") out.push(name === "tabindex" ? `${n}={${v}}` : `${n}="${v}"`);
     else if (v === true) out.push(n);
     else if (v.js !== undefined) out.push(`${n}={${v.js}}`);
@@ -113,6 +125,7 @@ function reactNode(view, node, c) {
     case "scoped": return [`{${slotName(node.name)}?.(${node.args.join(", ")})}`];
     case "whenSlot": return [`{${slotName(node.name)} ? (`, ...ind(reactKids(view, node.kids, c)), ") : null}"];
     case "when": return [`{${node.js} ? (`, ...ind(reactKids(view, node.kids, c)), ") : null}"];
+    case "choose": return [`{${node.js} ? (`, ...ind(reactKids(view, node.a, c)), ") : (", ...ind(reactKids(view, node.b, c)), ")}"];
     case "each": {
       const kids = node.kids.map((k) => ({ ...k, attrs: { ...k.attrs }, key: node.key }));
       return [`{${node.list}.map((${node.as}${indexVar(node)}) => (`, ...ind(reactKids(view, kids, c)), "))}"];
@@ -122,77 +135,79 @@ function reactNode(view, node, c) {
 }
 const reactKids = (view, kids, c) => {
   const lines = kids.flatMap((k) => reactNode(view, k, c));
-  const roots = kids.filter((k) => k.k === "el").length;
-  return kids.length > 1 && roots === kids.length ? ["<>", ...ind(lines), "</>"] : lines;
+  return kids.length > 1 && kids.every((k) => k.k === "el") ? ["<>", ...ind(lines), "</>"] : lines;
 };
 
 function reactEl(view, node, c) {
   const root = node.part === "root";
   const { name, close } = names(view, node, c);
-  const attrs = reactAttrs(view, node, c);
+  const attrs = reactAttrs(view, node);
   if (node.key) attrs.unshift(`key={${node.key}}`);
   if (root && c.shared) attrs.push("ref={ref}");
-  if (root && c.prim) { const g = reactGuard(view, c); if (g) attrs.push(g); }
-  if (node.rest || (root && view.restPart === "root")) attrs.push("{...rest}");
+  if (root && c.prim) { const g = reactGuard(view); if (g) attrs.push(g); }
+  // rest is typed for the <input>; a textarea sibling takes the same native props, so the spread is widened.
+  if (node.rest || (root && view.restPart === "root")) attrs.push(name === "textarea" && c.typescript ? "{...(rest as object)}" : "{...rest}");
   const kids = (node.kids ?? []).flatMap((k) => reactNode(view, k, c));
   if (!kids.length && VOID.has(name)) return openTag(name, attrs, true);
   return wrap(openTag(name, attrs), kids, close);
 }
 
-const reactGuard = (view, c) => {
-  const busy = view.spec.states.find((s) => s.attribute === "aria-busy" && view.props.some((p) => p.name === s.name));
+const busyState = (view) => view.spec.states.find((s) => s.attribute === "aria-busy" && view.props.some((p) => p.name === s.name));
+const reactGuard = (view) => {
+  const busy = busyState(view);
   return busy ? `onClickCapture={(e) => { if (${camel(busy.name)}) { e.preventDefault(); e.stopPropagation(); } }}` : "";
 };
 
 export function react(view, c) {
   const { name, Name } = view;
   const propNames = view.props.map((p) => p.js);
-  const slotProps = [...view.slots.map(slotName)];
-  const extra = view.dismissEvent ? ["onDismiss"] : [];
-  const destructure = [...view.props.map((p) => `${p.js}${p.type === "array" || p.default !== undefined ? ` = ${lit(p)}` : ""}`), ...slotProps, ...extra, "...rest"];
-  const restTag = view.restTag;
-  const omit = [...propNames, ...slotProps, ...extra, ...(view.slots.includes("default") ? [] : ["children"])].map((n) => `"${n}"`).join(" | ");
+  const slotProps = view.slots.map(slotName);
+  const callbacks = view.events.filter((e) => e.react).map((e) => e.react);
+  const destructure = [...view.props.map((p) => `${p.js}${hasDefault(p) ? ` = ${lit(p)}` : ""}`), ...slotProps, ...callbacks, "...rest"];
+  const omit = [...propNames, ...slotProps, ...callbacks, ...(view.slots.includes("default") ? [] : ["children"])].map((n) => `"${n}"`).join(" | ");
   const types = c.typescript
     ? `\nexport type ${Name}Props = {\n${[
       ...view.props.map((p) => `  ${p.js}?: ${tsType(p)};`),
       ...view.slots.map((s) => (view.scopedSlots.has(s) ? `  ${slotName(s)}?: (${view.scopedSlots.get(s).args[0]}: ${view.itemType(view.scopedSlots.get(s).list)}, index: number) => ReactNode;` : `  ${slotName(s)}?: ReactNode;`)),
-      ...(view.dismissEvent ? ["  /** Called with the toast id when one leaves: remove it from `toasts`. */\n  onDismiss?: (id: string) => void;"] : []),
-    ].join("\n")}\n} & Omit<ComponentPropsWithoutRef<"${restTag}">, ${omit}>;\n`
+      ...view.events.filter((e) => e.react).map((e) => `  ${e.react}?: (value: ${e.type}) => void;`),
+    ].join("\n")}\n} & Omit<ComponentPropsWithoutRef<"${view.restTag}">, ${omit}>;\n`
     : "";
   const hooks = [...(c.shared ? ["useEffect", "useRef"] : []), ...(view.usesUid ? ["useId"] : [])];
-  const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : [])];
+  const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : []), ...(view.selectProp ? ["selectTab"] : [])];
+  const typeImports = ["ComponentPropsWithoutRef", ...(view.slots.length ? ["ReactNode"] : [])];
   const imports = [
-    ...(c.typescript ? [`import type { ComponentPropsWithoutRef, ReactNode } from "react";`] : []),
+    ...(c.typescript ? [`import type { ${typeImports.join(", ")} } from "react";`] : []),
     ...(hooks.length ? [`import { ${hooks.join(", ")} } from "react";`] : []),
     ...(c.prim ? [c.prim.imp] : []),
     `import "./${name}.css";`,
     ...(c.shared ? [`import { ${behaviourImports.join(", ")} } from "./${name}.behaviour.js";`] : []),
   ];
   const el = ELEMENT_TYPE[view.rootTag] ?? "HTMLElement";
+  const eventEffects = c.shared ? view.events.filter((e) => e.react).flatMap((e) => [
+    `// ${e.dom}: handed to ${e.react}${e.prevent ? "; the component keeps the node so React stays the owner of the list" : ""}.`,
+    "useEffect(() => {",
+    "  const target = ref.current;",
+    "  if (!target) return;",
+    `  const handle = (${usesEvent(e, c) ? `event${T(c, ": Event")}` : ""}) => {`,
+    ...(e.prevent ? ["    event.preventDefault();"] : []),
+    `    ${e.react}?.(${payloadOf(e, c)});`,
+    "  };",
+    `  target.addEventListener("${e.dom}", handle);`,
+    `  return () => target.removeEventListener("${e.dom}", handle);`,
+    `}, [${e.react}]);`,
+  ]) : [];
   const body = [
-    ...(c.shared ? [`const ref = useRef${c.typescript ? `<${el}>` : ""}(null);`] : []),
+    ...(c.shared ? [`const ref = useRef${T(c, `<${el}>`)}(null);`] : []),
     ...(view.usesUid ? ["const uid = useId();"] : []),
     ...(c.shared ? ["useEffect(() => (ref.current ? attach(ref.current) : undefined), []);"] : []),
     ...(c.shared && view.openProp ? [
-      `useEffect(() => {`,
-      `  const dialog = ref.current;`,
-      `  if (!dialog) return;`,
-      `  if (${view.openProp}) openDialog(dialog); else closeDialog(dialog);`,
-      `}, [${view.openProp}]);`,
+      "useEffect(() => {", "  const dialog = ref.current;", "  if (!dialog) return;",
+      `  if (${view.openProp}) openDialog(dialog); else closeDialog(dialog);`, `}, [${view.openProp}]);`,
     ] : []),
-    ...(c.shared && view.dismissEvent ? [
-      "// A leaving toast fires a cancelable `dismiss`; the component keeps the node and hands the id to you, so React stays the owner of the list.",
-      "useEffect(() => {",
-      "  const region = ref.current;",
-      "  if (!region) return;",
-      `  const handle = (event${c.typescript ? ": Event" : ""}) => {`,
-      "    event.preventDefault();",
-      `    onDismiss?.(${c.typescript ? "(event.target as HTMLElement)" : "event.target"}.dataset.id ?? "");`,
-      "  };",
-      '  region.addEventListener("dismiss", handle);',
-      '  return () => region.removeEventListener("dismiss", handle);',
-      "}, [onDismiss]);",
+    ...(c.shared && view.selectProp ? [
+      "useEffect(() => {", `  if (ref.current && ${view.selectProp} !== undefined) selectTab(ref.current, ${view.selectProp});`, `}, [${view.selectProp}]);`,
     ] : []),
+    ...eventEffects,
   ];
   const jsx = reactNode(view, view.tree, c);
   const sig = c.typescript ? `}: ${Name}Props` : "}";
@@ -201,7 +216,7 @@ export function react(view, c) {
 }
 
 // ===================================================================== Vue
-function vueAttrs(view, node, c) {
+function vueAttrs(view, node) {
   const out = [];
   for (const [name, v] of baseAttrs(view, node)) {
     if (typeof v === "string") out.push(`${name}="${v}"`);
@@ -222,6 +237,7 @@ function vueNode(view, node, c, extra = []) {
     case "scoped": return [`<slot name="${node.name}" :${node.args[0]}="${node.args[0]}" :index="${node.args[1]}" />`];
     case "whenSlot": return node.kids.flatMap((k) => vueNode(view, k, c, [`v-if="$slots.${node.name}"`]));
     case "when": return node.kids.flatMap((k) => vueNode(view, k, c, [`v-if="${node.js}"`]));
+    case "choose": return [...node.a.flatMap((k) => vueNode(view, k, c, [`v-if="${node.js}"`])), ...node.b.flatMap((k) => vueNode(view, k, c, ["v-else"]))];
     case "each": return node.kids.flatMap((k) => vueNode(view, k, c, [`v-for="(${node.as}${indexVar(node)}) in ${node.list}"`, `:key="${node.key}"`]));
     case "el": return vueEl(view, node, c, extra);
   }
@@ -230,9 +246,13 @@ function vueNode(view, node, c, extra = []) {
 function vueEl(view, node, c, extra) {
   const root = node.part === "root";
   const { name, close } = names(view, node, c);
-  const attrs = [...extra, ...(root && c.shared ? ['ref="el"'] : []), ...vueAttrs(view, node, c)];
+  let attrs = vueAttrs(view, node);
+  if (node.model === "checked") attrs = attrs.filter((a) => !a.startsWith(":checked="));
+  attrs = [...extra, ...(root && c.shared ? ['ref="el"'] : []), ...attrs];
   for (const [event, handler] of Object.entries(node.on ?? {})) if (event === "click") attrs.push(`@click="${handler}"`);
-  if (view.dismissEvent && root) attrs.push('@dismiss="onDismiss"');
+  if (node.model === "value") attrs.push(':value="modelValue"', `@input="emit('update:modelValue', ($event.target as HTMLInputElement | HTMLTextAreaElement).value)"`);
+  if (node.model === "checked") attrs.push(':checked="modelValue ?? checked"', `@change="emit('update:modelValue', ($event.target as HTMLInputElement).checked)"`);
+  if (root) for (const e of view.events) attrs.push(`@${e.dom}="${handlerName(e)}"`);
   if (root && c.prim) { const g = vueGuard(view); if (g) attrs.push(g); }
   if (node.rest && !root) attrs.push('v-bind="$attrs"');
   const kids = (node.kids ?? []).flatMap((k) => vueNode(view, k, c));
@@ -241,43 +261,52 @@ function vueEl(view, node, c, extra) {
 }
 
 const vueGuard = (view) => {
-  const busy = view.spec.states.find((s) => s.attribute === "aria-busy" && view.props.some((p) => p.name === s.name));
+  const busy = busyState(view);
   return busy ? `@click.capture="(e: Event) => { if (${busy.name}) { e.preventDefault(); e.stopImmediatePropagation(); } }"` : "";
 };
 
 export function vue(view, c) {
   const { name } = view;
-  const defaults = view.props.filter((p) => p.default !== undefined || p.type === "array").map((p) => `${p.js}: ${p.type === "array" ? "() => []" : lit(p)}`);
+  const modelType = view.models.has("checked") ? "boolean" : "string";
+  // vue-tsc cannot represent the DOM AutoFill union inside defineProps (TS2590): a plain string there
+  const propTypes = [...view.props.map((p) => `${p.js}?: ${tsType(p) === "AutoFill" ? "string" : tsType(p)}`), ...(view.models.size ? [`modelValue?: ${modelType}`] : [])];
+  const defaults = view.props.filter(hasDefault).map((p) => `${p.js}: ${p.type === "array" ? "() => []" : lit(p)}`);
+  const usesProps = Boolean(view.syncProp);
   const vueImports = [
     ...(c.shared ? ["onBeforeUnmount", "onMounted", "ref"] : []),
     ...(view.usesUid ? ["getCurrentInstance"] : []),
-    ...(c.shared && view.openProp ? ["watch"] : []),
+    ...(c.shared && view.syncProp ? ["watch"] : []),
   ];
-  const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : [])];
-  // `close` needs no emit: a parent's @close falls through to the native <dialog>.
-  const emits = view.dismissEvent ? ["dismiss: [id: string]"] : [];
+  const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : []), ...(view.selectProp ? ["selectTab"] : [])];
+  const emits = [
+    ...view.events.flatMap((e) => [...(e.vue ? [`${e.vue}: [value: ${e.type}]`] : []), ...(e.sync ? [`"update:${e.sync}": [value: ${e.type}]`] : [])]),
+    ...(view.models.size ? [`"update:modelValue": [value: ${modelType}]`] : []),
+  ];
+  const handlers = view.events.flatMap((e) => [
+    `function ${handlerName(e)}(${usesEvent(e, c) ? "event: Event" : ""}) {`,
+    ...(e.prevent ? ["  event.preventDefault();"] : []),
+    ...(e.vue ? [`  emit("${e.vue}", ${e.payload.ts});`] : []),
+    ...(e.sync ? [`  emit("update:${e.sync}", ${e.payload.ts});`] : []),
+    "}",
+  ]);
   const script = [
     ...(vueImports.length ? [`import { ${vueImports.join(", ")} } from "vue";`] : []),
     ...(c.prim ? [c.prim.imp] : []),
     ...(c.shared ? [`import { ${behaviourImports.join(", ")} } from "./${name}.behaviour.js";`] : []),
     "",
+    // inheritAttrs is off when the native attributes belong to an inner control; v-model is wired through modelValue instead.
     ...(view.restPart !== "root" ? ["defineOptions({ inheritAttrs: false });"] : []),
-    `${c.shared && view.openProp ? "const props = " : ""}withDefaults(defineProps<{ ${view.props.map((p) => `${p.js}?: ${tsType(p)}`).join("; ")} }>(), { ${defaults.join(", ")} });`,
+    `${usesProps ? "const props = " : ""}withDefaults(defineProps<{ ${propTypes.join("; ")} }>(), { ${defaults.join(", ")} });`,
     ...(emits.length ? [`const emit = defineEmits<{ ${emits.join("; ")} }>();`] : []),
     ...(view.usesUid ? [`const uid = \`fgu-${name}-\${getCurrentInstance()?.uid ?? 0}\`;`] : []),
-    ...(view.dismissEvent ? [
-      "// A leaving toast fires a cancelable `dismiss`; keep the node and hand the id to the parent, which owns the list.",
-      "function onDismiss(event: Event) {",
-      "  event.preventDefault();",
-      '  emit("dismiss", (event.target as HTMLElement).dataset.id ?? "");',
-      "}",
-    ] : []),
+    ...handlers,
     ...(c.shared ? [
       `const el = ref<${ELEMENT_TYPE[view.rootTag] ?? "HTMLElement"} | null>(null);`,
       "let detach: (() => void) | undefined;",
-      `onMounted(() => {\n  if (!el.value) return;\n  detach = attach(el.value);${view.openProp ? `\n  if (props.${view.openProp}) openDialog(el.value);` : ""}\n});`,
+      `onMounted(() => {\n  if (!el.value) return;\n  detach = attach(el.value);${view.openProp ? `\n  if (props.${view.openProp}) openDialog(el.value);` : ""}${view.selectProp ? `\n  if (props.${view.selectProp} !== undefined) selectTab(el.value, props.${view.selectProp});` : ""}\n});`,
       "onBeforeUnmount(() => detach?.());",
       ...(view.openProp ? [`watch(() => props.${view.openProp}, (value) => {\n  if (!el.value) return;\n  if (value) openDialog(el.value); else closeDialog(el.value);\n});`] : []),
+      ...(view.selectProp ? [`watch(() => props.${view.selectProp}, (value) => {\n  if (el.value && value !== undefined) selectTab(el.value, value);\n});`] : []),
     ] : []),
   ];
   const tpl = vueNode(view, view.tree, c);
@@ -286,7 +315,7 @@ export function vue(view, c) {
 }
 
 // ===================================================================== Svelte
-function svelteAttrs(view, node, c) {
+function svelteAttrs(view, node) {
   const out = [];
   for (const [name, v] of baseAttrs(view, node)) {
     if (typeof v === "string") out.push(`${name}="${v}"`);
@@ -297,6 +326,8 @@ function svelteAttrs(view, node, c) {
     else if (v.ariaBool !== undefined) out.push(`${name}={${v.ariaBool} ? "true" : "false"}`);
   }
   for (const [event, handler] of Object.entries(node.on ?? {})) if (event === "click") out.push(`onclick={() => ${handler}}`);
+  if (node.model === "value") out.push("value={value}", "oninput={(e) => (value = e.currentTarget.value)}");
+  if (node.model === "checked") out.push("onchange={(e) => (checked = e.currentTarget.checked)}");
   return out;
 }
 
@@ -308,6 +339,7 @@ function svelteNode(view, node, c) {
     case "scoped": return [`{@render ${slotName(node.name)}?.(${node.args.join(", ")})}`];
     case "whenSlot": return [`{#if ${slotName(node.name)}}`, ...ind(node.kids.flatMap((k) => svelteNode(view, k, c))), "{/if}"];
     case "when": return [`{#if ${node.js}}`, ...ind(node.kids.flatMap((k) => svelteNode(view, k, c))), "{/if}"];
+    case "choose": return [`{#if ${node.js}}`, ...ind(node.a.flatMap((k) => svelteNode(view, k, c))), "{:else}", ...ind(node.b.flatMap((k) => svelteNode(view, k, c))), "{/if}"];
     case "each": return [`{#each ${node.list} as ${node.as}${indexVar(node)} (${node.key})}`, ...ind(node.kids.flatMap((k) => svelteNode(view, k, c))), "{/each}"];
     case "el": return svelteEl(view, node, c);
   }
@@ -316,78 +348,103 @@ function svelteNode(view, node, c) {
 function svelteEl(view, node, c) {
   const root = node.part === "root";
   const { name, close } = names(view, node, c);
-  const attrs = svelteAttrs(view, node, c);
-  if (root && c.shared) attrs.push(view.openProp ? `use:behaviour={${view.openProp}}` : "use:behaviour");
-  if (root && view.dismissEvent) attrs.push("use:dismissListener");
+  const attrs = svelteAttrs(view, node);
+  if (root && c.shared) attrs.push(view.syncProp ? `use:behaviour={${view.syncProp}}` : "use:behaviour");
+  if (root) for (const e of view.events) attrs.push(`use:listen${cap(e.dom)}`);
   if (root && c.prim) { const g = svelteGuard(view); if (g) attrs.push(g); }
   if (node.rest || (root && view.restPart === "root")) attrs.push("{...rest}");
   const kids = (node.kids ?? []).flatMap((k) => svelteNode(view, k, c));
-  if (!kids.length && VOID.has(name)) return openTag(name, attrs, true);
+  if (!kids.length && VOID.has(name)) return openTag(name, attrs, true); // Svelte rejects a self-closing <textarea />
   return wrap(openTag(name, attrs), kids, close);
 }
 
 const svelteGuard = (view) => {
-  const busy = view.spec.states.find((s) => s.attribute === "aria-busy" && view.props.some((p) => p.name === s.name));
+  const busy = busyState(view);
   return busy ? `onclickcapture={(e) => { if (${camel(busy.name)}) { e.preventDefault(); e.stopImmediatePropagation(); } }}` : "";
 };
 
 export function svelte(view, c) {
   const { name } = view;
-  const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : [])];
+  const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : []), ...(view.selectProp ? ["selectTab"] : [])];
+  const bindable = new Set([...view.events.map((e) => e.sync).filter(Boolean), ...(view.models.has("checked") ? ["checked"] : [])]);
   const props = [
-    ...view.props.map((p) => `${p.js}${p.type === "array" || p.default !== undefined ? ` = ${lit(p)}` : ""}`),
+    ...view.props.map((p) => (bindable.has(p.js) ? `${p.js} = $bindable(${hasDefault(p) ? lit(p) : ""})` : `${p.js}${hasDefault(p) ? ` = ${lit(p)}` : ""}`)),
+    ...(view.models.has("value") ? ["value = $bindable()"] : []),
     ...view.slots.map(slotName),
-    ...(view.dismissEvent ? ["ondismiss"] : []),
+    ...view.events.filter((e) => e.svelte).map((e) => e.svelte),
     "...rest",
   ];
-  const moduleScript = view.usesUid ? `<script module lang="ts">\n  let counter = 0;\n</script>\n\n` : "";
+  const ts = c.typescript;
+  const lang = ts ? ' lang="ts"' : "";
+  // Typed props, so `type` is the button/submit/reset union and not a string; the index signature keeps the rest open.
+  const propsType = `{ ${[
+    ...view.props.map((p) => `${p.js}?: ${tsType(p)}`),
+    ...(view.models.has("value") ? ["value?: string"] : []),
+    ...view.slots.map((sl) => `${slotName(sl)}?: ${view.scopedSlots.has(sl) ? `Snippet<[${view.itemType(view.scopedSlots.get(sl).list)}, number]>` : "Snippet"}`),
+    ...view.events.filter((e) => e.svelte).map((e) => `${e.svelte}?: (value: ${e.type}) => void`),
+    "[key: string]: any",
+  ].join("; ")} }`;
+  const moduleScript = view.usesUid ? `<script module${lang}>\n  let counter = 0;\n</script>\n\n` : "";
+  const syncType = view.openProp ? T(c, ": boolean") : T(c, ": number | undefined");
+  const syncCall = view.openProp
+    ? "open ? openDialog(node) : closeDialog(node)"
+    : "if (value !== undefined) selectTab(node, value)";
+  const behaviourFn = !c.shared ? [] : view.syncProp ? [
+    "",
+    "// attach wires the keyboard, focus and ARIA that the markup leaves to the shared behaviour; it returns the cleanup.",
+    `function behaviour(node${T(c, ": HTMLElement")}, initial${syncType}) {`,
+    "  const detach = attach(node);",
+    ...(view.openProp ? [`  const sync = (open${T(c, ": boolean")}) => { if (open) openDialog(node); else closeDialog(node); };`] : [`  const sync = (value${T(c, ": number | undefined")}) => { ${syncCall}; };`]),
+    "  sync(initial);",
+    "  return { update: sync, destroy: detach };",
+    "}",
+  ] : [
+    "",
+    "// attach wires the keyboard, focus and ARIA that the markup leaves to the shared behaviour; it returns the cleanup.",
+    `function behaviour(node${T(c, ": HTMLElement")}) {`,
+    "  const detach = attach(node);",
+    "  return { destroy: detach };",
+    "}",
+  ];
+  const listeners = view.events.flatMap((e) => [
+    "",
+    `// ${e.dom}: ${e.prevent ? "keep the node and hand the value to the parent, which owns the list" : "keep the bound prop in step"}.`,
+    `function listen${cap(e.dom)}(node${T(c, ": HTMLElement")}) {`,
+    `  const handle = (${usesEvent(e, c) ? `event${T(c, ": Event")}` : ""}) => {`,
+    ...(e.prevent ? ["    event.preventDefault();"] : []),
+    ...(e.svelte ? [`    ${e.svelte}?.(${payloadOf(e, c)});`] : []),
+    ...(e.sync ? [`    ${e.sync} = ${payloadOf(e, c)};`] : []),
+    "  };",
+    `  node.addEventListener("${e.dom}", handle);`,
+    `  return { destroy: () => node.removeEventListener("${e.dom}", handle) };`,
+    "}",
+  ]);
   const script = [
     ...(c.prim ? [c.prim.imp] : []),
     ...(c.shared ? [`import { ${behaviourImports.join(", ")} } from "./${name}.behaviour.js";`] : []),
+    ...(ts && view.slots.length ? ['import type { Snippet } from "svelte";'] : []),
     `import "./${name}.css";`,
     "",
-    `let { ${props.join(", ")} } = $props();`,
+    `let { ${props.join(", ")} }${ts ? `: ${propsType}` : ""} = $props();`,
     ...(view.usesUid ? [`const uid = \`fgu-${name}-\${++counter}\`;`] : []),
-    ...(c.shared ? [
-      "",
-      "// attach wires the keyboard, focus and ARIA that the markup leaves to the shared behaviour; it returns the cleanup.",
-      ...(view.openProp ? [
-        `function behaviour(node: HTMLElement, isOpen: boolean) {`,
-        `  const detach = attach(node);`,
-        `  const sync = (open: boolean) => (open ? openDialog(node) : closeDialog(node));`,
-        `  sync(isOpen);`,
-        `  return { update: sync, destroy: detach };`,
-        `}`,
-      ] : [
-        `function behaviour(node: HTMLElement) {`,
-        `  const detach = attach(node);`,
-        `  return { destroy: detach };`,
-        `}`,
-      ]),
-    ] : []),
-    ...(view.dismissEvent ? [
-      "",
-      "// A leaving toast fires a cancelable `dismiss`; keep the node and hand the id to the parent, which owns the list.",
-      "function dismissListener(node: HTMLElement) {",
-      "  const handle = (event: Event) => {",
-      "    event.preventDefault();",
-      '    ondismiss?.((event.target as HTMLElement).dataset.id ?? "");',
-      "  };",
-      '  node.addEventListener("dismiss", handle);',
-      '  return { destroy: () => node.removeEventListener("dismiss", handle) };',
-      "}",
-    ] : []),
+    ...behaviourFn,
+    ...listeners,
   ];
   const tpl = svelteNode(view, view.tree, c);
-  // `onclose` needs no prop: a parent's onclose lands in `rest`, which is spread on the <dialog>.
-  const content = `${moduleScript}<script lang="ts">\n${script.join("\n")}\n</script>\n\n${tpl.join("\n")}\n`;
+  const content = `${moduleScript}<script${lang}>\n${script.join("\n")}\n</script>\n\n${tpl.join("\n")}\n`;
   return [{ ext: ".svelte", content }];
 }
 
 // ===================================================================== Angular
-function angularAttrs(view, node, c) {
+// An input called `id` would also set the id of the <fgu-…> host element: the Angular class names it controlId.
+const NG_RENAME = { id: "controlId" };
+const ngx = (js) => js.replace(/(?<![\w.$'"-])id(?![\w'"-])/g, NG_RENAME.id);
+const ngName = (p) => NG_RENAME[p.js] ?? p.js;
+
+function angularAttrs(view, node) {
   const out = [];
-  for (const [name, v] of baseAttrs(view, node)) {
+  for (let [name, v] of baseAttrs(view, node)) {
+    if (v && typeof v === "object") v = Object.fromEntries(Object.entries(v).map(([k, e]) => [k, ngx(e)]));
     const prop = name === "checked";
     if (typeof v === "string") out.push(`${name}="${v}"`);
     else if (v === true) out.push(name);
@@ -396,7 +453,9 @@ function angularAttrs(view, node, c) {
     else if (v.aria !== undefined) out.push(`[attr.${name}]="${v.aria} ? 'true' : null"`);
     else if (v.ariaBool !== undefined) out.push(`[attr.${name}]="${v.ariaBool} ? 'true' : 'false'"`);
   }
-  for (const [event, handler] of Object.entries(node.on ?? {})) out.push(event === "close" ? `(close)="${handler}.emit($event)"` : `(${event})="${handler}"`);
+  for (const [event, handler] of Object.entries(node.on ?? {})) out.push(`(${event})="${handler}"`);
+  if (node.model === "value") out.push("[value]=\"value\"", '(input)="onValueInput($event)"');
+  if (node.model === "checked") out.push('(change)="onCheckedChange($event)"');
   return out;
 }
 
@@ -407,7 +466,8 @@ function angularNode(view, node, c) {
     case "slot": return [node.name === "default" ? "<ng-content />" : `<ng-content select="[slot=${node.name}]" />`];
     case "scoped": return [`<ng-container [ngTemplateOutlet]="${node.name}" [ngTemplateOutletContext]="{ $implicit: ${node.args[0]}, index: ${node.args[1]} }" />`];
     case "whenSlot": return node.kids.flatMap((k) => angularNode(view, k, c)); // content projection cannot be tested for: the part always renders
-    case "when": return [`@if (${node.js}) {`, ...ind(node.kids.flatMap((k) => angularNode(view, k, c))), "}"];
+    case "when": return [`@if (${ngx(node.js)}) {`, ...ind(node.kids.flatMap((k) => angularNode(view, k, c))), "}"];
+    case "choose": return [`@if (${ngx(node.js)}) {`, ...ind(node.a.flatMap((k) => angularNode(view, k, c))), "} @else {", ...ind(node.b.flatMap((k) => angularNode(view, k, c))), "}"];
     case "each": return [`@for (${node.as} of ${node.list}; track ${node.key === "i" ? "$index" : node.key}${usesIndex(node) ? "; let i = $index" : ""}) {`, ...ind(node.kids.flatMap((k) => angularNode(view, k, c))), "}"];
     case "el": return angularEl(view, node, c);
   }
@@ -415,52 +475,72 @@ function angularNode(view, node, c) {
 
 function angularEl(view, node, c) {
   const { name } = names(view, node, { prim: null });
-  const attrs = angularAttrs(view, node, c);
-  if (node.part === "root" && view.dismissEvent) attrs.push('(dismiss)="onDismiss($event)"');
+  const attrs = angularAttrs(view, node);
+  if (node.part === "root") for (const e of view.events) attrs.push(`(${e.dom})="${handlerName(e)}(${usesEvent(e, c) ? "$event" : ""})"`);
   const kids = (node.kids ?? []).flatMap((k) => angularNode(view, k, c));
   if (!kids.length && VOID.has(name)) return openTag(name, attrs, true);
   return wrap(openTag(name, attrs), kids, `</${name}>`);
 }
 
+const outputName = (e) => (e.sync ? `${e.sync}Change` : e.angular);
+
 export function angular(view, c) {
   const { name, Name } = view;
-  const inputs = view.props.map((p) => `  @Input() ${p.js}: ${tsType(p)}${p.default === undefined && p.type !== "array" ? " | undefined" : ""}${p.default === undefined && p.type !== "array" ? "" : ` = ${lit(p)}`};`);
-  const slotInputs = [...view.scopedSlots.entries()].map(([s, { list }]) => `  /** Template for each ${s}: <ng-template let-item let-index="index">. */\n  @Input() ${slotName(s)}: TemplateRef<{ $implicit: ${view.itemType(list)}; index: number }> | undefined;`);
-  const closeEvent = view.tree.on?.close;
-  const outputs = [
-    ...(closeEvent ? ["  @Output() closed = new EventEmitter<Event>();"] : []),
-    ...(view.dismissEvent ? ["  /** Emits the toast id when one leaves: remove it from `toasts`. */\n  @Output() dismissed = new EventEmitter<string>();"] : []),
+  // Strict templates: a bare attribute (<fgu-field required>) is the string "", so boolean and number inputs carry a transform; arrays may be readonly.
+  const transform = (p) => (p.type === "boolean" ? "{ transform: booleanAttribute }" : p.type === "number" ? "{ transform: numberAttribute }" : "");
+  const inputType = (p) => (p.type === "array" ? `readonly ${tsType(p)}` : tsType(p));
+  const inputs = view.props.map((p) => `  @Input(${p.js === "id" ? `{ alias: "controlId"${transform(p) ? `, ${transform(p).slice(2, -2)}` : ""} }` : transform(p)}) ${ngName(p)}: ${inputType(p)}${hasDefault(p) ? ` = ${lit(p)}` : " | undefined"};`);
+  const models = [
+    ...(view.models.has("value") ? ["  @Input() value: string | undefined;", "  @Output() valueChange = new EventEmitter<string>();"] : []),
+    ...(view.models.has("checked") ? ["  @Output() checkedChange = new EventEmitter<boolean>();"] : []),
   ];
-  const core = ["Component", "Input", "ViewEncapsulation", ...(outputs.length ? ["Output", "EventEmitter"] : []), ...(slotInputs.length ? ["TemplateRef"] : []),
-    ...(c.shared ? ["ElementRef", "AfterViewInit", "OnDestroy", "inject"] : []), ...(c.shared && view.openProp ? ["OnChanges"] : [])];
-  const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : [])];
-  const impls = [...(c.shared ? ["AfterViewInit", "OnDestroy"] : []), ...(c.shared && view.openProp ? ["OnChanges"] : [])];
+  const modelHandlers = [
+    ...(view.models.has("value") ? ["", "  onValueInput(event: Event) {", "    this.value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;", "    this.valueChange.emit(this.value);", "  }"] : []),
+    ...(view.models.has("checked") ? ["", "  onCheckedChange(event: Event) {", "    this.checked = (event.target as HTMLInputElement).checked;", "    this.checkedChange.emit(this.checked);", "  }"] : []),
+  ];
+  const slotInputs = [...view.scopedSlots.entries()].map(([s, { list }]) => `  /** Template for each ${s}: <ng-template let-item let-index="index">. */\n  @Input() ${slotName(s)}: TemplateRef<{ $implicit: ${view.itemType(list)}; index: number }> | null = null;`);
+  const outputs = view.events.map((e) => `  @Output() ${outputName(e)} = new EventEmitter<${e.type}>();`);
+  const syncs = c.shared ? [view.openProp, view.selectProp].filter(Boolean) : [];
+  const attrFns = [...(view.props.some((p) => p.type === "boolean") ? ["booleanAttribute"] : []), ...(view.props.some((p) => p.type === "number") ? ["numberAttribute"] : [])];
+  const core = ["Component", "Input", "ViewEncapsulation", ...attrFns, ...(outputs.length || models.length ? ["Output", "EventEmitter"] : []), ...(slotInputs.length ? ["TemplateRef"] : []),
+    ...(c.shared ? ["ElementRef", "AfterViewInit", "OnDestroy", "inject"] : []), ...(syncs.length ? ["OnChanges"] : [])];
+  const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : []), ...(view.selectProp ? ["selectTab"] : [])];
+  const impls = [...(c.shared ? ["AfterViewInit", "OnDestroy"] : []), ...(syncs.length ? ["OnChanges"] : [])];
+  const syncBody = [
+    ...(view.openProp ? [
+      '    const dialog = this.host.nativeElement.querySelector<HTMLDialogElement>(\'[data-part="root"]\');',
+      "    if (dialog) { if (this.open) openDialog(dialog); else closeDialog(dialog); }",
+    ] : []),
+    ...(view.selectProp ? [
+      "    const root = this.host.nativeElement.querySelector<HTMLElement>('[data-part=\"root\"]');",
+      "    if (root && this.selected !== undefined) selectTab(root, this.selected);",
+    ] : []),
+  ];
+  const handlers = view.events.flatMap((e) => [
+    "",
+    `  ${handlerName(e)}(${usesEvent(e, c) ? "event: Event" : ""}) {`,
+    ...(e.prevent ? ["    event.preventDefault();"] : []),
+    `    this.${outputName(e)}.emit(${e.payload.ts});`,
+    "  }",
+  ]);
   const members = [
     ...(view.usesUid ? [`  readonly uid = \`fgu-${name}-\${++nextId}\`;`] : []),
-    ...inputs, ...slotInputs, ...outputs,
+    ...inputs, ...models, ...slotInputs, ...outputs,
     ...(c.shared ? [
       "  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);",
       "  private detach?: () => void;",
       "",
-      `  ngAfterViewInit() {\n    this.detach = attach(this.host.nativeElement);${view.openProp ? "\n    this.syncOpen();" : ""}\n  }`,
+      `  ngAfterViewInit() {\n    this.detach = attach(this.host.nativeElement);${syncs.length ? "\n    this.syncControlled();" : ""}\n  }`,
       "  ngOnDestroy() { this.detach?.(); }",
-      ...(view.openProp ? [
-        "  ngOnChanges() { this.syncOpen(); }",
-        "  private syncOpen() {",
-        '    const dialog = this.host.nativeElement.querySelector<HTMLDialogElement>(\'[data-part="root"]\');',
-        "    if (!dialog || !this.detach) return;",
-        `    if (this.${view.openProp}) openDialog(dialog); else closeDialog(dialog);`,
+      ...(syncs.length ? [
+        "  ngOnChanges() { this.syncControlled(); }",
+        "  private syncControlled() {",
+        "    if (!this.detach) return;",
+        ...syncBody,
         "  }",
       ] : []),
     ] : []),
-    ...(view.dismissEvent ? [
-      "",
-      "  // A leaving toast fires a cancelable `dismiss`; keep the node and hand the id to the parent, which owns the list.",
-      "  onDismiss(event: Event) {",
-      "    event.preventDefault();",
-      '    this.dismissed.emit((event.target as HTMLElement).dataset["id"] ?? "");',
-      "  }",
-    ] : []),
+    ...handlers, ...modelHandlers,
   ];
   const imports = [`import { ${core.join(", ")} } from "@angular/core";`, ...(slotInputs.length ? ['import { NgTemplateOutlet } from "@angular/common";'] : []), ...(c.shared ? [`import { ${behaviourImports.join(", ")} } from "./${name}.behaviour.js";`] : [])];
   const ts = `${imports.join("\n")}\n${view.usesUid ? "\nlet nextId = 0;\n" : ""}\n@Component({\n  selector: "fgu-${name}",\n  standalone: true,\n  ${slotInputs.length ? "imports: [NgTemplateOutlet],\n  " : ""}templateUrl: "./${name}.component.html",\n  styleUrl: "./${name}.css",\n  // The css is already scoped by data-fgu, and projected content has to be styled too.\n  encapsulation: ViewEncapsulation.None,\n  host: { style: "display: contents" },\n})\nexport class ${Name}Component${impls.length ? ` implements ${impls.join(", ")}` : ""} {\n${members.join("\n")}\n}\n`;

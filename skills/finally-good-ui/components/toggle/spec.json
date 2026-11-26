@@ -91,6 +91,7 @@
     "--size-control-lg",
     "--icon-sm",
     "--icon-md",
+    "--icon-lg",
     "--space-1",
     "--space-2",
     "--space-3",

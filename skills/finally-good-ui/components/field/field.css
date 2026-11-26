@@ -59,3 +59,9 @@
 [data-fgu="field"] [data-part="control"] { transition: none; }
 [data-fgu="field"] [data-part="error"]:not(:empty) { animation: none; }
 }
+
+/* Multiline: a textarea is the same control part. */
+[data-fgu="field"] textarea[data-part="control"] {
+  padding-block: var(--space-2);
+  resize: vertical;
+}
