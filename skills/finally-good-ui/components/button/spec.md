@@ -78,3 +78,5 @@ Press feedback is `transform` and `opacity` only (`motion.compositor-only`), 100
 
 ## Scaffold API
 Props `variant`, `disabled`, `loading`, `type`; slots `default` (the label) and `icon` (optional; Angular always renders the empty part, hidden by `:empty`); events are native (`click`). `attach` returns the cleanup. With a wired primitive (button only) the primitive supplies the element and the scaffold adds the busy guard.
+
+Disabled uses the muted fill with the muted foreground (no opacity), at least 4.5:1 in the default tokens. The spinner only animates while `aria-busy`.

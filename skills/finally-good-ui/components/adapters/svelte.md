@@ -26,3 +26,7 @@ Rules: `recipes/INDEX.md`; Bits state hooks (`data-starting-style` / `data-endin
 
 ## Generated files
 Every component is written whole (parts, props, slots, the `attach` call from the lifecycle); `check-components` fails an empty skeleton (`empty-skeleton`). Primitives are wired for the button only. In a TypeScript project `<name>.behaviour.d.ts` is written next to the script, so the `.js` import type-checks without `allowJs`. Pass listeners and attributes through the normal fallthrough (`$attrs` / `...rest`).
+
+## Bindable props and TypeScript
+- `field` (`value`), `toggle` (`checked`), `dialog` (`open`) and `tabs` (`selected`) are `$bindable`: `<Field bind:value={email} />`, `<Dialog bind:open>`. Callbacks: `onselectedchange(index)` on tabs, `ondismiss(id)` on toast.
+- The script is TypeScript (`lang="ts"`, typed props) only when the project has TypeScript; a JavaScript project gets plain script without annotations. `field`'s `error` prop wins over the built-in validation message while it is non-empty (the behaviour writes into the same text node, never replaces it).

@@ -68,3 +68,5 @@ The thumb `transform`s and the mark's `opacity` fades (`motion.compositor-only`)
 
 ## Scaffold API
 Props `variant` (checkbox | switch), `checked` (initial state; the DOM owns it afterwards), `disabled`, `invalid`, `name`, `value`; slot `default` is the label text. Native attributes and listeners (`onChange`, `@change`) go to the input, not the label. A `switch` gets `role="switch"` in the markup.
+
+Controls are `--icon-lg` (24px) so the target meets the 24px minimum.

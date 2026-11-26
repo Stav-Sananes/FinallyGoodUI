@@ -26,3 +26,8 @@ Rules: `recipes/INDEX.md`; per-library state hooks: `recipes/motion/headless-pri
 
 ## Generated files
 Every component is written whole: parts, props, slots and the `attach` effect (`useEffect(() => attach(ref.current), [])`); the scaffold never leaves an empty skeleton, and `check-components` fails one (`empty-skeleton`). In a TypeScript project `<name>.behaviour.d.ts` is written next to the script, so the `.js` import type-checks without `allowJs`. `ref`, `attach` and the programmatic API (`open` on dialog) are generated; pass native props through `...rest`.
+
+## Controlled values and callbacks
+- `field` and `toggle` spread their native props on the input: control them as usual with `value` + `onChange` (or `defaultValue`, `defaultChecked`). The `checked` prop is the initial state (`defaultChecked`).
+- `dialog`: `open` plus `onOpenChange(false)` when it closes (Escape, close button, form submit); the native `onClose` still passes through. `tabs`: `selected` plus `onSelectedChange(index)`. `toast`: `onDismiss(id)` then remove the toast. The menu trigger uses React 19's `popoverTarget`.
+- `field` takes `multiline` (+ `rows`) for a textarea; its `error` prop wins over the built-in validation message while it is non-empty.

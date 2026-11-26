@@ -67,3 +67,5 @@ Enter and exit (opacity, a short lift on `transform`, a fading backdrop, `@start
 
 ## Scaffold API
 Props `variant` (modal | confirm) and `open` (the programmatic API: set it to show or close the dialog; it is `openDialog`/`closeDialog` underneath, exported from `<name>.behaviour.js` for code that holds the element). Slots `title`, `description` (optional), `default` (the body), `actions` (optional). Event `close` is the native one (`onClose`, `@close`, `onclose`; Angular output `closed`) and fires for Escape, the close button and `open = false`. Openers: any element with `data-dialog-open="<id>"` anywhere in the page, or `open`; focus returns to the opener, or to the first focusable inside it when the opener is a custom-element host. `attach` also works when it is given the dialog itself.
+
+Round 5: the body and the `actions` live in a `<form method="dialog" data-part="form">`, so a submit button closes the dialog and Enter in a body field submits; `initialFocus` (a selector, `data-initial-focus`) or the first `[autofocus]` gets focus on open. `open` flips to `false` on every close (`onOpenChange`, `update:open`, `bind:open`, `openChange`).

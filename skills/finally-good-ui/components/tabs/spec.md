@@ -61,3 +61,5 @@ The indicator transitions `transform` over `--duration-standard` with `--ease-mo
 
 ## Scaffold API
 Props `tabs` (labels, `string[]`) and `label` (the tablist's `aria-label`); slot `panel` is called per tab with `(tab, index)` (React prop `panel(tab, index)`, Vue `<template #panel="{ tab, index }">`, Svelte snippet `panel`, Angular `<ng-template let-tab let-index="index">` passed to `[panel]`). The first tab starts selected; `attach` owns selection, roving focus, panel visibility and the indicator afterwards. Programmatic: `selectTab(scope, indexOrTab)` from `<name>.behaviour.js`.
+
+Round 5: `selected` (index) is controlled; `attach` fires a bubbling `tabchange` (detail = the new index) on user selection and on `selectTab`, never on the first render.

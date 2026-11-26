@@ -28,3 +28,7 @@ The component imports `attach` from `./<name>.behaviour.js`. A strict project (`
 
 ## Generated files
 Every component is written whole (`.component.ts` + `.component.html`, standalone, `ViewEncapsulation.None` because the css is scoped by `data-fgu`, host `display: contents`); `attach(host)` runs in `ngAfterViewInit` and is cleaned up in `ngOnDestroy`. Named slots are `<ng-content select="[slot=name]">`, so project them as `<span slot="icon">`. Angular cannot tell whether an optional slot was filled, so optional parts (button icon, dialog description and actions) always render; the css hides an empty icon. Scoped slots (tabs `panel`) are `TemplateRef` inputs. A component whose root fires non-bubbling events exposes them as outputs (`closed` on dialog, `dismissed` on toast). Router: `detect-stack` reports `@angular/router` as `angular-router`.
+
+## Inputs and outputs
+- Boolean and number inputs use `booleanAttribute` / `numberAttribute`, so a bare attribute works under strict templates (`<fgu-field required>`); array inputs are `readonly`. The field's `id` input is `controlId` (an `id` input would also set the host element's id). Two-way: `[(value)]` on field, `[(checked)]` on toggle, `[(open)]` on dialog, `[(selected)]` on tabs; toast `(dismissed)`. Field `multiline` renders a textarea.
+- Compile check: `ngc` with `strictTemplates` over the generated files is part of `scripts/test/compile-scaffold.mjs`.

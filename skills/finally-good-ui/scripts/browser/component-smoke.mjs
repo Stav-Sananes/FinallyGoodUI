@@ -3,6 +3,7 @@
 // The unit tests drive the behaviour scripts against a fake DOM; this opens the page in Chromium and checks what
 // only a browser decides: the popover top layer, native <dialog> focus, real key events, live regions.
 // Imports `playwright` from the USER's project (--root), like check-flows.mjs; this plugin has no dependency on it.
+// It needs the full `playwright` (or `@playwright/test`) package: `playwright-core` alone does not resolve.
 // Exit: 0 all checks pass, 1 a check failed, 2 playwright/browser missing or bad input.
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";

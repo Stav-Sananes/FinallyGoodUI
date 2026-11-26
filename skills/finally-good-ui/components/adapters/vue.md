@@ -26,3 +26,7 @@ Rules: `recipes/INDEX.md`; Reka state hooks (`data-state`) in `recipes/motion/he
 
 ## Generated files
 Every component is written whole (parts, props, slots, the `attach` call from the lifecycle); `check-components` fails an empty skeleton (`empty-skeleton`). Primitives are wired for the button only. In a TypeScript project `<name>.behaviour.d.ts` is written next to the script, so the `.js` import type-checks without `allowJs`. Pass listeners and attributes through the normal fallthrough (`$attrs` / `...rest`).
+
+## v-model, events and controlled props
+- `field` and `toggle` put native attributes on the inner control (`inheritAttrs: false`), so `v-model` goes through `modelValue` / `update:modelValue` (a string for the field, a boolean for the toggle): `<Field v-model="email" label="Email" />`. Do not also pass `value` or `checked`.
+- `tabs`: `selected` (index) is controlled; the component emits `change` and `update:selected` with the new index (`v-model:selected`). `dialog`: `open` is controlled and emits `update:open` with `false` when it closes by Escape, the close button or a submit (`v-model:open`). `toast` emits `dismiss` with the id: remove it from `toasts`.
