@@ -173,7 +173,7 @@ const plan = (deps) => {
 const importLine = (p, ext) => p.files.find((f) => f.path.endsWith(ext)).content.split("\n").find((l) => /^import .* from "(?!\.|react"|vue")/.test(l));
 
 test("primitive import specifiers come from the package the project has", () => {
-  assert.match(importLine(plan({ react: "18", "radix-ui": "1" }), ".jsx"), /from "radix-ui"/);
+  assert.match(importLine(plan({ react: "18", "@radix-ui/react-primitive": "2" }), ".jsx"), /from "@radix-ui\/react-primitive"/);
   assert.match(importLine(plan({ react: "18", "@base-ui-components/react": "1" }), ".jsx"), /@base-ui-components\/react\/button/);
   assert.match(importLine(plan({ react: "18", "@base-ui/react": "1" }), ".jsx"), /"@base-ui\/react\/button"/);
   assert.match(importLine(plan({ vue: "3", "radix-vue": "1" }), ".vue"), /from "radix-vue"/);

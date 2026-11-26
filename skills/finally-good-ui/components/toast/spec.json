@@ -4,7 +4,19 @@
     "status",
     "error"
   ],
-  "props": [],
+  "props": [
+    {
+      "name": "toasts",
+      "type": "array",
+      "ts": "{ id: string; message: string; variant?: \"status\" | \"error\"; timeout?: number; action?: string; onAction?: (toast: { id: string }) => void }[]",
+      "default": "[]"
+    },
+    {
+      "name": "label",
+      "type": "string",
+      "default": "Notifications"
+    }
+  ],
   "events": [
     "dismiss"
   ],

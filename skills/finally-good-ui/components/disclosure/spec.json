@@ -91,5 +91,12 @@
     "surface": null,
     "interactive": "trigger",
     "density": "trigger"
+  },
+  "tags": {
+    "item": "div",
+    "heading": "h3",
+    "trigger": "button",
+    "panel": "div",
+    "content": "div"
   }
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Conformance check for scaffolded components: does the generated code still honour its spec?
-import { join, dirname, basename } from "node:path";
+import { join, dirname, basename, relative } from "node:path";
 import { readdirSync } from "node:fs";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
 import { loadSpec, rolePartOf } from "./lib/component-spec.mjs";
@@ -15,6 +15,8 @@ loads components/<name>/spec.json and checks the generated files against it. Pri
 {tool, ok, findings:[{file, rule, message}]}.
 
 Rules: role-missing, aria-missing, part-missing, state-unstyled, literal, key-handler-reimplemented,
+empty-skeleton (the parts are there but the component renders no content slot, or a shared-behaviour
+component never calls attach: markup alone is not a working component),
 spec-missing (a marker names a component that has no valid spec).
 
 Scope notes:
@@ -24,6 +26,9 @@ Scope notes:
     spec aria (aria-label) is consumer-supplied and not checked.
   - The plain-html output (<name>.html, with no framework file) is a static demo page: only the root
     part is required, and state aria is not checked. Each such component adds a "notes" entry.
+  - empty-skeleton: a framework file must render its content (children, <slot>, <ng-content>, {@render},
+    when the spec has slots) and, when the marker source is shared, call attach(...). The plain-html demo
+    page only needs the attach call.
   - key-handler-reimplemented applies when the marker source is shared or primitives:<name>;
     <name>.behaviour.js is never scanned.
 
@@ -61,7 +66,7 @@ const partHasRole = (role, part, text) => {
     if (new RegExp(`role=["']${r}["']`, "i").test(attrs)) return true;
     const t = tag.toLowerCase();
     if (t === "input") {
-      const type = /type=["']([\w-]+)["']/i.exec(attrs)?.[1]?.toLowerCase() ?? "text";
+      const type = /(?<![:\w-])type=["']([\w-]+)["']/i.exec(attrs)?.[1]?.toLowerCase() ?? "text"; // a bound type (:type="type") is a text field by default
       if (role === "checkbox" ? type === "checkbox" : role === "textbox" && ["text", "email", "search", "tel", "url", "password"].includes(type)) return true;
     }
     if ((role === "button" && t === "button") || (role === "link" && t === "a") || (role === "textbox" && t === "textarea")) return true;
@@ -69,7 +74,10 @@ const partHasRole = (role, part, text) => {
   return false;
 };
 
-const isFrameworkFile = (name, spec) => !name.endsWith(".css") && name !== MARKER && name !== `${spec.name}.behaviour.js`;
+// Any way a framework renders the content the caller passes in.
+const CONTENT_SLOT = /\bchildren\b|<slot\b|<ng-content\b|@render\b|\$slots\b|ngTemplateOutlet|<Slot\b/;
+
+const isFrameworkFile = (name, spec) => !name.endsWith(".css") && name !== MARKER && name !== `${spec.name}.behaviour.js` && name !== `${spec.name}.behaviour.d.ts`;
 // The plain-html output is a static demo page: it renders only the root, with no state attributes.
 const isDemoPage = (files) => files.every((f) => /\.html$/.test(f) && !/\.component\.html$/.test(f));
 
@@ -111,6 +119,9 @@ function checkComponent(markerPath, root, notes) {
     const seen = new Set((readText(join(dir, css_)) ?? "").match(LITERAL)?.map((l) => l.replace(/\s+/g, "")));
     for (const lit of seen) add(css_, "literal", `literal "${lit}" in CSS: use a token`);
   }
+  const shared = marker.source === "shared";
+  if (shared && !/\battach\(/.test(code)) add(where, "empty-skeleton", `${spec.name} uses the shared behaviour but never calls attach(): no keyboard, focus or ARIA wiring runs`);
+  if (!demo && spec.slots.length && !CONTENT_SLOT.test(code)) add(where, "empty-skeleton", `${spec.name} renders its parts but no content slot (${spec.slots.join(", ")}): the caller's content has nowhere to go`);
   if (marker.source === "shared" || String(marker.source).startsWith("primitives:")) {
     for (const file of frameworkFiles) {
       const text = readText(join(dir, file)) ?? "";
@@ -123,7 +134,8 @@ function checkComponent(markerPath, root, notes) {
   return findings;
 }
 
-const relativeDir = (root, dir) => dir.slice(root.length).replace(/^[\\/]+/, "");
+// Full path from the scanned root ("src/components/fgu/button"), whatever spelling --root had ("." or "./app/").
+const relativeDir = (root, dir) => relative(root, dir);
 
 export function checkComponents(root) {
   const notes = [];

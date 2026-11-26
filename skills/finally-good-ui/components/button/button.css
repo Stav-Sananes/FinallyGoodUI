@@ -30,6 +30,8 @@
 [data-fgu="button"] [data-part="label"],
 [data-fgu="button"] [data-part="icon"] { transition: opacity var(--duration-short) var(--ease-snappy); }
 [data-fgu="button"] [data-part="icon"] { display: inline-flex; width: var(--icon-md); height: var(--icon-md); }
+/* a framework that cannot tell whether the icon slot was filled (Angular) renders the part empty */
+[data-fgu="button"] [data-part="icon"]:empty { display: none; }
 [data-fgu="button"] [data-part="spinner"] {
   position: absolute;
   inset: 0;

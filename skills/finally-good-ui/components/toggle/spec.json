@@ -111,7 +111,8 @@
   ],
   "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/",
   "tags": {
-    "root": "label"
+    "root": "label",
+    "control": "input"
   },
   "profile": {
     "surface": null,

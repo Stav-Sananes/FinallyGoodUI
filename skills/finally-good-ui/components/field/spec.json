@@ -36,15 +36,34 @@
       "name": "required",
       "type": "boolean",
       "default": "false"
+    },
+    {
+      "name": "type",
+      "type": "string",
+      "default": "text"
+    },
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "placeholder",
+      "type": "string"
+    },
+    {
+      "name": "autocomplete",
+      "type": "string"
     }
   ],
   "events": [
     "input",
     "change"
   ],
-  "slots": [
-    "default"
-  ],
+  "slots": [],
   "states": [
     {
       "name": "invalid",
@@ -112,7 +131,8 @@
   "tags": {
     "label": "label",
     "hint": "p",
-    "error": "p"
+    "error": "p",
+    "control": "input"
   },
   "profile": {
     "surface": "control",

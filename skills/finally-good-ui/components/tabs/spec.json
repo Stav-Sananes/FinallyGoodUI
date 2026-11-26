@@ -3,10 +3,21 @@
   "shapes": [
     "underline"
   ],
-  "props": [],
+  "props": [
+    {
+      "name": "tabs",
+      "type": "array",
+      "ts": "string[]",
+      "default": "[]"
+    },
+    {
+      "name": "label",
+      "type": "string"
+    }
+  ],
   "events": [],
   "slots": [
-    "default"
+    "panel"
   ],
   "states": [
     {
@@ -68,12 +79,16 @@
   ],
   "tags": {
     "tab": "button",
-    "panel": "div"
+    "panel": "div",
+    "list": "div"
   },
   "pattern": "recipes/motion/tabs-indicator.md",
   "profile": {
     "surface": null,
     "interactive": "tab",
     "density": "tab"
-  }
+  },
+  "api": [
+    "selectTab(scope: Element, which: Element | number): void"
+  ]
 }

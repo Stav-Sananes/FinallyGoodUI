@@ -3,7 +3,14 @@
   "shapes": [
     "menu-button"
   ],
-  "props": [],
+  "props": [
+    {
+      "name": "items",
+      "type": "array",
+      "ts": "{ label: string; disabled?: boolean; onSelect?: (item: { label: string }) => void }[]",
+      "default": "[]"
+    }
+  ],
   "events": [],
   "slots": [
     "default"
@@ -77,12 +84,17 @@
   ],
   "tags": {
     "trigger": "button",
-    "item": "button"
+    "item": "button",
+    "list": "div"
   },
   "pattern": "recipes/patterns/menu-select-combobox.md",
   "profile": {
     "surface": "list",
     "interactive": "item",
     "density": "item"
-  }
+  },
+  "api": [
+    "openMenu(scope: Element, start?: number): void",
+    "closeMenu(scope: Element, options?: { restoreFocus?: boolean }): void"
+  ]
 }

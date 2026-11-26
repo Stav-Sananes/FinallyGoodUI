@@ -9,13 +9,21 @@
       "name": "variant",
       "type": "string",
       "default": "modal"
+    },
+    {
+      "name": "open",
+      "type": "boolean",
+      "default": "false"
     }
   ],
   "events": [
     "close"
   ],
   "slots": [
-    "default"
+    "title",
+    "description",
+    "default",
+    "actions"
   ],
   "states": [
     {
@@ -95,5 +103,9 @@
     "surface": "root",
     "interactive": null,
     "density": null
-  }
+  },
+  "api": [
+    "openDialog(dialog: HTMLElement, opener?: Element | null): void",
+    "closeDialog(dialog: HTMLElement): void"
+  ]
 }

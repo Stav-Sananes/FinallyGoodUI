@@ -64,6 +64,7 @@ test("shared source: behaviour.js may hold key handlers, the framework file may 
   const dir = join(root, "src/components/fgu/button");
   writeFileSync(join(dir, ".fgu-component.json"), JSON.stringify({ name: "button", source: "shared", framework: "react" }));
   writeFileSync(join(dir, "button.behaviour.js"), 'el.addEventListener("keydown", (e) => { if (e.key === "Enter") go(); });\n');
+  writeFileSync(join(dir, "button.tsx"), `${readFileSync(join(dir, "button.tsx"), "utf8")}\nuseEffect(() => attach(ref.current), []);\n`);
   assert.equal(check(root).json.ok, true);
   const tsx = readFileSync(join(dir, "button.tsx"), "utf8");
   writeFileSync(join(dir, "button.tsx"), tsx.replace("data-part=\"root\"", 'data-part="root" onKeyDown={(e) => e.key === " " && go()}'));
@@ -131,7 +132,7 @@ test("spec-missing: a marker naming an unknown component is reported", () => {
 });
 
 // The plain-html demo carve-out: root only, no state aria. Applies to <name>.html output and nothing else.
-const DEMO = '<!doctype html>\n<button data-part="root" type="button"><span data-part="label">button</span></button>\n';
+const DEMO = '<!doctype html>\n<button data-part="root" type="button"><span data-part="label">button</span></button>\n<script type="module">import { attach } from "./button.behaviour.js"; attach(document.body);</script>\n';
 const demoRoot = (html) => {
   const root = copy(fixture("generated-ok"));
   const dir = join(root, "src/components/fgu/button");
@@ -182,3 +183,57 @@ for (const project of ["plain", "react-radix", "vue-reka", "svelte-bits", "angul
     assert.equal(out.ok, true);
   });
 }
+
+// ---- empty skeletons: the parts are there, nothing works
+const SKELETON_TSX = `import "./dialog.css";
+
+export function Dialog() {
+  return (
+    <dialog data-fgu="dialog" data-part="root">
+      <h2 data-part="title"></h2>
+      <p data-part="description"></p>
+      <button data-part="close" type="button"></button>
+      <div data-part="actions"></div>
+    </dialog>
+  );
+}
+`;
+const dialogRoot = (tsx, source = "shared") => {
+  const root = tmp();
+  const dir = join(root, "src/components/fgu/dialog");
+  cpSync(fx("components/check/generated-ok/src/components/fgu/button"), dir, { recursive: true });
+  for (const f of ["button.css", "button.tsx"]) unlinkSync(join(dir, f));
+  writeFileSync(join(dir, ".fgu-component.json"), JSON.stringify({ name: "dialog", source, framework: "react" }));
+  writeFileSync(join(dir, "dialog.tsx"), tsx);
+  writeFileSync(join(dir, "dialog.css"), '[data-fgu="dialog"][data-part="root"][open] { opacity: 1; }\n');
+  return root;
+};
+const skeletonHits = (root) => check(root).json.findings.filter((f) => f.rule === "empty-skeleton");
+
+test("empty-skeleton: parts without a content slot and without attach() fail (both reasons named)", () => {
+  const hits = skeletonHits(dialogRoot(SKELETON_TSX));
+  assert.equal(check(dialogRoot(SKELETON_TSX)).json.ok, false);
+  assert.equal(hits.length, 2, JSON.stringify(hits));
+  assert.ok(hits.some((h) => /attach/.test(h.message)));
+  assert.ok(hits.some((h) => /content slot/.test(h.message) && /title/.test(h.message)));
+});
+
+test("empty-skeleton: a working component (slots rendered, attach called) is clean (positive control)", () => {
+  const ok = SKELETON_TSX.replace('<h2 data-part="title"></h2>', '<h2 data-part="title">{title}</h2>{children}').replace("export function Dialog() {", "export function Dialog({ title, children }) {\n  useEffect(() => attach(ref.current), []);");
+  assert.deepEqual(skeletonHits(dialogRoot(ok)), []);
+});
+
+test("empty-skeleton: a primitive-sourced component needs a content slot but no attach()", () => {
+  const prim = dialogRoot(SKELETON_TSX, "primitives:radix");
+  assert.deepEqual(skeletonHits(prim).map((h) => /content slot/.test(h.message)), [true]);
+});
+
+test("findings carry the full relative path, from any spelling of --root", () => {
+  const root = dialogRoot(SKELETON_TSX);
+  const full = "src/components/fgu/dialog/dialog.tsx";
+  assert.ok(check(root).json.findings.every((f) => f.file.startsWith("src/components/fgu/dialog/")), "absolute root");
+  const here = run("check-components.mjs", ["--root", "."], { cwd: root });
+  assert.ok(here.json.findings.some((f) => f.file === full), JSON.stringify(here.json.findings));
+  const dotted = run("check-components.mjs", ["--root", "./"], { cwd: root });
+  assert.ok(dotted.json.findings.some((f) => f.file === full), JSON.stringify(dotted.json.findings));
+});
