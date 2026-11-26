@@ -1,7 +1,7 @@
 // Loader code for the typefaces a token set names ($extensions.fgu.load on font tokens), per stack.
 // load: { source: "google" | "fontsource" | "local", weights: "100 900" (variable) | [400, 600],
 //         files?: [{ path, weight, style? }] (local) }
-import { groupTokens, fontLoad, isVariableFont } from "./tokens.mjs";
+import { groupTokens, fontLoad, isVariableFont, baseFace, namedVariable, weightRange } from "./tokens.mjs";
 
 export const LOADERS = ["next", "nuxt", "fontsource", "google"];
 
@@ -9,11 +9,14 @@ const capital = (s) => s[0].toUpperCase() + s.slice(1);
 const slug = (family) => family.toLowerCase().replace(/\s+/g, "-");
 const weightList = (load) => (isVariableFont(load) ? null : (load.weights ?? [400]).map(Number));
 
-/** [{name, family, load}] for every font token that names a face to load. */
+/** [{name, family, load}] for every font token that names a face to load. A family written the Fontsource way
+ *  ("Figtree Variable") is the family "Figtree" loaded as a variable font. */
 function loadedFaces(tokens) {
-  return [...groupTokens(tokens?.font)].filter(([, tok]) => fontLoad(tok)).map(([name, tok]) => ({
-    name, family: Array.isArray(tok.$value) ? tok.$value[0] : tok.$value, load: fontLoad(tok),
-  }));
+  return [...groupTokens(tokens?.font)].filter(([, tok]) => fontLoad(tok)).map(([name, tok]) => {
+    const written = Array.isArray(tok.$value) ? tok.$value[0] : tok.$value;
+    const load = fontLoad(tok);
+    return { name, family: baseFace(written), load: namedVariable(written) && !isVariableFont(load) ? { ...load, variable: true } : load };
+  });
 }
 
 const fontFace = (family, file) =>
@@ -53,7 +56,7 @@ function nuxt(faces) {
         `      { name: "${f.family}", src: "/${file.path.replace(/^\.?\//, "")}", weight: "${file.weight ?? 400}", global: true },`).join("\n");
     }
     const weights = weightList(f.load);
-    return `      { name: "${f.family}", provider: "${f.load.source}", weights: ${weights ? `[${weights.join(", ")}]` : `["${f.load.weights}"]`}, global: true },`;
+    return `      { name: "${f.family}", provider: "${f.load.source}", weights: ${weights ? `[${weights.join(", ")}]` : `["${weightRange(f.load).replace("..", " ")}"]`}, global: true },`;
   };
   return ["// nuxt.config.ts (local files live in public/)", "export default defineNuxtConfig({",
     '  modules: ["@nuxt/fonts"],', "  fonts: {", "    families: [", ...faces.map(entry), "    ],", "  },", "});"].join("\n");
@@ -79,7 +82,7 @@ function google(faces) {
   const remote = faces.filter((f) => f.load.source !== "local");
   const family = (f) => {
     const weights = weightList(f.load);
-    const axis = weights ? weights.join(";") : f.load.weights.trim().replace(/\s+/, "..");
+    const axis = weights ? weights.join(";") : weightRange(f.load);
     return `family=${f.family.replace(/\s+/g, "+")}:wght@${axis}`;
   };
   const lines = [];

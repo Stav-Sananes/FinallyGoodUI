@@ -82,3 +82,38 @@ test("detect: font loading in place, and the loader the stack should use", () =>
   assert.deepEqual(proj({ vite: "7.0.0", react: "19.2.0", "@fontsource-variable/inter": "5.2.0" }), { loader: "fontsource", inUse: ["fontsource"] });
   assert.deepEqual(proj({}, { "index.html": '<link href="https://fonts.googleapis.com/css2?family=Inter" rel="stylesheet">' }), { loader: "google", inUse: ["google-fonts"] });
 });
+
+// ---- variable fonts written the Fontsource way
+const variableTokens = (load, face = "Figtree Variable") => {
+  const t = JSON.parse(readFileSync(DEF, "utf8"));
+  t.font.sans = { $type: "fontFamily", $value: [face, "ui-sans-serif", "sans-serif"], $extensions: { fgu: { load } } };
+  const f = join(tmp(), "tokens.json");
+  writeFileSync(f, JSON.stringify(t));
+  return f;
+};
+
+test("fontsource: a family named '<Name> Variable' loads @fontsource-variable/<name>, never @fontsource/<name>-variable", () => {
+  const r = fonts(variableTokens({ source: "fontsource", weights: [400, 600] }), "fontsource");
+  assert.match(r.stdout, /npm install @fontsource-variable\/figtree\b/);
+  assert.match(r.stdout, /import "@fontsource-variable\/figtree";/);
+  assert.doesNotMatch(r.stdout, /figtree-variable|@fontsource\/figtree/);
+});
+
+test("fontsource: variable:true, and ranges written 100-900 or 100..900, pick the variable package", () => {
+  for (const load of [{ source: "fontsource", variable: true }, { source: "fontsource", weights: "100-900" }, { source: "fontsource", weights: "100..900" }, { source: "fontsource", weights: "variable" }]) {
+    const r = fonts(variableTokens(load, "Figtree"), "fontsource");
+    assert.match(r.stdout, /import "@fontsource-variable\/figtree";/, JSON.stringify(load));
+  }
+  const control = fonts(variableTokens({ source: "fontsource", weights: [400, 600] }, "Figtree"), "fontsource");
+  assert.match(control.stdout, /import "@fontsource\/figtree\/400\.css";/, "positive control: static weights stay static");
+});
+
+test("google, next and nuxt use the base family and a weight axis for a variable font", () => {
+  const f = variableTokens({ source: "google", weights: "200-800" });
+  assert.match(fonts(f, "google").stdout, /family=Figtree:wght@200\.\.800/);
+  assert.match(fonts(f, "next").stdout, /import \{ Figtree \} from "next\/font\/google";[\s\S]*Figtree\(\{ subsets: \["latin"\], display: "swap", variable/);
+  assert.match(fonts(f, "nuxt").stdout, /name: "Figtree", provider: "google", weights: \["200 800"\]/);
+  const css = run("emit-tokens.mjs", ["--in", f, "--format", "css"]).stdout;
+  assert.match(css, /--font-sans: var\(--font-sans-loaded, "Figtree Variable", Figtree\)/);
+  assert.doesNotMatch(css, /Variable Variable/);
+});

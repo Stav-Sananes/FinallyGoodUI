@@ -115,8 +115,17 @@ export const darkOf = (tok) => tok?.$extensions?.fgu?.dark;
 
 /** How a font token's face loads ($extensions.fgu.load), or null for a system stack. */
 export const fontLoad = (tok) => tok?.$extensions?.fgu?.load ?? null;
-/** A weight range ("100 900") means a variable font. */
-export const isVariableFont = (load) => typeof load?.weights === "string" && /^\d+\s+\d+$/.test(load.weights.trim());
+/** A variable font: a weight range ("100 900", "100-900", "100..900"), `weights: "variable"` or `variable: true`. */
+export const isVariableFont = (load) => load?.variable === true || (typeof load?.weights === "string" && /^(\d+\s*(?:\.\.|[-\u2013]|\s)\s*\d+|variable)$/i.test(load.weights.trim()));
+/** The family without Fontsource's own " Variable" suffix ("Figtree Variable" is the registered name of Figtree). */
+export const baseFace = (face) => String(face).replace(/\s+Variable$/i, "");
+/** True for a face whose token value already says "<Family> Variable". */
+export const namedVariable = (face) => /\s+Variable$/i.test(String(face));
+/** The weight axis of a variable font as "min..max" (default 100..900). */
+export const weightRange = (load) => {
+  const m = /(\d+)\s*(?:\.\.|[-\u2013]|\s)\s*(\d+)/.exec(String(load?.weights ?? ""));
+  return m ? `${m[1]}..${m[2]}` : "100..900";
+};
 
 /**
  * CSS for a font token whose face is loaded: next/font publishes its hashed family as
@@ -124,8 +133,9 @@ export const isVariableFont = (load) => typeof load?.weights === "string" && /^\
  * " Variable" for variable fonts), so both names follow as the var() fallback.
  */
 export function loadedFontCss(name, tok) {
-  const [face, ...rest] = Array.isArray(tok.$value) ? tok.$value : [tok.$value];
-  const names = isVariableFont(fontLoad(tok)) ? [`${face} Variable`, face] : [face];
+  const [named, ...rest] = Array.isArray(tok.$value) ? tok.$value : [tok.$value];
+  const face = baseFace(named);
+  const names = isVariableFont(fontLoad(tok)) || namedVariable(named) ? [`${face} Variable`, face] : [face];
   return [`var(--font-${name}-loaded, ${fontCss(names)})`, ...(rest.length ? [fontCss(rest)] : [])].join(", ");
 }
 
