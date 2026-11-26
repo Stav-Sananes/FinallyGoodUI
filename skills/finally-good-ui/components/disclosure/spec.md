@@ -61,3 +61,6 @@ Only open and disabled have attributes, so only they are in `states` in `spec.js
 
 ## Reference
 `reference/index.html`, `disclosure.css`, `disclosure.js` (`attach(root): detach`). The CSS is the neutral baseline; a project adapter replaces it with the project's own primitive and only keeps the contract above.
+
+## Scaffold API
+One component is one item (root, item, heading, trigger, panel). Props `variant`, `open` (initial; the trigger owns it afterwards), `disabled`; slots `trigger` (heading text) and `default` (the panel content). Single-open across several items: wrap them in an element with `data-disclosure-group` and `data-variant="single"`; `attach` closes the others. A native `<button aria-expanded aria-controls>`; closed panels are `inert`.

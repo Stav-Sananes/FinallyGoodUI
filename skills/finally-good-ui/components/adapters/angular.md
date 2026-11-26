@@ -22,3 +22,9 @@ Checker: no `(keydown...)`, `(keyup...)` or `@HostListener("keydown")` for a spe
 
 ## Motion
 Rules: `recipes/INDEX.md`. Put the recipe's CSS in a class and bind it with `animate.enter="pop-in"` and `animate.leave="pop-out"`; Angular adds the class, waits for the CSS transition or animation, then removes the element. Never use `@angular/animations` (`trigger()`, `state()`): deprecated, removal planned for v23, and it cannot be mixed with `animate.enter`. Tokens only, reduced-motion block. A library only at the recipe's upgrade trigger, after asking.
+
+## TypeScript and `.behaviour.js`
+The component imports `attach` from `./<name>.behaviour.js`. A strict project (`allowJs` off, the Angular default) cannot type that import, so the scaffold writes `<name>.behaviour.d.ts` beside it in a TypeScript project; if you copy the script by hand, either keep the `.d.ts` or set `"allowJs": true` in `tsconfig.json` (and add the file to `include`).
+
+## Generated files
+Every component is written whole (`.component.ts` + `.component.html`, standalone, `ViewEncapsulation.None` because the css is scoped by `data-fgu`, host `display: contents`); `attach(host)` runs in `ngAfterViewInit` and is cleaned up in `ngOnDestroy`. Named slots are `<ng-content select="[slot=name]">`, so project them as `<span slot="icon">`. Angular cannot tell whether an optional slot was filled, so optional parts (button icon, dialog description and actions) always render; the css hides an empty icon. Scoped slots (tabs `panel`) are `TemplateRef` inputs. A component whose root fires non-bubbling events exposes them as outputs (`closed` on dialog, `dismissed` on toast). Router: `detect-stack` reports `@angular/router` as `angular-router`.

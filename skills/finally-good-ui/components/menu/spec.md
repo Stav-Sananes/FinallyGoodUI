@@ -59,3 +59,6 @@ The key table (trigger and list, typeahead, wrap, Escape, Tab) is the menu colum
 
 ## Reference
 `reference/index.html`, `menu.css`, `menu.js` (`attach(root): detach`; `root` is any ancestor of the menus). The CSS is the neutral baseline; a project adapter replaces it with the project's own primitive and only keeps the contract above.
+
+## Scaffold API
+Props `items` (`{ label, disabled?, onSelect? }[]`); slot `default` is the trigger's label. Programmatic: `openMenu(scope, start?)` and `closeMenu(scope, { restoreFocus? })` from `<name>.behaviour.js` (scope: the menu root, trigger or list). The list is a native `popover`; `onSelect` runs from the item's click, which also closes the menu.

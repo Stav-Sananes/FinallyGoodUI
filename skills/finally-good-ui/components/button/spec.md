@@ -75,3 +75,6 @@ Press feedback is `transform` and `opacity` only (`motion.compositor-only`), 100
 
 ## Reference
 `reference/index.html`, `button.css`, `button.js` (`attach(root): detach`). The CSS is the neutral baseline; a project adapter replaces it with the project's own primitive and only keeps the contract above.
+
+## Scaffold API
+Props `variant`, `disabled`, `loading`, `type`; slots `default` (the label) and `icon` (optional; Angular always renders the empty part, hidden by `:empty`); events are native (`click`). `attach` returns the cleanup. With a wired primitive (button only) the primitive supplies the element and the scaffold adds the busy guard.

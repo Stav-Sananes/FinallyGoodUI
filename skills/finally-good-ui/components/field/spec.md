@@ -63,3 +63,6 @@ The error text fades in (`opacity` only, `--duration-short`, `--ease-enter`); no
 
 ## Reference
 `reference/index.html`, `field.css`, `field.js` (`attach(root): detach`). The CSS is the neutral baseline; a project adapter replaces it with the project's own primitive and only keeps the contract above.
+
+## Scaffold API
+Props `variant`, `label`, `hint`, `error`, `invalid`, `disabled`, `required`, and the control's own `type`, `name`, `id`, `placeholder`, `autocomplete`; every other native attribute and listener (`value`, `onInput`, `onChange`, `@input`) goes to the control, not the wrapper (Angular: events bubble to the host). No slots: `label`, `hint` and `error` are text props. `aria-describedby` points at the hint and the error line; the error line always renders. Validation on blur is `attach`'s; pass `error` for server messages.

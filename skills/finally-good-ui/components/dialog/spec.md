@@ -64,3 +64,6 @@ Enter and exit (opacity, a short lift on `transform`, a fading backdrop, `@start
 
 ## Reference
 `reference/index.html`, `dialog.css`, `dialog.js` (`attach(root): detach`; `root` is any ancestor of the triggers and dialogs). The CSS is the neutral baseline; a project adapter replaces it with the project's own primitive and only keeps the contract above.
+
+## Scaffold API
+Props `variant` (modal | confirm) and `open` (the programmatic API: set it to show or close the dialog; it is `openDialog`/`closeDialog` underneath, exported from `<name>.behaviour.js` for code that holds the element). Slots `title`, `description` (optional), `default` (the body), `actions` (optional). Event `close` is the native one (`onClose`, `@close`, `onclose`; Angular output `closed`) and fires for Escape, the close button and `open = false`. Openers: any element with `data-dialog-open="<id>"` anywhere in the page, or `open`; focus returns to the opener, or to the first focusable inside it when the opener is a custom-element host. `attach` also works when it is given the dialog itself.

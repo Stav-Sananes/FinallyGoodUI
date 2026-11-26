@@ -58,3 +58,6 @@ Enter: `transform` and `opacity` over `--duration-medium` with `--ease-enter`, f
 
 ## Reference
 `reference/index.html`, `toast.css`, `toast.js` (`attach(root): detach`; `root` is the live region or an ancestor). The CSS is the neutral baseline; a project adapter replaces it with the project's own primitive and only keeps the contract above.
+
+## Scaffold API
+Props `toasts` (`{ id, message, variant?, timeout?, action?, onAction? }[]`) and `label`; slot `default` for anything extra in the region. You own the list: when a toast leaves (timer or the dismiss button) the component keeps the node, calls `onDismiss(id)` (Vue `@dismiss`, Svelte `ondismiss`, Angular `(dismissed)`) and you remove it from `toasts`. The region is rendered once at the app root and never conditionally.

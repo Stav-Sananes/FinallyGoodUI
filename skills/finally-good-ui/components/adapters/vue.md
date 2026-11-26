@@ -23,3 +23,6 @@ Checker: no `@keydown`, `@keyup` or `@keypress` (with or without modifiers such 
 
 ## Motion
 Rules: `recipes/INDEX.md`; Reka state hooks (`data-state`) in `recipes/motion/headless-primitive-motion.md`. Start from the CSS baseline (transform/opacity, tokens, reduced-motion). For elements that mount and unmount use the built-in `<Transition>` or `<TransitionGroup>` with CSS classes; pass durations from the generated motion-tokens, never literals. Add a library only at the recipe's upgrade trigger, after asking.
+
+## Generated files
+Every component is written whole (parts, props, slots, the `attach` call from the lifecycle); `check-components` fails an empty skeleton (`empty-skeleton`). Primitives are wired for the button only. In a TypeScript project `<name>.behaviour.d.ts` is written next to the script, so the `.js` import type-checks without `allowJs`. Pass listeners and attributes through the normal fallthrough (`$attrs` / `...rest`).
