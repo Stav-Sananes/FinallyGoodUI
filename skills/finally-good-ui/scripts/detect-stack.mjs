@@ -258,6 +258,7 @@ export function detectStack(rootArg = ".") {
   else if (has("expo-router")) router = "expo-router";
   else if (framework === "nuxt" || has("vue-router")) router = "vue-router";
   else if (has("react-router") || has("react-router-dom")) router = "react-router";
+  else if (framework === "angular" && has("@angular/router")) router = "angular-router";
 
   // ---- styling
   let tailwind = null;

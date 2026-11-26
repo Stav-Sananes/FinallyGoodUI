@@ -325,3 +325,12 @@ test("desktop shells: Tauri (by package or src-tauri config) and Electron stay w
   assert.deepEqual(make({ react: "^19.0.0", electron: "^39.2.0" }).desktop, { shell: "electron", version: 39 });
   assert.equal(make({ react: "^19.0.0" }).desktop, null);
 });
+
+test("Angular router is recognised (@angular/router), and absent without it", () => {
+  const d = tmp();
+  writeFileSync(join(d, "package.json"), JSON.stringify({ dependencies: { "@angular/core": "21.0.0", "@angular/router": "21.0.0" } }));
+  assert.equal(detect(d).router, "angular-router");
+  const bare = tmp();
+  writeFileSync(join(bare, "package.json"), JSON.stringify({ dependencies: { "@angular/core": "21.0.0" } }));
+  assert.equal(detect(bare).router, null, "negative control: no router package, no router");
+});
