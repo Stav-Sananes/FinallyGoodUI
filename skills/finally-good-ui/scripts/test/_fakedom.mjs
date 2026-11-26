@@ -1,12 +1,27 @@
 // A tiny fake DOM for the component behaviour tests: elements with attributes, a tree, simple selectors
-// (`[attr]`, `[attr="v"]`, `[attr^="v"]`, `tag`, `:popover-open`, comma lists), focus, and real
-// capture/bubble event dispatch. It implements only what the reference scripts call.
+// (compounds of `[attr]`, `[attr="v"]`, `[attr^="v"]`, `tag`, `:popover-open`; descendant combinators; comma
+// lists), focus, and real capture/bubble event dispatch (up to the document). It implements only what the
+// reference scripts call.
 const ATTR = /^\[([\w-]+)(?:(\^?)=["']([^"']*)["'])?\]$/;
 
 export class Doc {
-  constructor() { this.activeElement = null; this.popovers = new Set(); this.ids = new Map(); this.defaultView = { getComputedStyle: () => ({ direction: "ltr", transitionDuration: "0s" }) }; }
+  constructor() { this.activeElement = null; this.popovers = new Set(); this.ids = new Map(); this.listeners = []; this.defaultView = { getComputedStyle: () => ({ direction: "ltr", transitionDuration: "0s" }) }; }
   getElementById(id) { return this.ids.get(id) ?? null; }
+  addEventListener(type, fn) { this.listeners.push({ type, fn, capture: false }); }
+  removeEventListener(type, fn) { const i = this.listeners.findIndex((l) => l.type === type && l.fn === fn); if (i >= 0) this.listeners.splice(i, 1); }
 }
+
+// Splits at `sep` outside [] and ().
+const splitOutside = (text, sep) => {
+  const parts = []; let depth = 0, at = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === "[" || c === "(") depth++; else if (c === "]" || c === ")") depth--;
+    else if (depth === 0 && (sep === " " ? /\s/.test(c) : c === sep)) { parts.push(text.slice(at, i)); at = i + 1; }
+  }
+  parts.push(text.slice(at));
+  return parts.map((p) => p.trim()).filter(Boolean);
+};
 
 export class El {
   constructor(doc, tag = "div", attrs = {}) {
@@ -32,16 +47,32 @@ export class El {
   remove() { this.removed = true; if (this.parent) this.parent.children = this.parent.children.filter((c) => c !== this); this.parent = null; this.dispatchRemoved?.(); }
   descendants() { return this.children.flatMap((c) => [c, ...c.descendants()]); }
   contains(el) { return el === this || this.descendants().includes(el); }
-  matches(sel) {
-    return sel.split(",").some((raw) => {
-      const s = raw.trim();
-      if (s === ":popover-open") return this.popoverOpen;
-      const m = ATTR.exec(s);
+  /** One compound: `tag`, `[attr...]` and `:popover-open` in any mix, all of which must hold. */
+  matchesCompound(s) {
+    const pieces = s.match(/\[[^\]]+\]|:popover-open|[a-z][\w-]*/g) ?? [];
+    if (pieces.join("") !== s) throw new Error(`fakedom: unsupported selector "${s}"`);
+    return pieces.every((piece) => {
+      if (piece === ":popover-open") return this.popoverOpen;
+      const m = ATTR.exec(piece);
       if (m) {
         const v = this.getAttribute(m[1]);
         return m[3] === undefined ? v !== null : m[2] ? v !== null && v.startsWith(m[3]) : v === m[3];
       }
-      return s === this.tag;
+      return piece === this.tag;
+    });
+  }
+  matches(sel) {
+    return splitOutside(sel, ",").some((complex) => {
+      const compounds = splitOutside(complex, " ");
+      if (!this.matchesCompound(compounds.pop())) return false;
+      let el = this.parent;
+      while (compounds.length) { // descendant combinator: each earlier compound must match some ancestor, right to left
+        const want = compounds.pop();
+        while (el && !el.matchesCompound(want)) el = el.parent;
+        if (!el) return false;
+        el = el.parent;
+      }
+      return true;
     });
   }
   closest(sel) { for (let e = this; e; e = e.parent) if (e.matches(sel)) return e; return null; }
@@ -80,6 +111,7 @@ export class El {
     for (const el of [...path].reverse()) { if (el !== this) fire(el, true); }
     fire(this, true); fire(this, false);
     if (ev.bubbles) for (const el of path.slice(1)) fire(el, false);
+    if (ev.bubbles && !ev.stopped) for (const l of [...this.doc.listeners]) if (l.type === type) { ev.currentTarget = this.doc; l.fn(ev); }
     return ev;
   }
   dispatchEvent(ev) { return !this.dispatch(ev.type, { bubbles: ev.bubbles, cancelable: ev.cancelable, detail: ev.detail }).defaultPrevented; }

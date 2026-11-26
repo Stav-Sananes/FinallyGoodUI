@@ -10,8 +10,11 @@
 //    and a cancelable bubbling `dismiss` event fires first, so a framework that owns the node can
 //    preventDefault() and drop the toast from its own state instead;
 //  - focus that was inside a dismissed toast goes back to where it came from.
-const TOAST = '[data-part="toast"]';
-const DISMISS = '[data-part="dismiss"]';
+// Every selector is scoped to data-fgu="toast": attach may be given a whole page, or the region itself.
+const TOAST = '[data-fgu="toast"] [data-part="toast"]';
+const DISMISS = '[data-fgu="toast"] [data-part="dismiss"]';
+const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]';
+const focusTarget = (el) => (el.matches?.(FOCUSABLE) ? el : el.querySelector?.(FOCUSABLE) ?? el);
 const DEFAULT_TIMEOUT_MS = 5000; // reading time, not animation: not a motion token
 const EXIT_GRACE_MS = 100; // wait this long past the transition for transitionend before removing anyway
 
@@ -62,7 +65,7 @@ export function attach(root) {
       const holdsFocus = toast.contains(toast.ownerDocument.activeElement);
       const proceed = toast.dispatchEvent(new CustomEvent("dismiss", { bubbles: true, cancelable: true }));
       if (proceed) toast.remove();
-      if (holdsFocus && returnTo?.isConnected) returnTo.focus();
+      if (holdsFocus && returnTo?.isConnected) focusTarget(returnTo).focus();
     };
     leaving.set(toast, finish);
     const ms = exitMs(toast);

@@ -70,5 +70,10 @@
     "tab": "button",
     "panel": "div"
   },
-  "pattern": "recipes/motion/tabs-indicator.md"
+  "pattern": "recipes/motion/tabs-indicator.md",
+  "profile": {
+    "surface": null,
+    "interactive": "tab",
+    "density": "tab"
+  }
 }

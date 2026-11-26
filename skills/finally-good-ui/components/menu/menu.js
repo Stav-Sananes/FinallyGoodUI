@@ -6,12 +6,20 @@
 // The trigger is the popover's invoker (popovertarget): the platform toggles on click and exempts the trigger
 // from light dismiss, so there is no click handler for it (a click handler would reopen a menu that light
 // dismiss had just closed). Enter and Space are that native click: no key listener for them here.
-const TRIGGER = '[data-part="trigger"]';
-const LIST = '[data-part="list"]';
-const ITEM = '[data-part="item"]';
+// Every selector is scoped to data-fgu="menu": attach may be given a whole page, or the menu root itself.
+// openMenu / closeMenu are the programmatic API: they take the list, the trigger or the menu root.
+const ROOT = '[data-fgu="menu"][data-part="root"]';
+const TRIGGER = '[data-fgu="menu"] [data-part="trigger"]';
+const LIST = '[data-fgu="menu"] [data-part="list"]';
+const ITEM = '[data-fgu="menu"] [data-part="item"]';
+const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]';
 const TYPEAHEAD_RESET_MS = 500; // input timing, not animation: not a motion token
 let counter = 0;
+const triggerOf = new WeakMap(); // list -> trigger
+const typed = new WeakMap(); // list -> { text, at }
 
+const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
+const focusTarget = (el) => (el.matches?.(FOCUSABLE) ? el : el.querySelector?.(FOCUSABLE) ?? el);
 const itemsOf = (list) => [...list.querySelectorAll(ITEM)];
 const isOpen = (list) => list.matches(":popover-open");
 
@@ -22,13 +30,58 @@ function prepareItems(list) {
   }
 }
 
-export function attach(root) {
-  const triggerOf = new WeakMap(); // list -> trigger
-  const typed = new WeakMap(); // list -> { text, at }
+const setExpanded = (list, open) => triggerOf.get(list)?.setAttribute("aria-expanded", String(open));
+function focusItem(list, item) {
+  if (!item) return;
+  for (const other of itemsOf(list)) other.setAttribute("tabindex", "-1");
+  item.setAttribute("tabindex", "0");
+  item.focus();
+}
+const focusAt = (list, index) => { const items = itemsOf(list); focusItem(list, items.at(index % items.length)); };
 
-  for (const trigger of root.querySelectorAll(TRIGGER)) {
+// The list a scope stands for: the list itself, a trigger's list, or the first list inside a root.
+function listOf(scope) {
+  if (scope.matches?.(LIST)) return scope;
+  const trigger = scope.matches?.(TRIGGER) ? scope : null;
+  if (trigger) return trigger.ownerDocument.getElementById(trigger.getAttribute("aria-controls"));
+  return scope.querySelector(LIST);
+}
+
+/** Opens the menu and moves focus to item `start` (0 = first, -1 = last). */
+export function openMenu(scope, start = 0) {
+  const list = listOf(scope);
+  if (!list || !triggerOf.has(list)) return;
+  if (!isOpen(list)) list.showPopover();
+  setExpanded(list, true);
+  focusAt(list, start);
+}
+
+/** Closes the menu; focus goes back to the trigger unless `restoreFocus` is false. */
+export function closeMenu(scope, { restoreFocus = true } = {}) {
+  const list = listOf(scope);
+  if (!list || !triggerOf.has(list)) return;
+  if (isOpen(list)) list.hidePopover();
+  setExpanded(list, false);
+  if (restoreFocus) { const trigger = triggerOf.get(list); if (trigger) focusTarget(trigger).focus(); }
+}
+
+function typeahead(list, event) {
+  const items = itemsOf(list);
+  const i = items.indexOf(list.ownerDocument.activeElement);
+  const prev = typed.get(list);
+  const text = prev && event.timeStamp - prev.at <= TYPEAHEAD_RESET_MS ? prev.text + event.key : event.key;
+  typed.set(list, { text, at: event.timeStamp });
+  const repeat = [...text].every((c) => c === text[0]); // "dd" cycles through items starting with "d"
+  const search = (repeat ? text[0] : text).toLowerCase();
+  const from = repeat ? i + 1 : Math.max(i, 0);
+  const label = (el) => el.textContent.trim().toLowerCase();
+  focusItem(list, [...items.slice(from), ...items.slice(0, from)].find((el) => label(el).startsWith(search)));
+}
+
+export function attach(root) {
+  for (const trigger of within(root, TRIGGER)) {
     const controlled = trigger.getAttribute("aria-controls");
-    const list = (controlled && trigger.ownerDocument.getElementById(controlled)) || trigger.closest('[data-part="root"]')?.querySelector(LIST);
+    const list = (controlled && trigger.ownerDocument.getElementById(controlled)) || trigger.closest(ROOT)?.querySelector(LIST);
     if (!list) continue;
     const n = ++counter;
     trigger.id ||= `fgu-menu-${n}-trigger`;
@@ -43,46 +96,13 @@ export function attach(root) {
     triggerOf.set(list, trigger);
   }
 
-  const setExpanded = (list, open) => triggerOf.get(list)?.setAttribute("aria-expanded", String(open));
-  const focusItem = (list, item) => {
-    if (!item) return;
-    for (const other of itemsOf(list)) other.setAttribute("tabindex", "-1");
-    item.setAttribute("tabindex", "0");
-    item.focus();
-  };
-  const focusAt = (list, index) => { const items = itemsOf(list); focusItem(list, items.at(index % items.length)); };
-
-  const open = (list, start) => {
-    if (!isOpen(list)) list.showPopover();
-    setExpanded(list, true);
-    focusAt(list, start);
-  };
-  const close = (list, { restoreFocus }) => {
-    if (isOpen(list)) list.hidePopover();
-    setExpanded(list, false);
-    if (restoreFocus) triggerOf.get(list)?.focus();
-  };
-
-  const typeahead = (list, event) => {
-    const items = itemsOf(list);
-    const i = items.indexOf(list.ownerDocument.activeElement);
-    const prev = typed.get(list);
-    const text = prev && event.timeStamp - prev.at <= TYPEAHEAD_RESET_MS ? prev.text + event.key : event.key;
-    typed.set(list, { text, at: event.timeStamp });
-    const repeat = [...text].every((c) => c === text[0]); // "dd" cycles through items starting with "d"
-    const search = (repeat ? text[0] : text).toLowerCase();
-    const from = repeat ? i + 1 : Math.max(i, 0);
-    const label = (el) => el.textContent.trim().toLowerCase();
-    focusItem(list, [...items.slice(from), ...items.slice(0, from)].find((el) => label(el).startsWith(search)));
-  };
-
   const onKeydown = (event) => {
     const trigger = event.target.closest?.(TRIGGER);
     if (trigger) {
       const list = trigger.ownerDocument.getElementById(trigger.getAttribute("aria-controls"));
       if (!list) return;
-      if (event.key === "ArrowDown") { event.preventDefault(); open(list, 0); }
-      if (event.key === "ArrowUp") { event.preventDefault(); open(list, -1); }
+      if (event.key === "ArrowDown") { event.preventDefault(); openMenu(list, 0); }
+      if (event.key === "ArrowUp") { event.preventDefault(); openMenu(list, -1); }
       return;
     }
     const list = event.target.closest?.(LIST);
@@ -91,8 +111,8 @@ export function attach(root) {
     const i = items.indexOf(list.ownerDocument.activeElement);
     const moves = { ArrowDown: i + 1, ArrowUp: i - 1 + items.length, Home: 0, End: items.length - 1 };
     if (event.key in moves) { event.preventDefault(); focusAt(list, moves[event.key]); return; }
-    if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); close(list, { restoreFocus: true }); return; }
-    if (event.key === "Tab") { close(list, { restoreFocus: false }); return; }
+    if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeMenu(list); return; }
+    if (event.key === "Tab") { closeMenu(list, { restoreFocus: false }); return; }
     if (event.key.length === 1 && /\S/.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) typeahead(list, event);
   };
 
@@ -102,7 +122,7 @@ export function attach(root) {
     const list = item?.closest(LIST);
     if (!item || !list || !triggerOf.has(list)) return;
     if (item.getAttribute("aria-disabled") === "true") { event.preventDefault(); event.stopPropagation(); return; }
-    close(list, { restoreFocus: true });
+    closeMenu(list);
   };
 
   // `beforetoggle` and `toggle` do not bubble; they also fire for the invoker, light dismiss and Escape.

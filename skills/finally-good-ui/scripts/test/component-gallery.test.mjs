@@ -37,7 +37,8 @@ test("the gallery is one static file: tokens, scoped component css with the prof
   const html = page(root);
   assert.match(html, /--color-primary:/, "tokens css inline");
   assert.doesNotMatch(html, /href="tokens\.css"|\.\.\/|import \{ attach \}|<link /, "no external references");
-  assert.match(html, /\[data-fgu="button"\] \[data-part="root"\]/, "component css is scoped to its section");
+  assert.match(html, /\[data-fgu="button"\]\[data-part="root"\]/, "component css is scoped to its component");
+  assert.doesNotMatch(html, /\[data-fgu="button"\] \[data-fgu="button"\]/, "no double scoping");
   assert.match(html, /\/\* button: radius=sharp material=flat density=dense/, "profile layer applied");
   assert.match(html, /\/\* tabs: radius=sharp/, "profile layer applied to every component");
   assert.match(html, /@keyframes btn-spin/, "keyframes kept");

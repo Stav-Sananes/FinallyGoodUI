@@ -86,5 +86,10 @@
     "panel",
     "content"
   ],
-  "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/accordion/"
+  "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/accordion/",
+  "profile": {
+    "surface": null,
+    "interactive": "trigger",
+    "density": "trigger"
+  }
 }

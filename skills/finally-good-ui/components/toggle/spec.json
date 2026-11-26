@@ -112,5 +112,10 @@
   "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/",
   "tags": {
     "root": "label"
+  },
+  "profile": {
+    "surface": null,
+    "interactive": "control",
+    "density": null
   }
 }

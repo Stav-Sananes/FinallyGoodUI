@@ -79,5 +79,10 @@
     "trigger": "button",
     "item": "button"
   },
-  "pattern": "recipes/patterns/menu-select-combobox.md"
+  "pattern": "recipes/patterns/menu-select-combobox.md",
+  "profile": {
+    "surface": "list",
+    "interactive": "item",
+    "density": "item"
+  }
 }

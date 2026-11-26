@@ -90,5 +90,10 @@
     "close": "button",
     "actions": "div"
   },
-  "pattern": "recipes/motion/dialog-enter-exit.md"
+  "pattern": "recipes/motion/dialog-enter-exit.md",
+  "profile": {
+    "surface": "root",
+    "interactive": null,
+    "density": null
+  }
 }

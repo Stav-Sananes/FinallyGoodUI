@@ -1,13 +1,12 @@
 /* Disclosure / accordion reference. Tokens only; load tokens.css (emit-tokens.mjs --format css) first. */
-[data-part="root"] {
+[data-fgu="disclosure"][data-part="root"] {
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   color: var(--color-foreground);
 }
-[data-part="item"] { border-block-end: var(--border-width-hairline) solid var(--color-border); }
-[data-part="heading"] { margin: 0; font: inherit; }
-
-[data-part="trigger"] {
+[data-fgu="disclosure"] [data-part="item"] { border-block-end: var(--border-width-hairline) solid var(--color-border); }
+[data-fgu="disclosure"] [data-part="heading"] { margin: 0; font: inherit; }
+[data-fgu="disclosure"] [data-part="trigger"] {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -25,14 +24,13 @@
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-[data-part="trigger"]:focus-visible {
+[data-fgu="disclosure"] [data-part="trigger"]:focus-visible {
   outline: var(--ring-width) solid var(--color-ring);
   outline-offset: calc(var(--ring-offset) * -1);
 }
-[data-part="trigger"]:disabled { opacity: 0.5; color: var(--color-muted-foreground); cursor: not-allowed; }
-
+[data-fgu="disclosure"] [data-part="trigger"]:disabled { opacity: 0.5; color: var(--color-muted-foreground); cursor: not-allowed; }
 /* The chevron is always in the box; opening only rotates it, so the trigger keeps its size. */
-[data-part="indicator"] {
+[data-fgu="disclosure"] [data-part="indicator"] {
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -41,15 +39,14 @@
   block-size: var(--icon-md);
   transition: transform var(--duration-short) var(--ease-exit);
 }
-[data-part="indicator"]::before { content: "\2304"; }
-[data-part="trigger"][aria-expanded="true"] [data-part="indicator"] {
+[data-fgu="disclosure"] [data-part="indicator"]::before { content: "\2304"; }
+[data-fgu="disclosure"] [data-part="trigger"][aria-expanded="true"] [data-part="indicator"] {
   transform: rotate(0.5turn);
   transition-duration: var(--duration-standard);
   transition-timing-function: var(--ease-move);
 }
-
 /* Panel: grid rows 0fr to 1fr is the all-browsers auto-height animation (recipes/motion/accordion-auto-height.md). */
-[data-part="panel"] {
+[data-fgu="disclosure"] [data-part="panel"] {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
@@ -57,19 +54,18 @@
     grid-template-rows var(--duration-short) var(--ease-exit), /* fgu-allow: animate-layout-prop */
     opacity var(--duration-short) var(--ease-exit);
 }
-[data-part="heading"]:has([aria-expanded="true"]) + [data-part="panel"] {
+[data-fgu="disclosure"] [data-part="heading"]:has([aria-expanded="true"]) + [data-part="panel"] {
   grid-template-rows: 1fr;
   opacity: 1;
   transition-duration: var(--duration-standard);
   transition-timing-function: var(--ease-move);
 }
-[data-part="content"] {
+[data-fgu="disclosure"] [data-part="content"] {
   overflow: hidden;
   min-block-size: 0;
   padding-inline: var(--space-2);
 }
-
 @media (prefers-reduced-motion: reduce) {
-  [data-part="panel"] { transition-property: opacity; }
-  [data-part="indicator"] { transition: none; }
+[data-fgu="disclosure"] [data-part="panel"] { transition-property: opacity; }
+[data-fgu="disclosure"] [data-part="indicator"] { transition: none; }
 }

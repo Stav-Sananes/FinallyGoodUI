@@ -1,6 +1,6 @@
 /* Toast reference: a persistent live region holding plain toast elements. Tokens only; load tokens.css first.
    Enter and exit follow recipes/motion/toast-stack.md (transform and opacity only). */
-[data-part="root"] {
+[data-fgu="toast"][data-part="root"] {
   position: fixed;
   inset: auto var(--space-4) var(--space-4) auto;
   z-index: var(--z-toast);
@@ -13,8 +13,7 @@
   font-family: var(--font-sans);
   font-size: var(--text-sm);
 }
-
-[data-part="toast"] {
+[data-fgu="toast"] [data-part="toast"] {
   pointer-events: auto;
   display: flex;
   align-items: center;
@@ -32,21 +31,20 @@
     opacity var(--duration-medium) var(--ease-enter);
 }
 @starting-style {
-  [data-part="toast"] { opacity: 0; transform: translateY(100%); }
+[data-fgu="toast"] [data-part="toast"] { opacity: 0; transform: translateY(100%); }
 }
-[data-part="toast"][data-leaving] {
+[data-fgu="toast"] [data-part="toast"][data-leaving] {
   opacity: 0;
   transform: translateX(calc(100% + var(--space-4)));
   transition-duration: var(--duration-short);
   transition-timing-function: var(--ease-exit);
 }
-
-[data-part="message"] { flex: 1; margin: 0; }
+[data-fgu="toast"] [data-part="message"] { flex: 1; margin: 0; }
 /* An error is never colour alone: a leading icon and a heavier edge as well. */
-[data-part="toast"][data-variant="error"] { border-inline-start: var(--border-width-strong) solid var(--color-destructive); }
-[data-part="toast"][data-variant="error"] [data-part="message"]::before { content: "\26A0"; content: "\26A0" / ""; margin-inline-end: var(--space-2); color: var(--color-destructive); }
-
-[data-part="action"], [data-part="dismiss"] {
+[data-fgu="toast"] [data-part="toast"][data-variant="error"] { border-inline-start: var(--border-width-strong) solid var(--color-destructive); }
+[data-fgu="toast"] [data-part="toast"][data-variant="error"] [data-part="message"]::before { content: "\26A0"; content: "\26A0" / ""; margin-inline-end: var(--space-2); color: var(--color-destructive); }
+[data-fgu="toast"] [data-part="action"],
+[data-fgu="toast"] [data-part="dismiss"] {
   flex: none;
   box-sizing: border-box;
   min-block-size: var(--size-control-md);
@@ -59,12 +57,13 @@
   cursor: pointer;
   touch-action: manipulation;
 }
-[data-part="action"]:focus-visible, [data-part="dismiss"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
-
+[data-fgu="toast"] [data-part="action"]:focus-visible,
+[data-fgu="toast"] [data-part="dismiss"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
 /* Reduced motion: opacity only, no slide. */
 @media (prefers-reduced-motion: reduce) {
-  [data-part="toast"], [data-part="toast"][data-leaving] { transform: none; }
-  @starting-style {
-    [data-part="toast"] { transform: none; }
-  }
+[data-fgu="toast"] [data-part="toast"],
+[data-fgu="toast"] [data-part="toast"][data-leaving] { transform: none; }
+@starting-style {
+[data-fgu="toast"] [data-part="toast"] { transform: none; }
+}
 }

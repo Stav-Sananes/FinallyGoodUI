@@ -1,5 +1,5 @@
 /* Button reference. Tokens only; load tokens.css (emit-tokens.mjs --format css) first. */
-[data-part="root"] {
+[data-fgu="button"][data-part="root"] {
   position: relative;
   --btn-bg: var(--color-primary);
   --btn-fg: var(--color-primary-foreground);
@@ -24,13 +24,13 @@
     transform var(--duration-micro) var(--ease-snappy),
     opacity var(--duration-short) var(--ease-snappy);
 }
-[data-part="root"][data-variant="secondary"] { --btn-bg: var(--color-accent); --btn-fg: var(--color-accent-foreground); border-color: var(--color-border); }
-[data-part="root"][data-variant="ghost"] { --btn-bg: transparent; --btn-fg: var(--color-foreground); }
-[data-part="root"][data-variant="destructive"] { --btn-bg: var(--color-destructive); --btn-fg: var(--color-destructive-foreground); }
-
-[data-part="label"], [data-part="icon"] { transition: opacity var(--duration-short) var(--ease-snappy); }
-[data-part="icon"] { display: inline-flex; width: var(--icon-md); height: var(--icon-md); }
-[data-part="spinner"] {
+[data-fgu="button"][data-part="root"][data-variant="secondary"] { --btn-bg: var(--color-accent); --btn-fg: var(--color-accent-foreground); border-color: var(--color-border); }
+[data-fgu="button"][data-part="root"][data-variant="ghost"] { --btn-bg: transparent; --btn-fg: var(--color-foreground); }
+[data-fgu="button"][data-part="root"][data-variant="destructive"] { --btn-bg: var(--color-destructive); --btn-fg: var(--color-destructive-foreground); }
+[data-fgu="button"] [data-part="label"],
+[data-fgu="button"] [data-part="icon"] { transition: opacity var(--duration-short) var(--ease-snappy); }
+[data-fgu="button"] [data-part="icon"] { display: inline-flex; width: var(--icon-md); height: var(--icon-md); }
+[data-fgu="button"] [data-part="spinner"] {
   position: absolute;
   inset: 0;
   margin: auto;
@@ -43,30 +43,28 @@
   border-radius: var(--radius-full);
   animation: btn-spin var(--duration-hero) linear infinite;
 }
-[data-part="root"][aria-busy="true"] [data-part="spinner"] { opacity: 1; }
-[data-part="root"][aria-busy="true"] [data-part="label"],
-[data-part="root"][aria-busy="true"] [data-part="icon"] { opacity: 0; }
-[data-part="root"][aria-busy="true"] { cursor: progress; }
-
+[data-fgu="button"][data-part="root"][aria-busy="true"] [data-part="spinner"] { opacity: 1; }
+[data-fgu="button"][data-part="root"][aria-busy="true"] [data-part="label"],
+[data-fgu="button"][data-part="root"][aria-busy="true"] [data-part="icon"] { opacity: 0; }
+[data-fgu="button"][data-part="root"][aria-busy="true"] { cursor: progress; }
 @media (hover: hover) and (pointer: fine) {
-  [data-part="root"]:hover:not(:disabled):not([aria-busy="true"]) { opacity: 0.9; }
+[data-fgu="button"][data-part="root"]:hover:not(:disabled):not([aria-busy="true"]) { opacity: 0.9; }
 }
-[data-part="root"]:active:not(:disabled):not([aria-busy="true"]) { transform: scale(0.97); }
-[data-part="root"]:focus-visible {
+[data-fgu="button"][data-part="root"]:active:not(:disabled):not([aria-busy="true"]) { transform: scale(0.97); }
+[data-fgu="button"][data-part="root"]:focus-visible {
   outline: var(--ring-width) solid var(--color-ring);
   outline-offset: var(--ring-offset);
 }
-[data-part="root"]:disabled {
+[data-fgu="button"][data-part="root"]:disabled {
   opacity: 0.5;
   color: var(--color-muted-foreground);
   cursor: not-allowed;
 }
-
 @keyframes btn-spin { to { transform: rotate(1turn); } }
-
 @media (prefers-reduced-motion: reduce) {
-  [data-part="root"] { transition: opacity var(--duration-short) linear; }
-  [data-part="root"]:active:not(:disabled):not([aria-busy="true"]) { transform: none; opacity: 0.85; }
-  [data-part="spinner"] { animation: none; }
-  [data-part="label"], [data-part="icon"] { transition: none; }
+[data-fgu="button"][data-part="root"] { transition: opacity var(--duration-short) linear; }
+[data-fgu="button"][data-part="root"]:active:not(:disabled):not([aria-busy="true"]) { transform: none; opacity: 0.85; }
+[data-fgu="button"] [data-part="spinner"] { animation: none; }
+[data-fgu="button"] [data-part="label"],
+[data-fgu="button"] [data-part="icon"] { transition: none; }
 }

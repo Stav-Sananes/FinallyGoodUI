@@ -2,8 +2,12 @@
 // recipes/patterns/form-validation.md (no error while typing a pristine field, show it on blur,
 // clear it on the next keystroke once fixed). Messages come from `data-msg-<validity key>` on the control
 // (data-msg-value-missing, data-msg-type-mismatch ...), else the browser's own text.
-const CONTROL = '[data-part="control"]';
+// Every selector is scoped to data-fgu="field": attach may be given a whole page, or the field itself.
+const FIELD = '[data-fgu="field"][data-part="root"]';
+const CONTROL = '[data-fgu="field"] [data-part="control"]';
 let counter = 0;
+
+const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
 
 const message = (control) => {
   for (const key in control.validity) {
@@ -41,11 +45,11 @@ function show(field, control) {
 }
 
 export function attach(root) {
-  for (const field of root.querySelectorAll('[data-part="root"]')) wire(field);
+  for (const field of within(root, FIELD)) wire(field);
 
   const owner = (event) => {
     const control = event.target.closest?.(CONTROL);
-    return control ? { control, field: control.closest('[data-part="root"]') } : null;
+    return control ? { control, field: control.closest(FIELD) } : null;
   };
   // focusout (it bubbles; blur does not): the field was touched, so validate it now.
   const onFocusOut = (event) => {

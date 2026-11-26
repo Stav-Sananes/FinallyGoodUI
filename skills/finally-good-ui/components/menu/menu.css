@@ -1,13 +1,12 @@
 /* Menu button reference: a native popover list under a button. Tokens only; load tokens.css first.
    Open and close motion follows recipes/motion/popover-from-trigger.md (opacity and a short drop). */
-[data-part="root"] {
+[data-fgu="menu"][data-part="root"] {
   display: inline-block;
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   color: var(--color-foreground);
 }
-
-[data-part="trigger"] {
+[data-fgu="menu"] [data-part="trigger"] {
   box-sizing: border-box;
   min-block-size: var(--size-control-md);
   padding-inline: var(--space-3);
@@ -18,11 +17,10 @@
   cursor: pointer;
   touch-action: manipulation;
 }
-[data-part="trigger"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
-[data-part="trigger"][aria-expanded="true"] { background: var(--color-accent); color: var(--color-accent-foreground); }
-
+[data-fgu="menu"] [data-part="trigger"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
+[data-fgu="menu"] [data-part="trigger"][aria-expanded="true"] { background: var(--color-accent); color: var(--color-accent-foreground); }
 /* The list sits in the top layer; attach writes --menu-x / --menu-y from the trigger's box. */
-[data-part="list"] {
+[data-fgu="menu"] [data-part="list"] {
   inset: auto;
   inset-block-start: var(--menu-y, 0);
   inset-inline-start: var(--menu-x, 0);
@@ -39,17 +37,16 @@
     display var(--duration-micro) allow-discrete,
     overlay var(--duration-micro) allow-discrete;
 }
-[data-part="list"]:popover-open {
+[data-fgu="menu"] [data-part="list"]:popover-open {
   opacity: 1;
   transform: none;
   transition-duration: var(--duration-short);
   transition-timing-function: var(--ease-snappy);
 }
 @starting-style {
-  [data-part="list"]:popover-open { opacity: 0; transform: translateY(calc(var(--space-1) * -1)); }
+[data-fgu="menu"] [data-part="list"]:popover-open { opacity: 0; transform: translateY(calc(var(--space-1) * -1)); }
 }
-
-[data-part="item"] {
+[data-fgu="menu"] [data-part="item"] {
   display: flex;
   align-items: center;
   box-sizing: border-box;
@@ -64,17 +61,17 @@
   cursor: pointer;
 }
 /* The highlight is the focus ring plus a fill: never colour alone. */
-[data-part="item"]:focus-visible {
+[data-fgu="menu"] [data-part="item"]:focus-visible {
   background: var(--color-accent);
   color: var(--color-accent-foreground);
   outline: var(--ring-width) solid var(--color-ring);
   outline-offset: calc(var(--ring-offset) * -1);
 }
-[data-part="item"][aria-disabled="true"] { opacity: 0.5; color: var(--color-muted-foreground); cursor: not-allowed; }
-
+[data-fgu="menu"] [data-part="item"][aria-disabled="true"] { opacity: 0.5; color: var(--color-muted-foreground); cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) {
-  [data-part="list"], [data-part="list"]:popover-open { transform: none; }
-  @starting-style {
-    [data-part="list"]:popover-open { transform: none; }
-  }
+[data-fgu="menu"] [data-part="list"],
+[data-fgu="menu"] [data-part="list"]:popover-open { transform: none; }
+@starting-style {
+[data-fgu="menu"] [data-part="list"]:popover-open { transform: none; }
+}
 }

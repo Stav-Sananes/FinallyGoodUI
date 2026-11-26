@@ -39,7 +39,7 @@ async function loadPlaywright(root) {
   return null;
 }
 
-const section = (page, name) => page.locator(`[data-fgu="${name}"]`);
+const section = (page, name) => page.locator(`[data-fgu-section="${name}"]`);
 const expect = (cond, detail) => { if (!cond) throw new Error(detail); };
 
 // Each check gets a fresh page so one failure cannot poison the next. Returns a detail string on success.

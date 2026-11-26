@@ -13,7 +13,7 @@ const dialogPage = ({ backdropClose = false } = {}) => {
   const doc = new Doc();
   const root = make(doc, "div");
   const opener = make(doc, "button", { "data-dialog-open": "d1", id: "o1" });
-  const dlg = make(doc, "dialog", { "data-part": "root", id: "d1", ...(backdropClose ? { "data-backdrop-close": "" } : {}) });
+  const dlg = make(doc, "dialog", { "data-fgu": "dialog", "data-part": "root", id: "d1", ...(backdropClose ? { "data-backdrop-close": "" } : {}) });
   const title = make(doc, "h2", { "data-part": "title" });
   const desc = make(doc, "p", { "data-part": "description" });
   const close = make(doc, "button", { "data-part": "close" });
@@ -100,7 +100,7 @@ test("dialog attach: detach removes every listener and stops reacting", async ()
 // ---- menu
 const menuPage = () => {
   const doc = new Doc();
-  const root = make(doc, "div", { "data-part": "root" });
+  const root = make(doc, "div", { "data-fgu": "menu", "data-part": "root" });
   const trigger = make(doc, "button", { "data-part": "trigger", id: "t1" });
   const list = make(doc, "div", { "data-part": "list", role: "menu", id: "m1" });
   const labels = ["Rename", "Duplicate", "Move", "Delete"];
@@ -291,7 +291,7 @@ test("menu attach: detach removes every listener and stops reacting", async () =
 // ---- tabs
 const tabsPage = ({ controls = true, selected = null, orientation = null } = {}) => {
   const doc = new Doc();
-  const root = make(doc, "div", { "data-part": "root" });
+  const root = make(doc, "div", { "data-fgu": "tabs", "data-part": "root" });
   const list = make(doc, "div", { "data-part": "list", role: "tablist", "aria-label": "Views", ...(orientation ? { "aria-orientation": orientation } : {}) });
   const names = ["open", "paid", "void"];
   const tabs = names.map((n, i) => make(doc, "button", { "data-part": "tab", id: `tab-${n}`, ...(controls ? { "aria-controls": `panel-${n}` } : {}), ...(selected === i ? { "aria-selected": "true" } : {}) }, n));
@@ -444,7 +444,7 @@ const withClock = async (fn) => {
 const toastPage = ({ toasts = [{}], duration = "0s" } = {}) => {
   const doc = new Doc();
   doc.defaultView.getComputedStyle = () => ({ transitionDuration: duration });
-  const root = make(doc, "div", { "data-part": "root", role: "status" });
+  const root = make(doc, "div", { "data-fgu": "toast", "data-part": "root", role: "status" });
   const outside = make(doc, "button", { id: "outside" });
   const made = toasts.map((attrs, i) => {
     const toast = make(doc, "div", { "data-part": "toast", ...attrs });

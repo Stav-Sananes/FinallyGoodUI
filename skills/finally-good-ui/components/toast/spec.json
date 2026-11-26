@@ -75,5 +75,10 @@
     "action": "button",
     "dismiss": "button"
   },
-  "pattern": "recipes/motion/toast-stack.md"
+  "pattern": "recipes/motion/toast-stack.md",
+  "profile": {
+    "surface": "toast",
+    "interactive": null,
+    "density": null
+  }
 }

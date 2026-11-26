@@ -42,6 +42,16 @@ export function validateSpec(spec) {
       if (typeof tag !== "string" || !/^[a-z][a-z0-9]*$/.test(tag)) errors.push(`tags.${part}: must be a plain lowercase tag name`);
     }
   }
+  if (spec.profile !== undefined) {
+    if (!isObj(spec.profile)) errors.push("profile: must be an object (surface, density, interactive: a part or null; radius: boolean)");
+    else for (const [k, v] of Object.entries(spec.profile)) {
+      if (k === "radius") { if (typeof v !== "boolean") errors.push("profile.radius: must be a boolean"); }
+      else if (["surface", "density", "interactive"].includes(k)) {
+        if (v !== null && !(isText(v) && Array.isArray(spec.parts) && spec.parts.includes(v))) errors.push(`profile.${k}: must be null or one of parts`);
+      } else errors.push(`profile.${k}: unknown key`);
+    }
+  }
+  if (spec.api !== undefined) textList(errors, "api", spec.api);
   if (!isText(spec.name)) errors.push("name: must be a non-empty string");
   textList(errors, "shapes", spec.shapes);
   textList(errors, "events", spec.events);
@@ -54,6 +64,7 @@ export function validateSpec(spec) {
   objectList(errors, "props", spec.props, (p, at) => {
     if (!isText(p.name)) errors.push(`${at}.name: must be a non-empty string`);
     if (!isText(p.type)) errors.push(`${at}.type: must be a non-empty string`);
+    if (p.ts !== undefined && !isText(p.ts)) errors.push(`${at}.ts: must be a non-empty string (the TypeScript type)`);
   });
   objectList(errors, "states", spec.states, (s, at) => {
     if (!isText(s.name)) errors.push(`${at}.name: must be a non-empty string`);

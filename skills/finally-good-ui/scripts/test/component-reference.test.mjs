@@ -55,7 +55,7 @@ const spinnerLayoutProblems = (cssText) => {
     if (!/data-part="spinner"/.test(sel)) continue;
     if (/\bdisplay\s*:/.test(body)) problems.push(`${sel.trim()}: sets display`);
   }
-  const base = [...src.matchAll(/([^{}@]+)\{([^{}]*)\}/g)].find(([, sel]) => sel.trim() === '[data-part="spinner"]');
+  const base = [...src.matchAll(/([^{}@]+)\{([^{}]*)\}/g)].find(([, sel]) => sel.trim() === '[data-fgu="button"] [data-part="spinner"]');
   if (!base || !/position\s*:\s*absolute/.test(base[2])) problems.push("spinner base rule is not position:absolute");
   return problems;
 };

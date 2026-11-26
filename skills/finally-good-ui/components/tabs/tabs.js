@@ -3,16 +3,20 @@
 // one tab stop (roving tabindex), only the selected panel visible, click to select, ArrowLeft/Right
 // (ArrowUp/Down when aria-orientation="vertical", swapped in right-to-left lists) with wrapping,
 // Home and End, and the indicator's position as CSS variables on the list. Tab leaves the tablist natively.
-const LIST = '[data-part="list"]';
-const TAB = '[data-part="tab"]';
-const PANEL = '[data-part="panel"]';
+// Every selector is scoped to data-fgu="tabs": attach may be given a whole page, or the tabs root itself.
+// selectTab is the programmatic API: selectTab(scope, tabOrIndex).
+const ROOT = '[data-fgu="tabs"][data-part="root"]';
+const LIST = '[data-fgu="tabs"] [data-part="list"]';
+const TAB = '[data-fgu="tabs"] [data-part="tab"]';
+const PANEL = '[data-fgu="tabs"] [data-part="panel"]';
 let counter = 0;
 
+const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
 const tabsOf = (list) => [...list.querySelectorAll(TAB)];
 const panelOf = (tab) => { const id = tab.getAttribute("aria-controls"); return id ? tab.ownerDocument.getElementById(id) : null; };
 
 function wire(list) {
-  const group = list.closest('[data-part="root"]') ?? list.parentElement;
+  const group = list.closest(ROOT) ?? list.parentElement;
   const panels = [...group.querySelectorAll(PANEL)];
   tabsOf(list).forEach((tab, i) => {
     const n = ++counter;
@@ -51,10 +55,17 @@ function select(list, tab) {
   place(list);
 }
 
+/** Selects a tab of the tabs inside `scope` (the root, the list, or any ancestor): a tab element or its index. */
+export function selectTab(scope, which) {
+  const list = scope.matches?.(LIST) ? scope : scope.querySelector(LIST);
+  const tab = typeof which === "number" ? tabsOf(list)[which] : which;
+  if (list && tab) select(list, tab);
+}
+
 export function attach(root) {
   const observers = [];
   const frames = [];
-  for (const list of root.querySelectorAll(LIST)) {
+  for (const list of within(root, LIST)) {
     wire(list);
     const tabs = tabsOf(list);
     select(list, tabs.find((t) => t.getAttribute("aria-selected") === "true") ?? tabs[0]);

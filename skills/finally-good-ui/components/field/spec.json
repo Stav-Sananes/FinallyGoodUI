@@ -113,5 +113,10 @@
     "label": "label",
     "hint": "p",
     "error": "p"
+  },
+  "profile": {
+    "surface": "control",
+    "interactive": "control",
+    "density": "control"
   }
 }

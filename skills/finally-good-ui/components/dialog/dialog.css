@@ -1,6 +1,6 @@
 /* Dialog reference: native <dialog> shown with showModal(). Tokens only; load tokens.css first.
    Enter and exit follow recipes/motion/dialog-enter-exit.md (opacity and a short lift, no scale). */
-[data-part="root"] {
+[data-fgu="dialog"][data-part="root"] {
   box-sizing: border-box;
   inline-size: min(calc(100vw - var(--space-8)), 32rem);
   max-block-size: calc(100dvh - var(--space-8));
@@ -19,17 +19,16 @@
     display var(--duration-short) allow-discrete,
     overlay var(--duration-short) allow-discrete;
 }
-[data-part="root"][open] {
+[data-fgu="dialog"][data-part="root"][open] {
   opacity: 1;
   transform: none;
   transition-duration: var(--duration-standard);
   transition-timing-function: var(--ease-enter);
 }
 @starting-style {
-  [data-part="root"][open] { opacity: 0; transform: translateY(var(--space-2)); }
+[data-fgu="dialog"][data-part="root"][open] { opacity: 0; transform: translateY(var(--space-2)); }
 }
-
-[data-part="root"]::backdrop {
+[data-fgu="dialog"][data-part="root"]::backdrop {
   background: var(--color-overlay);
   opacity: 0;
   transition:
@@ -37,21 +36,19 @@
     display var(--duration-medium) allow-discrete,
     overlay var(--duration-medium) allow-discrete;
 }
-[data-part="root"][open]::backdrop { opacity: 1; }
+[data-fgu="dialog"][data-part="root"][open]::backdrop { opacity: 1; }
 @starting-style {
-  [data-part="root"][open]::backdrop { opacity: 0; }
+[data-fgu="dialog"][data-part="root"][open]::backdrop { opacity: 0; }
 }
-
 /* Header row: the title takes the space, the close button keeps its size, so content never reflows. */
-[data-part="title"] {
+[data-fgu="dialog"] [data-part="title"] {
   margin: 0;
   padding-inline-end: var(--size-control-md);
   font-size: var(--text-lg);
   font-weight: 600;
 }
-[data-part="description"] { margin-block: var(--space-2) 0; color: var(--color-muted-foreground); }
-
-[data-part="close"] {
+[data-fgu="dialog"] [data-part="description"] { margin-block: var(--space-2) 0; color: var(--color-muted-foreground); }
+[data-fgu="dialog"] [data-part="close"] {
   position: absolute;
   inset-block-start: var(--space-2);
   inset-inline-end: var(--space-2);
@@ -68,15 +65,14 @@
   cursor: pointer;
   touch-action: manipulation;
 }
-[data-part="close"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
-[data-part="root"][data-variant="confirm"] [data-part="close"] { display: none; }
-
-[data-part="actions"] { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); margin-block-start: var(--space-6); }
-
+[data-fgu="dialog"] [data-part="close"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
+[data-fgu="dialog"][data-part="root"][data-variant="confirm"] [data-part="close"] { display: none; }
+[data-fgu="dialog"] [data-part="actions"] { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); margin-block-start: var(--space-6); }
 /* Reduced motion: opacity only, no lift. */
 @media (prefers-reduced-motion: reduce) {
-  [data-part="root"], [data-part="root"][open] { transform: none; }
-  @starting-style {
-    [data-part="root"][open] { transform: none; }
-  }
+[data-fgu="dialog"][data-part="root"],
+[data-fgu="dialog"][data-part="root"][open] { transform: none; }
+@starting-style {
+[data-fgu="dialog"][data-part="root"][open] { transform: none; }
+}
 }
