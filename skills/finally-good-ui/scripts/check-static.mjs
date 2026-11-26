@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Layer-1 static checks. Regex/heuristic based: fast, dependency-free, best effort.
-import { join, resolve, relative, isAbsolute, extname, basename } from "node:path";
+import { join, resolve, relative, isAbsolute, extname, basename, dirname } from "node:path";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
 import { readdirSync } from "node:fs";
 import { readText, walk, isFile, toPosix, lineIndex, IGNORE_DIRS } from "./lib/fs.mjs";
@@ -355,7 +355,7 @@ export function checkFile(rel, text, ctx) {
       if (role && tab) return;
       add("div-onclick", m.index, "high", `Clickable <${m[1]}> is not keyboard or screen-reader accessible; use <button>/<a> (or add role, tabIndex and key handlers).`);
     });
-    checkWidgetKeyboard(markup, clean, add);
+    checkWidgetKeyboard(markup, clean, add, keysViaBehaviour(rel, clean, ctx));
     checkInputErgonomics(markup, add, each);
     checkImageDimensions(markup, add, each);
     each(/<(input|select|textarea|Input|Select|Textarea)\b/g, markup, (m) => {
@@ -446,8 +446,15 @@ function wrapsNativeRadios(markup, bodyStart, tagName) {
   return /type\s*=\s*\{?\s*["'`]radio["'`]/.test(body) && !/role\s*=\s*\{?\s*["'`]radio["'`]/.test(body);
 }
 
-function checkWidgetKeyboard(markup, clean, add) {
-  if (SCRIPT_KEY_LISTENER.test(clean)) return;
+// A scaffolded component (marker + <name>.behaviour.js next to it) or any file that imports a *.behaviour module has
+// its keys wired by attach(): the role in the markup is backed by script that lives in the shared behaviour file.
+const BEHAVIOUR_IMPORT = /from\s+["'][^"']*\.behaviour(?:\.js)?["']|import\(\s*["'][^"']*\.behaviour/;
+function keysViaBehaviour(rel, clean, ctx) {
+  return BEHAVIOUR_IMPORT.test(clean) || Boolean(ctx.hasBehaviour?.(rel));
+}
+
+function checkWidgetKeyboard(markup, clean, add, viaBehaviour = false) {
+  if (viaBehaviour || SCRIPT_KEY_LISTENER.test(clean)) return;
   WIDGET_ROLE.lastIndex = 0;
   let m;
   while ((m = WIDGET_ROLE.exec(markup))) {
@@ -700,6 +707,16 @@ export function checkStatic(rootArg = ".", { files, tokens } = {}) {
       if (t != null && t.length <= 1_000_000) customProps(rel, t, vars);
     }
     return vars;
+  };
+  const behaviourDirs = new Map();
+  ctx.hasBehaviour = (rel) => {
+    const dir = dirname(rel);
+    if (!behaviourDirs.has(dir)) {
+      let names = [];
+      try { names = readdirSync(join(root, dir)); } catch { /* unreadable dir: no behaviour */ }
+      behaviourDirs.set(dir, names.includes(".fgu-component.json") && names.some((n) => n.endsWith(".behaviour.js")));
+    }
+    return behaviourDirs.get(dir);
   };
   const findings = [];
   for (const rel of targets) {

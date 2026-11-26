@@ -287,3 +287,21 @@ test("ink-on-paper: a near-neutral pale page with near-black primary actions is 
   assert.deepEqual(theme("#fbfbfa", "oklch(0.55 0.17 30)"), [], "a coloured primary breaks it");
   assert.deepEqual(theme("oklch(0.16 0.004 80)", "oklch(0.95 0 0)"), [], "a dark page is not paper");
 });
+
+test("role-no-keyboard: keys wired by an attached .behaviour.js count (scaffolded component dir, or a file importing it)", () => {
+  const d = tmp();
+  const menu = join(d, "src/components/fgu/menu");
+  const other = join(d, "src/other");
+  const importing = join(d, "src/importing");
+  for (const dir of [menu, other, importing]) mkdirSync(dir, { recursive: true });
+  const vue = '<template><div role="menu" popover><button role="menuitem">One</button></div></template>\n';
+  writeFileSync(join(menu, "menu.vue"), vue);
+  writeFileSync(join(other, "menu.vue"), vue);
+  writeFileSync(join(importing, "Menu.tsx"), 'import { attach } from "../components/fgu/menu/menu.behaviour.js";\nexport const M = () => <div role="menu">x</div>;\n');
+  const hits = () => check(d).findings.filter((f) => f.rule === "role-no-keyboard").map((f) => f.file).sort();
+  // before the scaffold's behaviour exists, the markup alone is flagged (positive control)
+  assert.deepEqual(hits(), ["src/components/fgu/menu/menu.vue", "src/other/menu.vue"]);
+  writeFileSync(join(menu, ".fgu-component.json"), '{ "name": "menu", "source": "shared", "framework": "vue" }');
+  writeFileSync(join(menu, "menu.behaviour.js"), "export function attach() {}\n");
+  assert.deepEqual(hits(), ["src/other/menu.vue"], "the scaffolded component and the importing file are cleared; the unrelated copy is not");
+});
