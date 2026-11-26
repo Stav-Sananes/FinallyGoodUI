@@ -9,4 +9,6 @@
 - [tabs](components/tabs/spec.md) — tablist of native buttons with panels: one tab stop, arrows/Home/End, selection follows focus, sliding indicator per the tabs recipe.
 - [toast](components/toast/spec.md) — always-present `role="status"` region with plain toast elements: auto-dismiss that pauses on hover and focus, dismiss button, never focus-stealing; errors never the only signal.
 
+Style profile (`.design/component-style.json`: schema and how to derive it from the direction): `components/style-profile.md`.
+
 Framework adapters (load the one that matches the project's stack, on demand): `components/adapters/{plain,react,vue,svelte,angular}.md`, and `components/adapters/light/{solid,lit}.md` for stacks the scaffold has no template for. Each says how props, state attributes, slots and the behaviour source (installed primitive, else the shared `<name>.behaviour.js`) map onto that framework.
