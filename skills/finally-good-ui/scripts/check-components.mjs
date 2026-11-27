@@ -83,7 +83,12 @@ export function literalsIn(css) {
 const KEY_HANDLER = /\bonkey(?:down|up|press)\w*|@key(?:down|up|press)[.\w-]*|\bon:key(?:down|up|press)[.\w:|-]*|\(key(?:down|up|press)[.\w-]*\)|addEventListener\(\s*["']key(?:down|up|press)["']/i;
 // Spellings of a spec key in handler code, lower-cased ("Space" is also written " "; Escape is also "esc").
 const KEY_ALIASES = { space: ["space"], escape: ["escape", "esc"], arrowdown: ["arrowdown", "down"], arrowup: ["arrowup", "up"], arrowleft: ["arrowleft", "left"], arrowright: ["arrowright", "right"] };
+const keyPatterns = new Map();
 const keyPattern = (key) => {
+  if (!keyPatterns.has(key)) keyPatterns.set(key, buildKeyPattern(key));
+  return keyPatterns.get(key);
+};
+const buildKeyPattern = (key) => {
   const k = key.toLowerCase();
   const names = (KEY_ALIASES[k] ?? [k]).map((n) => `(?<![a-z])${n}(?![a-z])`);
   if (k === "space") names.push(`["'] ["']`);
@@ -93,9 +98,10 @@ const keyPattern = (key) => {
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** The role is carried by the element: an explicit role attribute or the native/primitive element of that name. */
+const roleRegexes = new Map();
 const hasRole = (role, text) => {
-  const r = escape(role);
-  return new RegExp(`role=["']${r}["']|<${r}\\b|as=["']${r}["']|\\.${r}\\b|\\b${r}\\.Root\\b`, "i").test(text);
+  if (!roleRegexes.has(role)) { const r = escape(role); roleRegexes.set(role, new RegExp(`role=["']${r}["']|<${r}\\b|as=["']${r}["']|\\.${r}\\b|\\b${r}\\.Root\\b`, "i")); }
+  return roleRegexes.get(role).test(text);
 };
 
 // Does the opening tag of the role part carry the role, as role="x" or through its native tag?
@@ -153,20 +159,22 @@ const isFrameworkFile = (name, spec) => !name.endsWith(".css") && name !== MARKE
 // The plain-html output is a static demo page: it renders only the root, with no state attributes.
 const isDemoPage = (files) => files.length > 0 && files.every((f) => /\.html$/.test(f) && !/\.component\.html$/.test(f));
 
-function checkComponent(markerPath, root, notes, defined) {
+function checkComponent(markerPath, root, notes, defined, specs) {
   const dir = dirname(markerPath);
   const rel = (name) => toPosix(join(relativeDir(root, dir), name));
   const marker = readJson(markerPath);
   const name = marker?.name;
   let spec;
-  try { spec = loadSpec(join(COMPONENTS_ROOT, String(name))); }
+  try { spec = specs.get(name) ?? (specs.set(name, loadSpec(join(COMPONENTS_ROOT, String(name)))), specs.get(name)); }
   catch (e) { return [{ file: rel(MARKER), rule: "spec-missing", message: `no spec for component "${name}": ${e.message}` }]; }
 
   const names = readdirSync(dir).sort(); // the same reported file on every OS
   const frameworkFiles = names.filter((n) => isFrameworkFile(n, spec));
   const cssFiles = names.filter((n) => n.endsWith(".css"));
-  const code = frameworkFiles.map((n) => readText(join(dir, n)) ?? "").join("\n");
-  const css = cssFiles.map((n) => readText(join(dir, n)) ?? "").join("\n");
+  const texts = new Map(); // each file is read once
+  const textOf = (n) => { if (!texts.has(n)) texts.set(n, readText(join(dir, n)) ?? ""); return texts.get(n); };
+  const code = frameworkFiles.map(textOf).join("\n");
+  const css = cssFiles.map(textOf).join("\n");
   const where = frameworkFiles[0] ?? MARKER;
   const findings = [];
   const add = (file, rule, message) => findings.push({ file: rel(file), rule, message });
@@ -188,22 +196,24 @@ function checkComponent(markerPath, root, notes, defined) {
     if (!new RegExp(`(?<![\\w-])${escape(attribute)}(?![\\w-])`).test(css)) add(cssFiles[0] ?? where, "state-unstyled", `state "${state}" (${attribute}) has no CSS rule`);
   }
   for (const css_ of cssFiles) {
-    for (const { selector, why } of selectorProblems(spec, readText(join(dir, css_)) ?? "")) add(css_, "css-selector-unmatched", `${selector}: ${why}`);
+    const sheet = textOf(css_);
+    for (const { selector, why } of selectorProblems(spec, sheet)) add(css_, "css-selector-unmatched", `${selector}: ${why}`);
     if (defined) {
-      const missing = usedVars(readText(join(dir, css_)) ?? "").filter((v) => !defined.has(v));
+      const missing = usedVars(sheet).filter((v) => !defined.has(v));
       if (missing.length) add(css_, "token-undefined", `the project's tokens do not define ${missing.join(", ")}: those declarations are dropped. Add them (emit-tokens.mjs --format css writes the skill's set) or regenerate .design/tokens.json`);
     }
-    for (const lit of literalsIn(readText(join(dir, css_)) ?? "")) add(css_, "literal", `literal "${lit}" in CSS: use a token`);
+    for (const lit of literalsIn(sheet)) add(css_, "literal", `literal "${lit}" in CSS: use a token`);
   }
   const shared = marker.source === "shared";
   if (shared && !/\battach\(/.test(code)) add(where, "empty-skeleton", `${spec.name} uses the shared behaviour but never calls attach(): no keyboard, focus or ARIA wiring runs`);
   if (!demo && spec.slots.length && !CONTENT_SLOT.test(code)) add(where, "empty-skeleton", `${spec.name} renders its parts but no content slot (${spec.slots.join(", ")}): the caller's content has nowhere to go`);
   if (marker.source === "shared" || String(marker.source).startsWith("primitives:")) {
     for (const file of frameworkFiles) {
-      const text = readText(join(dir, file)) ?? "";
+      const text = textOf(file);
       if (!KEY_HANDLER.test(text)) continue;
+      const lower = text.toLowerCase();
       for (const key of Object.keys(spec.a11y.keys)) {
-        if (keyPattern(key).test(text.toLowerCase())) add(file, "key-handler-reimplemented", `key "${key}" is handled in ${file}: the ${marker.source} behaviour already does it`);
+        if (keyPattern(key).test(lower)) add(file, "key-handler-reimplemented", `key "${key}" is handled in ${file}: the ${marker.source} behaviour already does it`);
       }
     }
   }
@@ -217,8 +227,9 @@ export function checkComponents(root) {
   const notes = [];
   const markers = walk(root, root).filter((f) => basename(f) === MARKER);
   const defined = markers.length ? definedVars(root) : null; // null: the project has no token set to compare with
+  const specs = new Map();
   const findings = markers.flatMap((m) => {
-    try { return checkComponent(join(root, m), root, notes, defined); }
+    try { return checkComponent(join(root, m), root, notes, defined, specs); }
     catch (e) { return [{ file: toPosix(relative(root, join(root, m))), rule: "css-unparseable", message: `could not check this component: ${e.message}` }]; }
   });
   return { findings, notes };

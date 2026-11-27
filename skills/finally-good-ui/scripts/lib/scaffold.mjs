@@ -67,7 +67,8 @@ function chooseSource(stack, family, spec, markup, tag, deps) {
   return { source: `primitives:${name}`, prim: { ...entry, imp }, note: null };
 }
 
-export function planScaffold({ spec, stack, profile, root, force = false }) {
+/** `defined`: the project's custom properties when the caller already has them (definedVars(root), null = none); computed here otherwise. */
+export function planScaffold({ spec, stack, profile, root, force = false, defined = undefined }) {
   const framework = stack.framework;
   if (NATIVE.has(framework)) throw new UsageError(`${framework} is a native stack: component scaffolds are web only (no DOM, no CSS)`);
   const family = FAMILY[framework] ?? null;
@@ -88,8 +89,8 @@ export function planScaffold({ spec, stack, profile, root, force = false }) {
   const rendered = family ? FRAMEWORKS[family](view, { shared, prim, typescript }) : plain(spec, COMPONENTS_ROOT);
 
   // The css is written against the skill's token names: say so when the project's own tokens lack some.
-  const defined = definedVars(root);
-  const missing = defined ? usedVars(css).filter((v) => !defined.has(v)) : [];
+  const known = defined === undefined ? definedVars(root) : defined;
+  const missing = known ? usedVars(css).filter((v) => !known.has(v)) : [];
   if (missing.length) notes.push(`the project's tokens do not define ${missing.join(", ")}: add them (emit-tokens.mjs --format css writes the skill's set) or those declarations are dropped`);
 
   const out = [

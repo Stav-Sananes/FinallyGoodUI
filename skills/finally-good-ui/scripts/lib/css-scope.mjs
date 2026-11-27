@@ -58,6 +58,8 @@ function closeOf(css, open) {
   throw new Error("unbalanced braces in component css");
 }
 
+// sticky: matches only at lastIndex, so no slice of the rest of the stylesheet per rule
+const LEAD_COMMENT = /\s*(\/\*[\s\S]*?\*\/)\s*/y;
 const GROUPING = /^@(media|supports|starting-style|layer|container)\b/;
 
 /** Applies `fn(selector)` to every selector of every style rule; @keyframes and other at-rules pass through,
@@ -65,9 +67,9 @@ const GROUPING = /^@(media|supports|starting-style|layer|container)\b/;
 export function mapSelectors(text, fn) {
   let out = "", i = 0;
   while (i < text.length) {
-    const rest = text.slice(i);
-    const lead = rest.match(/^\s*(\/\*[\s\S]*?\*\/)\s*/); // comments between rules are kept (the profile layer's header is one)
-    if (lead) { out += `${lead[1]}\n`; i += lead[0].length; continue; }
+    LEAD_COMMENT.lastIndex = i;
+    const lead = LEAD_COMMENT.exec(text); // comments between rules are kept (the profile layer's header is one)
+    if (lead) { out += `${lead[1]}\n`; i = LEAD_COMMENT.lastIndex; continue; }
     const stop = findStop(text, i);
     if (!stop) break;
     if (stop.ch === ";") { out += `${text.slice(i, stop.index + 1).trim()}\n`; i = stop.index + 1; continue; }

@@ -57,11 +57,12 @@ function writeGallery(root, dryRun) {
   const own = join(root, ".design/tokens.json");
   let tokens;
   try { tokens = loadTokens(exists(own) ? own : DEFAULT_TOKENS); } catch (e) { throw new UsageError(`tokens: ${e.message}`); }
+  const components = galleryComponents();
   if (!dryRun) {
     mkdirSync(join(root, ".design"), { recursive: true });
-    writeFileSync(join(root, GALLERY), buildGallery({ profile, tokensCss: emitCss(tokens) }));
+    writeFileSync(join(root, GALLERY), buildGallery({ profile, tokensCss: emitCss(tokens), components }));
   }
-  return { tool: "scaffold-component", gallery: GALLERY, tokens: exists(own) ? ".design/tokens.json" : "skill defaults", components: galleryComponents() };
+  return { tool: "scaffold-component", gallery: GALLERY, tokens: exists(own) ? ".design/tokens.json" : "skill defaults", components };
 }
 
 if (isMain(import.meta.url)) {

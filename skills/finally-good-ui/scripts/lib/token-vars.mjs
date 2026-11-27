@@ -27,8 +27,10 @@ export function definedVars(root) {
     try { for (const m of emitCss(loadTokens(tokens)).matchAll(DEFINITION)) defined.add(m[1]); } catch { /* an unreadable token file defines nothing */ }
   }
   const files = walk(root, root, { exts: STYLE_EXTS, maxDepth: 8, maxFiles: 4000 });
+  const owned = new Map(); // dir -> is it a scaffolded component folder (one stat per folder, not per file)
+  const isComponentDir = (dir) => { if (!owned.has(dir)) owned.set(dir, exists(join(root, dir, ".fgu-component.json"))); return owned.get(dir); };
   for (const f of files) {
-    if (exists(join(root, dirname(f), ".fgu-component.json"))) continue; // a scaffolded component's own css defines nothing the project owns
+    if (isComponentDir(dirname(f))) continue; // a scaffolded component's own css defines nothing the project owns
     const text = readText(join(root, f));
     if (text && text.length < 2_000_000) for (const m of text.matchAll(DEFINITION)) defined.add(m[1]);
   }
