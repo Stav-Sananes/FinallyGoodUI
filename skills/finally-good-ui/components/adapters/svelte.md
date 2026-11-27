@@ -32,3 +32,6 @@ Every component is written whole (parts, props, slots, the `attach` call from th
 - The script is TypeScript (`lang="ts"`, typed props) only when the project has TypeScript; a JavaScript project gets plain script without annotations. `field`'s `error` prop wins over the built-in validation message while it is non-empty (the behaviour writes into the same text node, never replaces it).
 
 Round 6: `toast-store.ts` exports the `toasts` store with `pushToast(toast)` (returns the id) and `dismissToast(id)`: `<Toast toasts={$toasts} ondismiss={dismissToast} />`. Dialog `nativeValidation`, field `hideLabel`.
+
+## Select, table, tooltip, popover
+Bindable: `<Select bind:value>`, `<Table bind:sort bind:selected>` (you re-order `rows`), `<Popover bind:open>`. `Tooltip`: `delay`, `variant`, children = the control, snippet `content` = the text.

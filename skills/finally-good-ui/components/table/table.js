@@ -13,8 +13,8 @@ const part = (name) => `[data-fgu="table"] [data-part="${name}"]`;
 
 const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
 const rootOf = (el) => el.closest?.(ROOT) ?? null;
-const rowBoxes = (root) => [...root.querySelectorAll(`${part("body")} ${part("select")}`)];
-const allBox = (root) => root.querySelector(`${part("head")} ${part("select")}`);
+const rowBoxes = (root) => [...root.querySelectorAll(`${part("body")} [data-part="select"]`)];
+const allBox = (root) => root.querySelector(`${part("head")} [data-part="select"]`);
 const idOf = (box) => box.closest("tr")?.getAttribute("data-row-id") ?? "";
 
 function refresh(root) {

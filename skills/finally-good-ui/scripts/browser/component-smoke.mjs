@@ -16,7 +16,8 @@ Usage: component-smoke.mjs [--root <dir>] [--page <file>]
 
 Opens the component gallery in Chromium and asserts real behaviour: Menu toggles and Escape returns focus,
 Dialog focus in / Escape / focus back, Tabs arrow keys, Disclosure aria-expanded, Toast live region and
-dismiss, Button aria-busy swallowing clicks, and no page errors.
+dismiss, Button aria-busy swallowing clicks, Select open/filter/choose, Table sort and selection, Tooltip focus/Escape/hover,
+Popover open/Escape/outside click, and no page errors.
 Prints {"tool":"component-smoke","ok","checks":[{name,ok,detail}]}.
 
 Options:
@@ -125,6 +126,69 @@ const CHECKS = [
     expect((await clicks(busy)) === 0, "the busy button received a click");
     expect(await busy.evaluate((el) => !el.disabled), "the busy button became disabled instead of staying focusable");
     return "busy 0 clicks, idle 1 click";
+  }],
+  ["select: the listbox opens on the trigger, arrows and Enter choose, the display and hidden value follow, focus returns", async (page) => {
+    const sel = section(page, "select").locator('[data-variant="listbox"]').first();
+    const trigger = sel.locator('[data-part="trigger"]'), list = sel.locator('[data-part="listbox"]');
+    await trigger.focus();
+    await page.keyboard.press("ArrowDown");
+    expect(await list.evaluate((el) => el.matches(":popover-open")), "ArrowDown did not open the list");
+    expect((await trigger.getAttribute("aria-expanded")) === "true", "aria-expanded is not true while open");
+    expect(await list.evaluate((el) => el.contains(document.activeElement)), "focus did not move into the list");
+    await page.keyboard.type("pl"); // the search field filters
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("Enter");
+    expect(await list.evaluate((el) => !el.matches(":popover-open")), "choosing did not close the list");
+    expect(((await sel.locator('[data-part="display"]').textContent()) ?? "").trim() === "Platform", "the display did not show the chosen option");
+    expect((await sel.locator('[data-part="value"]').inputValue()) === "platform", "the hidden value did not follow");
+    expect(await trigger.evaluate((el) => el === document.activeElement), "focus did not return to the trigger");
+    return "ArrowDown opened, filter + Enter chose Platform, trigger focused";
+  }],
+  ["table: a sort button sets aria-sort and select-all checks every row", async (page) => {
+    const table = section(page, "table").locator('[data-part="root"]').first();
+    const th = table.locator('[data-part="header"][data-key="due"]');
+    await th.locator('[data-part="sort"]').click();
+    expect((await th.getAttribute("aria-sort")) === "ascending", "the first click did not sort ascending");
+    await th.locator('[data-part="sort"]').click();
+    expect((await th.getAttribute("aria-sort")) === "descending", "the second click did not sort descending");
+    await table.locator('[data-part="head"] [data-part="select"]').check();
+    const rows = table.locator('[data-part="body"] [data-part="row"][data-row-id]');
+    expect((await rows.evaluateAll((els) => els.every((e) => e.getAttribute("aria-selected") === "true"))), "select-all did not select every row");
+    await rows.first().locator('[data-part="select"]').uncheck();
+    expect(await table.locator('[data-part="head"] [data-part="select"]').evaluate((el) => el.indeterminate), "the head checkbox is not mixed with one row cleared");
+    return "aria-sort ascending -> descending, select-all, mixed state";
+  }],
+  ["tooltip: keyboard focus shows it, Escape hides it, the control is described by it", async (page) => {
+    const tip = section(page, "tooltip").locator('[data-part="root"]').first();
+    const button = tip.locator("button"), content = tip.locator('[data-part="content"]');
+    await page.keyboard.press("Tab");
+    await button.focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    expect(await content.evaluate((el) => el.matches(":popover-open")), "keyboard focus did not show the tooltip");
+    expect((await button.getAttribute("aria-describedby")) === (await content.getAttribute("id")), "aria-describedby does not point at the tooltip");
+    await page.keyboard.press("Escape");
+    expect(await content.evaluate((el) => !el.matches(":popover-open")), "Escape did not hide it");
+    await button.hover();
+    await page.waitForTimeout(700);
+    expect(await content.evaluate((el) => el.matches(":popover-open")), "hover did not show it after the delay");
+    return "focus shows, Escape hides, hover shows after the delay";
+  }],
+  ["popover: opens with focus inside, Escape closes and focus returns to the trigger, outside click dismisses", async (page) => {
+    const pop = section(page, "popover").locator('[data-part="root"]').first();
+    const trigger = pop.locator('[data-part="trigger"]'), panel = pop.locator('[data-part="panel"]');
+    await trigger.click();
+    expect(await panel.evaluate((el) => el.matches(":popover-open")), "the trigger did not open the panel");
+    await page.waitForTimeout(100); // the toggle event that moves focus is dispatched asynchronously
+    expect(await panel.evaluate((el) => el.contains(document.activeElement)), "focus did not move into the panel");
+    expect((await trigger.getAttribute("aria-expanded")) === "true", "aria-expanded is not true while open");
+    await page.keyboard.press("Escape");
+    expect(await panel.evaluate((el) => !el.matches(":popover-open")), "Escape did not close it");
+    expect(await trigger.evaluate((el) => el === document.activeElement), "focus did not return to the trigger");
+    await trigger.click();
+    await page.mouse.click(2, 2);
+    expect(await panel.evaluate((el) => !el.matches(":popover-open")), "an outside click did not dismiss it");
+    return "open, focus in, Escape and outside click close, trigger focused";
   }],
 ];
 

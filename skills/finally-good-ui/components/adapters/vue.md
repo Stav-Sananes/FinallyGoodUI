@@ -32,3 +32,6 @@ Every component is written whole (parts, props, slots, the `attach` call from th
 - `tabs`: `selected` (index) is controlled; the component emits `change` and `update:selected` with the new index (`v-model:selected`). `dialog`: `open` is controlled and emits `update:open` with `false` when it closes by Escape, the close button or a submit (`v-model:open`). `toast` emits `dismiss` with the id: remove it from `toasts`.
 
 Round 6: `toast-store.ts` exports `useToast()` (`toasts`, `push` returning the id, `dismiss(id)`): `<Toast :toasts="toasts" @dismiss="dismiss" />` once near the root. Toggle also supports `v-model:checked`. Dialog: `:native-validation` re-enables the browser's bubbles; field `hide-label`.
+
+## Select, table, tooltip, popover
+`Select`: `v-model` (or `v-model:value`), `variant="native"` for a `<select>`. `Table`: `v-model:sort`, `v-model:selected` (ids); you re-order `rows` yourself. `Popover`: `v-model:open`. `Tooltip`: `delay`, `variant`, default slot = the control, `#content` = the text.

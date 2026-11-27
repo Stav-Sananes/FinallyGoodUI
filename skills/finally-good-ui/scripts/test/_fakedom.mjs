@@ -90,6 +90,7 @@ export class El {
     if (target && !ev.defaultPrevented) target.popoverOpen ? target.hidePopover() : target.showPopover();
     return ev;
   }
+  click() { return this.dispatch("click", { bubbles: true }); }
   showModal() { this.setAttribute("open", ""); this.modal = true; }
   close() { if (!this.hasAttribute("open")) return; this.removeAttribute("open"); this.dispatch("close"); }
   addEventListener(type, fn, opts) { this.listeners.push({ type, fn, capture: opts === true || opts?.capture === true }); }

@@ -34,3 +34,6 @@ Every component is written whole (`.component.ts` + `.component.html`, standalon
 - Compile check: `ngc` with `strictTemplates` over the generated files is part of `scripts/test/compile-scaffold.mjs`.
 
 Round 6: `toast-store.service.ts` is `ToastStore` (signal `toasts`, `push` returning the id, `dismiss(id)`): `<fgu-toast [toasts]="store.toasts()" (dismissed)="store.dismiss($event)" />`. Generated TypeScript reads `dataset["id"]` (index-signature safe). Dialog `nativeValidation`, field `hideLabel` and `validate` from the behaviour for form-level checks.
+
+## Select, table, tooltip, popover
+Two-way: `[(value)]` on `fgu-select`, `[(sort)]` and `[(selected)]` on `fgu-table` (you re-order `rows`), `[(open)]` on `fgu-popover`. `fgu-tooltip`: `delay`, `variant`, the control as content and `<span slot="content">` for the text. Optional slots always render (Angular cannot tell if they were filled).

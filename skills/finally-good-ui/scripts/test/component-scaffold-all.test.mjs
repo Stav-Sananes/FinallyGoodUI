@@ -285,3 +285,47 @@ test("profile: the menu trigger takes the surface (border, shadow, radius) from 
   assert.match(trigger, /border-radius: var\(--radius-/);
   assert.match(trigger, /border-width: var\(--border-width-/);
 });
+
+// ---- select, table, tooltip, popover
+test("select: native and listbox shapes, uncontrolled DOM value in React, v-model in Vue, bindable value in Svelte, two-way in Angular", () => {
+  for (const fw of ["react", "vue", "svelte", "angular"]) {
+    const text = joined("select", fw);
+    assert.match(text, /<select\b/, `${fw}: native shape`);
+    assert.match(text, /role="combobox"/, `${fw}: listbox shape`);
+    assert.match(text, /selectValue/, `${fw}: controlled value reaches the DOM through selectValue`);
+  }
+  assert.match(joined("select", "react"), /defaultValue=\{value\}/);
+  assert.match(joined("select", "react"), /onValueChange/);
+  assert.match(joined("select", "vue"), /"update:modelValue": \[value: string\]/);
+  assert.match(joined("select", "vue"), /"update:value": \[value: string\]/);
+  assert.match(joined("select", "svelte"), /value = \$bindable\(\)/);
+  assert.match(joined("select", "angular"), /@Output\(\) valueChange/);
+  assert.doesNotMatch(joined("select", "react"), /\.dataset\./);
+});
+
+test("table: columns and rows rendered from props, sort and selection are bound, selection reaches the DOM through syncSelection", () => {
+  for (const fw of ["react", "vue", "svelte", "angular"]) {
+    const text = joined("table", fw);
+    assert.match(text, /row\[col\.key\]/, `${fw}: cells from the columns`);
+    assert.match(text, /'ascending'/, `${fw}: aria-sort`);
+    assert.match(text, /syncSelection/, `${fw}: controlled selection`);
+  }
+  assert.match(joined("table", "react"), /onSortChange/);
+  assert.match(joined("table", "react"), /onSelectedChange/);
+  assert.match(joined("table", "vue"), /"update:sort": \[value: string\]/);
+  assert.match(joined("table", "vue"), /"update:selected": \[value: string\[\]\]/);
+  assert.match(joined("table", "svelte"), /sort = \$bindable\(\)/);
+  assert.match(joined("table", "angular"), /@Output\(\) selectedChange/);
+});
+
+test("popover: bound open through openPopover/closePopover, tooltip: delay and placement reach the root, content is plain text", () => {
+  assert.match(joined("popover", "react"), /openPopover\(dialog\)/);
+  assert.match(joined("popover", "vue"), /watch\(\(\) => props\.open/);
+  assert.match(joined("popover", "svelte"), /open = \$bindable\(false\)/);
+  assert.match(joined("popover", "angular"), /@Output\(\) openChange/);
+  for (const fw of ["react", "vue", "svelte", "angular"]) {
+    assert.match(joined("tooltip", fw), /data-delay/, fw);
+    assert.match(joined("tooltip", fw), /data-placement/, fw);
+    assert.match(joined("tooltip", fw), /role="tooltip"/, fw);
+  }
+});

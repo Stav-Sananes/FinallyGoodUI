@@ -26,3 +26,5 @@ Checker: write no `keydown`/`keyup`/`keypress` listener for a key in `spec.a11y.
 Rules and tokens: `recipes/INDEX.md`. Plain CSS transitions on `transform` and `opacity` with `var(--duration-*)` and `var(--ease-*)`, plus `@media (prefers-reduced-motion: reduce)`. Enter animations on inserted elements use `@starting-style`. For anything CSS cannot do, use the Web Animations API with durations from the generated motion-tokens module, never literals.
 
 The scaffold writes the component's reference page re-pointed at the files next to it (`<name>.css`, `<name>.behaviour.js`): every part and state, `attach` called on the demo. Load your `tokens.css` before the stylesheet.
+
+Select, table, tooltip and popover: the page is the component's reference page; each exports a small programmatic API from `<name>.behaviour.js` (`selectValue`, `syncSelection`, `showTooltip` / `hideTooltip`, `openPopover` / `closePopover`) and fires a bubbling custom event (`selectchange`, `sortchange`, `selectionchange`, `popoverchange`).

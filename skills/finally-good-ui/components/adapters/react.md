@@ -33,3 +33,6 @@ Every component is written whole: parts, props, slots and the `attach` effect (`
 - `field` takes `multiline` (+ `rows`) for a textarea; its `error` prop wins over the built-in validation message while it is non-empty.
 
 Round 6: `toast-store.tsx` holds `ToastProvider` (renders the region, owns the list) and `useToast()` (`push(toast)` returns the id, `dismiss(id)`). Toast `onAction(id)` and `onDismiss(id)` both get the id. Toggle: pass `checked` + `onChange` to control it, or `defaultChecked` to leave it uncontrolled. Dialog's form is `noValidate` unless `nativeValidation`; field `hideLabel`.
+
+## Select, table, tooltip, popover
+`Select`: `value` seeds the choice (the DOM owns it afterwards) and `onValueChange(value)` reports it; `variant="native"` renders a `<select>`. `Table`: `sort` + `onSortChange("key:ascending")` (you re-order `rows`), `selected` + `onSelectedChange(ids)`. `Popover`: `open` + `onOpenChange`. `Tooltip`: `delay`, `variant` (top | bottom), the control as children and the text in `content`. `Select` and `Popover` use the native `popover` attribute (`popoverTarget` is React 19).

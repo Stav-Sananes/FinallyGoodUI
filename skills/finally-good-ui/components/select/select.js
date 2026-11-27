@@ -27,7 +27,7 @@ function syncDisplay(root) {
   const chosen = optionsOf(root).find((o) => o.getAttribute("aria-selected") === "true");
   const text = chosen ? labelOf(chosen) : display.getAttribute("data-placeholder") ?? "";
   if (display.textContent !== text) display.textContent = text;
-  display.toggleAttribute?.("data-empty", !chosen);
+  if (chosen) display.removeAttribute("data-empty"); else display.setAttribute("data-empty", "");
   const hidden = q(root, "value");
   if (hidden) hidden.value = chosen?.getAttribute("data-value") ?? "";
 }
