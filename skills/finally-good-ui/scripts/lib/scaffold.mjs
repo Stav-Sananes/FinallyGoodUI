@@ -85,7 +85,8 @@ export function planScaffold({ spec, stack, profile, root, force = false }) {
 
   const refDir = join(COMPONENTS_ROOT, spec.name);
   const css = `${readFileSync(join(refDir, `${spec.name}.css`), "utf8").trimEnd()}\n\n${profileCss(profile, spec).trimEnd()}\n`;
-  const rendered = family ? FRAMEWORKS[family](view, { shared, prim, typescript }) : plain(spec, COMPONENTS_ROOT);
+  const rendered = (family ? FRAMEWORKS[family](view, { shared, prim, typescript }) : plain(spec, COMPONENTS_ROOT))
+    .map((r) => ({ ...r, content: view.rename(r.content) }));
 
   // The css is written against the skill's token names: say so when the project's own tokens lack some.
   const defined = definedVars(root);

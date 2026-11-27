@@ -1,0 +1,40 @@
+/* Tooltip reference: a native popover (manual) under or over its trigger. Tokens only; load tokens.css first.
+   attach writes --tip-x / --tip-y (the trigger's centre and its top or bottom edge) and data-side on the root. */
+[data-fgu="tooltip"][data-part="root"] { display: inline-block; }
+[data-fgu="tooltip"] [data-part="trigger"] { display: inline-block; }
+[data-fgu="tooltip"][data-open] [data-part="trigger"] { cursor: default; } /* the open state is data-open on the root */
+[data-fgu="tooltip"] [data-part="content"] {
+  position: fixed;
+  inset: auto;
+  inset-inline-start: var(--tip-x, 0);
+  inset-block-start: var(--tip-y, 0);
+  margin: 0;
+  box-sizing: border-box;
+  max-inline-size: min(20rem, calc(100vw - var(--space-4)));
+  padding: var(--space-1) var(--space-2);
+  border: 0;
+  background: var(--color-foreground);
+  color: var(--color-background);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  pointer-events: auto;
+  opacity: 0;
+  translate: -50% var(--space-2);
+  transition:
+    opacity var(--duration-micro) var(--ease-exit),
+    display var(--duration-micro) allow-discrete,
+    overlay var(--duration-micro) allow-discrete;
+}
+[data-fgu="tooltip"][data-side="top"] [data-part="content"] { translate: -50% calc(-100% - var(--space-2)); }
+[data-fgu="tooltip"][data-side="bottom"] [data-part="content"] { translate: -50% var(--space-2); }
+[data-fgu="tooltip"] [data-part="content"]:popover-open {
+  opacity: 1;
+  transition-duration: var(--duration-short);
+  transition-timing-function: var(--ease-enter);
+}
+@starting-style {
+  [data-fgu="tooltip"] [data-part="content"]:popover-open { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="tooltip"] [data-part="content"] { transition-duration: 0s; }
+}

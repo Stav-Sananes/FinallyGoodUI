@@ -45,6 +45,12 @@ export function viewOf(spec, markup) {
   return {
     name: spec.name, Name: pascal(spec.name), spec, tree, props, usesUid, restPart,
     slots: spec.slots, scopedSlots, listProp, openProp: markup.openProp ?? null, selectProp: markup.selectProp ?? null,
+    // the behaviour functions a controlled prop calls (dialog: openDialog/closeDialog, tabs: selectTab); the renderers
+    // are written with those names and `rename` swaps in the component's own
+    rename: (text) => {
+      const [open, close] = markup.openFns ?? ["openDialog", "closeDialog"];
+      return text.replaceAll("openDialog", open).replaceAll("closeDialog", close).replaceAll("selectTab", markup.selectFn ?? "selectTab");
+    },
     syncProp: markup.openProp ?? markup.selectProp ?? null, models, events: (markup.events ?? []).map((k) => ({ key: k, ...EVENTS[k] })),
     tagOf: (node) => node.tag ?? tagOfPart(spec, node.part ?? "span"),
     restTag: tagOfPart(spec, restPart),
@@ -98,12 +104,12 @@ const baseAttrs = (view, node) => [
 ];
 
 // ===================================================================== React
-const REACT_NAME = { for: "htmlFor", tabindex: "tabIndex", novalidate: "noValidate", autocomplete: "autoComplete", checked: "defaultChecked" };
+const REACT_NAME = { for: "htmlFor", tabindex: "tabIndex", novalidate: "noValidate", colspan: "colSpan", autocomplete: "autoComplete", checked: "defaultChecked" };
 
 function reactAttrs(view, node) {
   const out = [], spread = [];
   for (const [name, v] of baseAttrs(view, node)) {
-    const n = REACT_NAME[name] ?? name;
+    const n = name === "value" && view.tagOf(node) === "select" ? "defaultValue" : REACT_NAME[name] ?? name; // a select keeps the DOM's choice: uncontrolled
     // Toggle: `checked` makes the checkbox controlled (pair it with onChange); without it the input is uncontrolled (defaultChecked passes through rest).
     if (name === "checked" && node.model === "checked") { spread.push("...(checked === undefined ? {} : { checked })"); continue; }
     if (NONSTANDARD.has(name)) { spread.push(`${REACT_SPREAD_NAME[name] ?? name}: ${v === true ? '""' : typeof v === "string" ? JSON.stringify(v) : v.js}`); continue; }
@@ -281,7 +287,7 @@ export function vue(view, c) {
   ];
   const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : []), ...(view.selectProp ? ["selectTab"] : [])];
   const emits = [
-    ...view.events.flatMap((e) => [...(e.vue ? [`${e.vue}: [value: ${e.type}]`] : []), ...(e.sync ? [`"update:${e.sync}": [value: ${e.type}]`] : [])]),
+    ...view.events.flatMap((e) => [...(e.vue ? [`${e.vue}: [value: ${e.type}]`] : []), ...(e.sync ? [`"update:${e.sync}": [value: ${e.type}]`] : []), ...(e.modelAlso ? [`"update:modelValue": [value: ${e.type}]`] : [])]),
     ...(view.models.size ? [`"update:modelValue": [value: ${modelType}]`] : []),
     ...(view.models.has("checked") ? ['"update:checked": [value: boolean]'] : []), // v-model:checked, parity with Svelte bind:checked
   ];
@@ -290,6 +296,7 @@ export function vue(view, c) {
     ...(e.prevent ? ["  event.preventDefault();"] : []),
     ...(e.vue ? [`  emit("${e.vue}", ${e.payload.ts});`] : []),
     ...(e.sync ? [`  emit("update:${e.sync}", ${e.payload.ts});`] : []),
+    ...(e.modelAlso ? [`  emit("update:modelValue", ${e.payload.ts});`] : []),
     "}",
   ]);
   const modelHandler = view.models.has("checked") ? [
@@ -365,8 +372,9 @@ function svelteEl(view, node, c) {
   if (root && c.prim) { const g = svelteGuard(view); if (g) attrs.push(g); }
   if (node.rest || (root && view.restPart === "root")) attrs.push("{...rest}");
   const kids = (node.kids ?? []).flatMap((k) => svelteNode(view, k, c));
-  if (!kids.length && VOID.has(name)) return openTag(name, attrs, true); // Svelte rejects a self-closing <textarea />
-  return wrap(openTag(name, attrs), kids, close);
+  const ignore = (node.ignore ?? []).map((rule) => `<!-- svelte-ignore ${rule} -->`);
+  if (!kids.length && VOID.has(name)) return [...ignore, ...openTag(name, attrs, true)]; // Svelte rejects a self-closing <textarea />
+  return [...ignore, ...wrap(openTag(name, attrs), kids, close)];
 }
 
 const svelteGuard = (view) => {
@@ -396,7 +404,8 @@ export function svelte(view, c) {
     "[key: string]: any",
   ].join("; ")} }`;
   const moduleScript = view.usesUid ? `<script module${lang}>\n  let counter = 0;\n</script>\n\n` : "";
-  const syncType = view.openProp ? T(c, ": boolean") : T(c, ": number | undefined");
+  const syncTs = view.selectProp ? `${tsType(view.listProp(view.selectProp))} | undefined` : "boolean";
+  const syncType = T(c, `: ${syncTs}`);
   const syncCall = view.openProp
     ? "open ? openDialog(node) : closeDialog(node)"
     : "if (value !== undefined) selectTab(node, value)";
@@ -405,7 +414,7 @@ export function svelte(view, c) {
     "// attach wires the keyboard, focus and ARIA that the markup leaves to the shared behaviour; it returns the cleanup.",
     `function behaviour(node${T(c, ": HTMLElement")}, initial${syncType}) {`,
     "  const detach = attach(node);",
-    ...(view.openProp ? [`  const sync = (open${T(c, ": boolean")}) => { if (open) openDialog(node); else closeDialog(node); };`] : [`  const sync = (value${T(c, ": number | undefined")}) => { ${syncCall}; };`]),
+    ...(view.openProp ? [`  const sync = (open${T(c, ": boolean")}) => { if (open) openDialog(node); else closeDialog(node); };`] : [`  const sync = (value${T(c, `: ${syncTs}`)}) => { ${syncCall}; };`]),
     "  sync(initial);",
     "  return { update: sync, destroy: detach };",
     "}",
@@ -524,7 +533,7 @@ export function angular(view, c) {
     ] : []),
     ...(view.selectProp ? [
       "    const root = this.host.nativeElement.querySelector<HTMLElement>('[data-part=\"root\"]');",
-      "    if (root && this.selected !== undefined) selectTab(root, this.selected);",
+      `    if (root && this.${view.selectProp} !== undefined) selectTab(root, this.${view.selectProp});`,
     ] : []),
   ];
   const handlers = view.events.flatMap((e) => [

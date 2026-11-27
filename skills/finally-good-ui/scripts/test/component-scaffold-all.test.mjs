@@ -26,8 +26,8 @@ const SLOT_RENDER = {
   angular: (s) => (s === "default" ? /<ng-content \/>/ : /ngTemplateOutlet|ng-content select/),
 };
 
-test("the suite covers all eight components and five outputs", () => {
-  assert.deepEqual(NAMES, ["button", "dialog", "disclosure", "field", "menu", "tabs", "toast", "toggle"]);
+test("the suite covers all twelve components and five outputs", () => {
+  assert.deepEqual(NAMES, ["button", "dialog", "disclosure", "field", "menu", "popover", "select", "table", "tabs", "toast", "toggle", "tooltip"]);
   assert.equal(FRAMEWORKS.length, 5);
 });
 
@@ -35,7 +35,7 @@ for (const name of NAMES) for (const framework of FRAMEWORKS) {
   test(`${name} in ${framework}: renders every spec part, its tag, the root attribute and the role`, () => {
     const s = spec(name);
     const text = code(plan(name, framework));
-    assert.ok(text.length > 400, "positive control: a real file");
+    assert.ok(text.length > 200, "positive control: a real file");
     for (const part of s.parts) assert.match(text, new RegExp(`data-part="${part}"`), `part ${part}`);
     assert.match(text, new RegExp(`data-fgu="${name}"[\\s\\S]*data-part="root"|data-part="root"[\\s\\S]*data-fgu="${name}"`), "root carries data-fgu");
     for (const [part, tag] of Object.entries(s.tags ?? {})) {

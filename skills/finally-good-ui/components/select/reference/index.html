@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Select reference</title>
+<!-- tokens.css: node scripts/emit-tokens.mjs --in tokens/default.tokens.json --format css > tokens.css -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../select.css">
+</head>
+<body>
+<main id="demo">
+  <div data-fgu="select" data-part="root" data-variant="native">
+    <label data-part="label" for="s-native">Status</label>
+    <select data-part="control" id="s-native" name="status">
+      <option data-part="option" value="open">Open</option>
+      <option data-part="option" value="paid" selected>Paid</option>
+      <option data-part="option" value="void" disabled>Void</option>
+    </select>
+  </div>
+  <div data-fgu="select" data-part="root" data-variant="listbox">
+    <label data-part="label" for="s-team">Team</label>
+    <button type="button" data-part="trigger" id="s-team" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="s-team-list" popovertarget="s-team-list"><span data-part="display" data-placeholder="Choose a team"></span></button>
+    <div data-part="listbox" id="s-team-list" popover role="listbox" aria-labelledby="s-team">
+      <input type="search" data-part="search" aria-label="Search teams" placeholder="Search" autocomplete="off">
+      <div data-part="option" data-value="design" aria-selected="false">Design</div>
+      <div data-part="option" data-value="finance" aria-selected="true">Finance</div>
+      <div data-part="option" data-value="platform" aria-selected="false">Platform</div>
+      <div data-part="option" data-value="legal" aria-selected="false" aria-disabled="true">Legal</div>
+      <div data-part="empty" role="status" hidden>No matches</div>
+    </div>
+    <input type="hidden" data-part="value" name="team" value="">
+  </div>
+</main>
+<script type="module">
+  import { attach } from "../select.js";
+  attach(document.getElementById("demo"));
+</script>
+</body>
+</html>

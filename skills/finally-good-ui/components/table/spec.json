@@ -1,0 +1,160 @@
+{
+  "name": "table",
+  "shapes": [
+    "table"
+  ],
+  "props": [
+    {
+      "name": "columns",
+      "type": "array",
+      "ts": "{ key: string; label: string; sortable?: boolean; align?: \"start\" | \"end\" }[]",
+      "default": "[]"
+    },
+    {
+      "name": "rows",
+      "type": "array",
+      "ts": "{ id: string; [key: string]: string | number | undefined }[]",
+      "default": "[]"
+    },
+    {
+      "name": "caption",
+      "type": "string"
+    },
+    {
+      "name": "sort",
+      "type": "string"
+    },
+    {
+      "name": "selectable",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "selected",
+      "type": "array",
+      "ts": "string[]",
+      "default": "[]"
+    },
+    {
+      "name": "loading",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "sticky",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "emptyText",
+      "type": "string",
+      "default": "No rows"
+    },
+    {
+      "name": "loadingText",
+      "type": "string",
+      "default": "Loading"
+    }
+  ],
+  "events": [
+    "sortchange",
+    "selectionchange"
+  ],
+  "slots": [],
+  "states": [
+    {
+      "name": "selected",
+      "attribute": "aria-selected"
+    },
+    {
+      "name": "sorted",
+      "attribute": "aria-sort"
+    },
+    {
+      "name": "loading",
+      "attribute": "aria-busy"
+    }
+  ],
+  "a11y": {
+    "role": "region",
+    "rolePart": "root",
+    "aria": [
+      "aria-labelledby",
+      "aria-sort",
+      "aria-selected",
+      "aria-busy"
+    ],
+    "keys": {}
+  },
+  "tokens": [
+    "--color-foreground",
+    "--color-muted",
+    "--color-muted-foreground",
+    "--color-background",
+    "--color-accent",
+    "--color-accent-foreground",
+    "--color-primary",
+    "--color-border",
+    "--color-ring",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--shadow-sm",
+    "--shadow-md",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--ring-width",
+    "--ring-offset",
+    "--size-control-sm",
+    "--size-control-md",
+    "--size-control-lg",
+    "--icon-lg",
+    "--space-1",
+    "--space-2",
+    "--space-3",
+    "--space-4",
+    "--space-6",
+    "--font-sans",
+    "--text-sm",
+    "--duration-short",
+    "--ease-snappy"
+  ],
+  "parts": [
+    "root",
+    "table",
+    "caption",
+    "head",
+    "body",
+    "row",
+    "header",
+    "sort",
+    "cell",
+    "select",
+    "status"
+  ],
+  "tags": {
+    "table": "table",
+    "caption": "caption",
+    "head": "thead",
+    "body": "tbody",
+    "row": "tr",
+    "header": "th",
+    "sort": "button",
+    "cell": "td",
+    "select": "input",
+    "status": "td"
+  },
+  "profile": {
+    "surface": "root",
+    "density": null,
+    "interactive": "sort",
+    "touch": [
+      "sort"
+    ]
+  },
+  "api": [
+    "syncSelection(scope: Element, ids?: readonly string[]): void"
+  ],
+  "pattern": "recipes/patterns/data-table.md"
+}

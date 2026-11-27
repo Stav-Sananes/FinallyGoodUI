@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Popover reference</title>
+<!-- tokens.css: node scripts/emit-tokens.mjs --in tokens/default.tokens.json --format css > tokens.css -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../popover.css">
+</head>
+<body>
+<main id="demo">
+  <div data-fgu="popover" data-part="root">
+    <button type="button" data-part="trigger" id="pop-filters" aria-haspopup="dialog" aria-expanded="false" aria-controls="pop-filters-panel" popovertarget="pop-filters-panel">Filters</button>
+    <div data-part="panel" id="pop-filters-panel" popover role="dialog" aria-labelledby="pop-filters" tabindex="-1">
+      <label><input type="checkbox" checked> Open invoices</label><br>
+      <label><input type="checkbox"> Paid invoices</label>
+    </div>
+  </div>
+</main>
+<script type="module">
+  import { attach } from "../popover.js";
+  attach(document.getElementById("demo"));
+</script>
+</body>
+</html>
