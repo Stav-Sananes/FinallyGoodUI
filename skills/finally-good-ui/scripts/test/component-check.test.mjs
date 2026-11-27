@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cpSync, readFileSync, writeFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
-import { fx, run, tmp } from "./_h.mjs";
+import { fx, run, tmp, SR } from "./_h.mjs";
 
 const check = (root, ...extra) => run("check-components.mjs", ["--root", root, ...extra]);
 const fixture = (name) => fx(`components/check/${name}`);
@@ -242,7 +242,6 @@ test("findings carry the full relative path, from any spelling of --root", () =>
 import { selectorProblems } from "../check-components.mjs";
 import { loadSpec } from "../lib/component-spec.mjs";
 import { readdirSync } from "node:fs";
-import { SR } from "./_h.mjs";
 
 test("every selector in every reference stylesheet can match the generated markup", () => {
   for (const name of readdirSync(join(SR, "components")).filter((d) => !d.includes("."))) {
@@ -267,4 +266,78 @@ test("check-components reports css-selector-unmatched in a scaffolded component'
   const hits = check(root).json.findings.filter((f) => f.rule === "css-selector-unmatched");
   assert.equal(hits.length, 1);
   assert.match(hits[0].message, /descendant/);
+});
+
+// ---- the token-only rule (review I5)
+import { literalsIn } from "../check-components.mjs";
+
+test("literal rule: catches hex, colour functions, rem/em/s/ms/px lengths in values, with positive controls", () => {
+  for (const bad of ["a { color: #fff }", "a { color: rgb(1 2 3) }", "a { color: oklch(0.5 0.1 20) }", "a { margin: 1.5rem }", "a { gap: 2em }", "a { transition: opacity 0.2s }", "a { transition-duration: .15s }", "a { width: 4px }", "a { animation-duration: 200ms }", "a { transition: opacity 2s }"]) {
+    assert.ok(literalsIn(bad).length > 0, bad);
+  }
+});
+
+test("literal rule: no false positives on #id selectors, url(#frag), comments, zero, percentages, custom-property names, opacity and sanctioned widths", () => {
+  for (const ok of ["#main .x { color: var(--c) }", "a { background: url(#grad) }", "a { background: url(data:image/svg+xml;utf8,%23fff) }", "/* 100ms in, #fff, 4px */ a { color: red }", "a { transition-duration: 0s; animation-duration: 0s }", "a { width: 100%; inset: 0 }", "a { opacity: 0.5 }", "a { inline-size: min(100%, 32rem) }", "a { font-size: max(var(--text-base), 1rem) }", "a { transition: opacity var(--duration-short) var(--ease-snappy) }", "a { margin-block: calc(var(--space-1) * -1) }", "a { --btn-1s: 1 }".replace("--btn-1s", "--btn-bg").replace(": 1", ": var(--x)")]) {
+    assert.deepEqual(literalsIn(ok), [], ok);
+  }
+});
+
+test("literal rule: every shipped reference stylesheet is clean", () => {
+  for (const name of readdirSync(join(SR, "components")).filter((d) => !d.includes(".") && d !== "adapters")) {
+    assert.deepEqual(literalsIn(readFileSync(join(SR, "components", name, `${name}.css`), "utf8")), [], name);
+  }
+});
+
+test("an empty framework file list is not a demo page: a deleted component file keeps the aria and skeleton rules", () => {
+  const root = copy(fixture("generated-ok"));
+  unlinkSync(join(root, "src/components/fgu/button/button.tsx"));
+  const rules = check(root).json.findings.map((f) => f.rule);
+  assert.ok(rules.includes("aria-missing") || rules.includes("part-missing"), rules.join());
+  assert.ok(rules.includes("aria-missing"), "aria-missing is no longer skipped: " + rules.join());
+});
+
+// ---- the project's tokens must define what the component css uses (review I2)
+import { usedVars, definedVars } from "../lib/token-vars.mjs";
+import { emitCss } from "../emit-tokens.mjs";
+import { loadTokens } from "../lib/token-files.mjs";
+
+const scaffoldWithTokens = (css) => {
+  const root = tmp();
+  cpSync(fx("components/projects/plain"), root, { recursive: true });
+  if (css !== null) writeFileSync(join(root, "tokens.css"), css);
+  return { root, out: run("scaffold-component.mjs", ["--name", "button", "--root", root]) };
+};
+const defaults = () => emitCss(loadTokens(join(SR, "tokens/default.tokens.json")));
+
+test("usedVars lists the variables with no fallback and not defined by the sheet itself", () => {
+  assert.deepEqual(usedVars("a { --x: 1; min-height: var(--size-control-md); color: var(--x); top: var(--menu-y, 0); z-index: var(--z-toast) }"), ["--size-control-md", "--z-toast"]);
+  assert.deepEqual(usedVars("a { color: red } /* var(--in-comment) */"), []);
+});
+
+test("scaffold notes, and check-components fails, when the project's tokens lack a variable the css needs", () => {
+  const old = defaults().replace(/\s*--size-control-md:[^;]*;/, "").replace(/\s*--z-toast:[^;]*;/, "");
+  const { root, out } = scaffoldWithTokens(old);
+  assert.equal(out.code, 0);
+  assert.ok(out.json.notes.some((n) => /--size-control-md/.test(n) && /--z-toast|--size-control-md/.test(n)), JSON.stringify(out.json.notes));
+  const hits = check(root).json.findings.filter((f) => f.rule === "token-undefined");
+  assert.equal(hits.length, 1, JSON.stringify(hits));
+  assert.match(hits[0].message, /--size-control-md/);
+  assert.match(hits[0].file, /button\.css$/);
+});
+
+test("no finding with the full token set (positive control), and none when the project defines no tokens at all", () => {
+  const full = scaffoldWithTokens(defaults());
+  assert.deepEqual(full.out.json.notes.filter((n) => /tokens do not define/.test(n)), []);
+  assert.deepEqual(check(full.root).json.findings.filter((f) => f.rule === "token-undefined"), []);
+  const none = scaffoldWithTokens(null);
+  assert.equal(definedVars(none.root), null);
+  assert.deepEqual(check(none.root).json.findings.filter((f) => f.rule === "token-undefined"), []);
+});
+
+test(".design/tokens.json counts as the project's tokens", () => {
+  const root = tmp();
+  cpSync(fx("components/projects/plain"), root, { recursive: true });
+  cpSync(join(SR, "tokens/default.tokens.json"), join(root, ".design/tokens.json"));
+  assert.ok(definedVars(root).has("--size-control-md"));
 });

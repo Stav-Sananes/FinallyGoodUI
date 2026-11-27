@@ -85,7 +85,9 @@ test("shared source in react calls attach from an effect", () => {
 test(".fgu-component.json records name, source and framework", () => {
   const root = copy("react-radix");
   scaffold(root);
-  assert.deepEqual(JSON.parse(read(root, ".fgu-component.json")), { name: "button", source: "primitives:radix", framework: "react" });
+  const marker = JSON.parse(read(root, ".fgu-component.json"));
+  assert.deepEqual({ name: marker.name, source: marker.source, framework: marker.framework }, { name: "button", source: "primitives:radix", framework: "react" });
+  assert.deepEqual(Object.keys(marker.files).sort(), ["button.css", "button.tsx"], "a hash per file the scaffold wrote");
 });
 
 test("native frameworks exit 2 with a clear message", () => {
@@ -251,4 +253,53 @@ test("adapter docs say the spinner is always rendered", () => {
     assert.doesNotMatch(text, /render conditionally|@if \(busy\)/, `${f} still claims a conditional spinner`);
   }
   assert.match(readFileSync(join(SR, "components/adapters/react.md"), "utf8"), /spinner.*always render/i);
+});
+
+// ---- re-running: refresh what the scaffold wrote, never what a person edited (review I3, T5)
+const setProfile = (root, patch) => {
+  const f = join(root, ".design/component-style.json");
+  writeFileSync(f, JSON.stringify({ ...JSON.parse(readFileSync(f, "utf8")), ...patch }));
+};
+
+test("a profile change refreshes untouched scaffold files and leaves an edited one alone", () => {
+  const root = copy("plain");
+  setProfile(root, { radius: "sharp" });
+  scaffold(root, "--framework", "react");
+  const html = join(dirOf(root), "button.jsx");
+  writeFileSync(html, `${readFileSync(html, "utf8")}\n// hand-written\n`);
+  const cssBefore = read(root, "button.css");
+  setProfile(root, { radius: "round" });
+  const again = scaffold(root, "--framework", "react");
+  const by = Object.fromEntries(again.json.files.map((f) => [f.path.split("/").pop(), f.skipped ?? "written"]));
+  assert.equal(by["button.css"], "written", "untouched css is refreshed from the new profile");
+  assert.notEqual(read(root, "button.css"), cssBefore);
+  assert.match(read(root, "button.css"), /--radius-full|--radius-xl/);
+  assert.equal(by["button.jsx"], "exists", "the edited component is skipped");
+  assert.match(read(root, "button.jsx"), /hand-written/);
+  const marker = JSON.parse(read(root, ".fgu-component.json"));
+  assert.ok(marker.files["button.css"] && marker.files["button.jsx"], "the skipped file keeps its old hash, so it stays 'edited'");
+  const third = scaffold(root, "--framework", "react");
+  assert.equal(third.json.files.find((f) => f.path.endsWith("button.jsx")).skipped, "exists", "still protected on the next run");
+});
+
+test("--force is the only way to overwrite an edited file", () => {
+  const root = copy("plain");
+  scaffold(root, "--framework", "react");
+  const file = join(dirOf(root), "button.jsx");
+  writeFileSync(file, "// mine\n");
+  assert.equal(readFileSync(file, "utf8"), "// mine\n");
+  scaffold(root, "--framework", "react");
+  assert.equal(readFileSync(file, "utf8"), "// mine\n", "a plain re-run keeps it");
+  scaffold(root, "--framework", "react", "--force");
+  assert.notEqual(readFileSync(file, "utf8"), "// mine\n");
+});
+
+test("the marker is rewritten whenever another file is, so it never describes files it did not produce", () => {
+  const root = copy("plain");
+  scaffold(root, "--framework", "react");
+  const before = JSON.parse(read(root, ".fgu-component.json"));
+  setProfile(root, { radius: "round" });
+  scaffold(root, "--framework", "react");
+  const after = JSON.parse(read(root, ".fgu-component.json"));
+  assert.notEqual(after.files["button.css"], before.files["button.css"]);
 });

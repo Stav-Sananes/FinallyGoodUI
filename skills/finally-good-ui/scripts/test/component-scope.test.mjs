@@ -92,3 +92,35 @@ test("scopeComponentCss is idempotent and keeps keyframes", () => {
   assert.equal(partSelector("x", "root"), '[data-fgu="x"][data-part="root"]');
   assert.deepEqual(splitTop("a, b:not(c, d)"), ["a", "b:not(c, d)"]);
 });
+
+// ---- parser robustness (review I1, T9)
+test("comments with an apostrophe or a brace inside a rule do not break the scoper", () => {
+  const css = '[data-part="root"] { /* it\'s } here */ color: red }\n/* don\'t { */\n[data-part="y"] { a: 1 }';
+  const out = scopeComponentCss("x", css);
+  assert.match(out, /\[data-fgu="x"\]\[data-part="root"\] \{ \/\* it's \} here \*\/ color: red \}/);
+  assert.match(out, /\[data-fgu="x"\] \[data-part="y"\] \{ a: 1 \}/);
+  assert.deepEqual(selectorsOf(css), ['[data-part="root"]', '[data-part="y"]']);
+});
+
+test("semicolon-terminated at-rules (@layer a, b; @import; @charset) pass through and do not swallow the next rule", () => {
+  const css = '@charset "utf-8";\n@import url("x.css");\n@layer a, b;\n[data-part="root"] { a: 1 }';
+  const out = scopeComponentCss("x", css);
+  assert.match(out, /@layer a, b;/);
+  assert.match(out, /@import url\("x\.css"\);/);
+  assert.match(out, /\[data-fgu="x"\]\[data-part="root"\] \{ a: 1 \}/);
+  assert.deepEqual(selectorsOf(css), ['[data-part="root"]']);
+});
+
+test("check-components reports an unparseable stylesheet as a finding instead of crashing the whole run", async () => {
+  const { checkComponents } = await import("../check-components.mjs");
+  const { mkdirSync, writeFileSync } = await import("node:fs");
+  const { tmp } = await import("./_h.mjs");
+  const root = tmp();
+  const dir = join(root, "src/components/fgu/button");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, ".fgu-component.json"), JSON.stringify({ name: "button", source: "shared", framework: "react" }));
+  writeFileSync(join(dir, "button.css"), '[data-part="root"] { color: red ');
+  writeFileSync(join(dir, "button.tsx"), "x");
+  const { findings } = checkComponents(root);
+  assert.ok(findings.some((f) => f.rule === "css-unparseable" && /components\/fgu\/button/.test(f.file) && /unbalanced/.test(f.message)), JSON.stringify(findings));
+});

@@ -66,6 +66,9 @@ export function attach(root) {
       const proceed = toast.dispatchEvent(new CustomEvent("dismiss", { bubbles: true, cancelable: true }));
       if (proceed) toast.remove();
       if (holdsFocus && returnTo?.isConnected) focusTarget(returnTo).focus();
+      // Removing a focused node does not fire focusout everywhere (Firefox, Safari): recompute, or the countdowns stay paused for good.
+      focused = root.contains(root.ownerDocument.activeElement);
+      sync();
     };
     leaving.set(toast, finish);
     const ms = exitMs(toast);

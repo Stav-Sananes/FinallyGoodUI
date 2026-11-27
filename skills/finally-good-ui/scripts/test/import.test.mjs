@@ -97,3 +97,27 @@ test("import refuses to overwrite an existing token set without --force", () => 
   assert.ok(existsSync(join(out, "tokens.resolver.json")));
   assert.equal(run("import-tokens.mjs", []).code, 2);
 });
+
+// ---- the component token groups survive an import (review T1): z, size.control, border-width, ring
+test("import keeps z, size.control, border-width and ring as their own groups; a plain size.* stays spacing", () => {
+  const d = tmp();
+  const dim = (v) => ({ $type: "dimension", $value: { value: v, unit: "px" } });
+  const f = write(d, "in.json", {
+    z: { toast: { $type: "number", $value: 100 }, overlay: { $type: "number", $value: 50 } },
+    size: { control: { md: dim(40), lg: dim(44) }, huge: dim(96) },
+    "border-width": { strong: dim(2) },
+    ring: { width: dim(2) },
+    color: { background: { $type: "color", $value: srgb("#FFFFFF") } },
+  });
+  const r = run("import-tokens.mjs", ["--in", f, "--out-dir", join(d, "out"), "--no-defaults"]);
+  assert.equal(r.code, 0, r.stderr);
+  const t = loadTokens(join(d, "out", "tokens.json"));
+  assert.equal(t.z.toast.$value, 100);
+  assert.equal(t.z.overlay.$value, 50);
+  assert.equal(t.size["control-md"].$value.value, 40);
+  assert.equal(t.size["control-lg"].$value.value, 44);
+  assert.equal(t["border-width"].strong.$value.value, 2);
+  assert.equal(t.ring.width.$value.value, 2);
+  assert.equal(t.size.huge, undefined, "negative control: size.huge is a spacing alias, not a control size");
+  assert.ok(t.space?.huge || t.space?.["huge"], "it went to space");
+});

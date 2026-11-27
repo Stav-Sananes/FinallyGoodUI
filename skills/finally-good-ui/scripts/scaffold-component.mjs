@@ -22,7 +22,8 @@ component), one framework file (.tsx/.jsx, .vue, .svelte, .component.ts + .html,
 .fgu-component.json. Reads .design/component-style.json. Components dir: src/components/fgu, or fgu
 under the shadcn components alias. <name>.css is the reference CSS followed by the profile layer;
 the profile layer comes last and overrides border, border-radius, min-height, padding-inline and
-transition on purpose. Existing files are skipped unless --force.
+transition on purpose. A re-run refreshes the files the scaffold wrote and nobody edited (the marker keeps their
+hashes) and skips the edited ones; --force overwrites everything it plans.
 
 --gallery writes .design/components.html: every reference component on one static page, styled with
 the style profile and the project's tokens (.design/tokens.json, else the skill defaults). Open it
@@ -33,7 +34,7 @@ Options:
   --name <component>   a component under components/ (e.g. button)
   --root <dir>         project root (default: cwd)
   --framework <name>   override the detected framework (react, vue, svelte, angular, html ...)
-  --force              overwrite existing files
+  --force              overwrite every planned file, edited ones included
   --dry-run            print the plan, write nothing
 `;
 

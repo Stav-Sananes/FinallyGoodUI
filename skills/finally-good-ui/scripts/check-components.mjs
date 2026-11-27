@@ -7,6 +7,7 @@ import { loadSpec, rolePartOf } from "./lib/component-spec.mjs";
 import { walk, readText, readJson, isDir } from "./lib/fs.mjs";
 import { COMPONENTS_ROOT } from "./lib/scaffold.mjs";
 import { mapSelectors } from "./lib/css-scope.mjs";
+import { usedVars, definedVars } from "./lib/token-vars.mjs";
 
 const HELP = `
 Usage: check-components.mjs --root <dir> [--strict]
@@ -16,6 +17,9 @@ loads components/<name>/spec.json and checks the generated files against it. Pri
 {tool, ok, findings:[{file, rule, message}]}.
 
 Rules: role-missing, aria-missing, part-missing, state-unstyled, literal, key-handler-reimplemented,
+token-undefined (the component's css uses a var(--x) that the project's own tokens or stylesheets never define; only checked
+when the project defines some custom properties at all),
+css-unparseable (the component could not be read, usually a stylesheet with unbalanced braces),
 css-selector-unmatched (a selector in the component CSS that the generated markup can never match: an unknown
 part, a variant the spec does not list, or a descendant [data-variant] when the variant sits on the root),
 empty-skeleton (the parts are there but the component renders no content slot, or a shared-behaviour
@@ -41,7 +45,39 @@ Options:
 `;
 
 const MARKER = ".fgu-component.json";
-const LITERAL = /#[0-9a-f]{3,8}\b|\d*\.?\d+\s*(?:px|ms)\b/gi;
+// A literal in a declaration VALUE: a hex colour, a colour function, or a length/time (px rem em ms s). Selectors,
+// comments and url(...) are not values. Zero (0, 0s, 0ms) and percentages are fine.
+const LITERAL = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(|(?<![\w.#-])(?:\d*\.\d+|[1-9]\d*|0\d+)\s*(?:px|rem|em|ms|s)\b/gi;
+
+/** [{ prop, value }] of every declaration, with comments and url(...) removed; selectors never appear. */
+export function declarationsOf(css) {
+  const clean = css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/url\([^)]*\)/gi, "url()");
+  const out = [];
+  for (const [, body] of clean.matchAll(/\{([^{}]*)\}/g)) {
+    for (const decl of body.split(";")) {
+      const at = decl.indexOf(":");
+      if (at > 0) out.push({ prop: decl.slice(0, at).trim().toLowerCase(), value: decl.slice(at + 1).trim() });
+    }
+  }
+  return out;
+}
+
+/** The token-only violations of a stylesheet: literal values the project's tokens should carry.
+ *  Allowed on purpose: `opacity` (state dimming; there is no opacity token group), 1rem (the user's base size, for the iOS
+ *  zoom guard), and rem/em measures on width/height properties (a dialog's 32rem reading width). */
+export function literalsIn(css) {
+  const found = new Set();
+  for (const { prop, value } of declarationsOf(css)) {
+    if (prop === "opacity") continue;
+    for (const m of value.matchAll(LITERAL)) {
+      const lit = m[0].replace(/\s+/g, "");
+      if (lit.toLowerCase() === "1rem") continue;
+      if (/(rem|em)$/i.test(lit) && /(^|-)(inline-size|block-size|width|height)$/.test(prop)) continue;
+      found.add(lit);
+    }
+  }
+  return [...found];
+}
 // Key listeners in every framework syntax; modifier suffixes (@keydown.enter, (keydown.enter), onKeyDownCapture)
 // are part of the match. onClick and friends never match.
 const KEY_HANDLER = /\bonkey(?:down|up|press)\w*|@key(?:down|up|press)[.\w-]*|\bon:key(?:down|up|press)[.\w:|-]*|\(key(?:down|up|press)[.\w-]*\)|addEventListener\(\s*["']key(?:down|up|press)["']/i;
@@ -115,9 +151,9 @@ export function selectorProblems(spec, css) {
 
 const isFrameworkFile = (name, spec) => !name.endsWith(".css") && name !== MARKER && name !== `${spec.name}.behaviour.js` && name !== `${spec.name}.behaviour.d.ts` && !/^toast-store\./.test(name);
 // The plain-html output is a static demo page: it renders only the root, with no state attributes.
-const isDemoPage = (files) => files.every((f) => /\.html$/.test(f) && !/\.component\.html$/.test(f));
+const isDemoPage = (files) => files.length > 0 && files.every((f) => /\.html$/.test(f) && !/\.component\.html$/.test(f));
 
-function checkComponent(markerPath, root, notes) {
+function checkComponent(markerPath, root, notes, defined) {
   const dir = dirname(markerPath);
   const rel = (name) => join(relativeDir(root, dir), name).split("\\").join("/");
   const marker = readJson(markerPath);
@@ -126,7 +162,7 @@ function checkComponent(markerPath, root, notes) {
   try { spec = loadSpec(join(COMPONENTS_ROOT, String(name))); }
   catch (e) { return [{ file: rel(MARKER), rule: "spec-missing", message: `no spec for component "${name}": ${e.message}` }]; }
 
-  const names = readdirSync(dir);
+  const names = readdirSync(dir).sort(); // the same reported file on every OS
   const frameworkFiles = names.filter((n) => isFrameworkFile(n, spec));
   const cssFiles = names.filter((n) => n.endsWith(".css"));
   const code = frameworkFiles.map((n) => readText(join(dir, n)) ?? "").join("\n");
@@ -153,8 +189,11 @@ function checkComponent(markerPath, root, notes) {
   }
   for (const css_ of cssFiles) {
     for (const { selector, why } of selectorProblems(spec, readText(join(dir, css_)) ?? "")) add(css_, "css-selector-unmatched", `${selector}: ${why}`);
-    const seen = new Set((readText(join(dir, css_)) ?? "").match(LITERAL)?.map((l) => l.replace(/\s+/g, "")));
-    for (const lit of seen) add(css_, "literal", `literal "${lit}" in CSS: use a token`);
+    if (defined) {
+      const missing = usedVars(readText(join(dir, css_)) ?? "").filter((v) => !defined.has(v));
+      if (missing.length) add(css_, "token-undefined", `the project's tokens do not define ${missing.join(", ")}: those declarations are dropped. Add them (emit-tokens.mjs --format css writes the skill's set) or regenerate .design/tokens.json`);
+    }
+    for (const lit of literalsIn(readText(join(dir, css_)) ?? "")) add(css_, "literal", `literal "${lit}" in CSS: use a token`);
   }
   const shared = marker.source === "shared";
   if (shared && !/\battach\(/.test(code)) add(where, "empty-skeleton", `${spec.name} uses the shared behaviour but never calls attach(): no keyboard, focus or ARIA wiring runs`);
@@ -177,7 +216,11 @@ const relativeDir = (root, dir) => relative(root, dir);
 export function checkComponents(root) {
   const notes = [];
   const markers = walk(root, root).filter((f) => basename(f) === MARKER);
-  const findings = markers.flatMap((m) => checkComponent(join(root, m), root, notes));
+  const defined = markers.length ? definedVars(root) : null; // null: the project has no token set to compare with
+  const findings = markers.flatMap((m) => {
+    try { return checkComponent(join(root, m), root, notes, defined); }
+    catch (e) { return [{ file: relative(root, join(root, m)).split("\\").join("/"), rule: "css-unparseable", message: `could not check this component: ${e.message}` }]; }
+  });
   return { findings, notes };
 }
 

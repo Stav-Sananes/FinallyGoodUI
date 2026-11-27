@@ -847,3 +847,18 @@ test("field: attach cancels the submit of an invalid form (so a method=dialog fo
   p.b.control.validity = { valid: true }; p.c.control.validity = { valid: true };
   assert.equal(submit().defaultPrevented, false);
 });
+
+test("toast: dismissing the toast that holds focus resumes the other countdowns even when the browser fires no focusout on removal (review I4)", async () => {
+  const { attach } = await load("toast");
+  await withClock(async (clock) => {
+    const p = toastPage({ toasts: [{ "data-timeout": "0" }, {}] });
+    attach(p.root);
+    p.made[0].dismiss.focus(); // focusin: the countdown of the second toast pauses
+    clock.advance(10000);
+    assert.equal(p.gone(1), false, "paused while focus is inside the region (positive control)");
+    p.made[0].dismiss.dispatch("click", { bubbles: true }); // removes the focused toast; the fake DOM, like Firefox, fires no focusout
+    assert.equal(p.gone(0), true);
+    clock.advance(5000);
+    assert.equal(p.gone(1), true, "the second toast leaves after its reading time");
+  });
+});

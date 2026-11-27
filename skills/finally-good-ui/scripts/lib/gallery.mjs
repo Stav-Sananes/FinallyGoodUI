@@ -23,6 +23,9 @@ function section(name, profile) {
   const spec = loadSpec(dir);
   const css = `${read(join(dir, `${name}.css`))}\n${profileCss(profile, spec)}`;
   const ref = read(join(dir, "reference/index.html"));
+  for (const marker of ["<body>", '<script type="module">']) {
+    if (!ref.includes(marker)) throw new Error(`gallery: ${name}/reference/index.html has no ${marker} (the gallery slices the page between <body> and the module script)`);
+  }
   const demoId = `fgu-${name}-demo`;
   const markup = ref.slice(ref.indexOf("<body>") + 6, ref.indexOf('<script type="module">'))
     .replace('<main id="demo">', `<div id="${demoId}">`).replace("<main>", "<div>").replace("</main>", "</div>").trim();

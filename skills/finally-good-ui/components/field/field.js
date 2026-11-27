@@ -9,9 +9,11 @@ let counter = 0;
 
 const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
 
+// Fixed order (the browser's own order for the most useful message first), not for..in over ValidityState.
+const VALIDITY_KEYS = ["valueMissing", "typeMismatch", "patternMismatch", "tooShort", "tooLong", "rangeUnderflow", "rangeOverflow", "stepMismatch", "badInput", "customError"];
 const message = (control) => {
-  for (const key in control.validity) {
-    if (key === "valid" || !control.validity[key]) continue;
+  for (const key of VALIDITY_KEYS) {
+    if (!control.validity[key]) continue;
     const attr = `msg${key[0].toUpperCase()}${key.slice(1)}`;
     return control.dataset[attr] || control.validationMessage;
   }

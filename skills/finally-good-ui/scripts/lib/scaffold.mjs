@@ -3,12 +3,14 @@
 // exist, but never writes. Markup comes from scaffold-markup.mjs (one tree per component, rendered for each
 // framework by scaffold-render.mjs). Behaviour is never written per framework: it is either the project's own
 // primitive (source "primitives:<name>", the button only) or the one shared reference script (source "shared").
-import { join, dirname } from "node:path";
+import { join, dirname, basename } from "node:path";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
 import { UsageError } from "./cli.mjs";
 import { profileCss } from "./style-profile.mjs";
 import { exists, readJson, isDir } from "./fs.mjs";
+import { usedVars, definedVars } from "./token-vars.mjs";
 import { MARKUP } from "./scaffold-markup.mjs";
 import { viewOf, react, vue, svelte, angular, plain, toastStore } from "./scaffold-render.mjs";
 
@@ -33,6 +35,8 @@ const PRIMITIVES = {
   "angular-cdk": { angular: null }, // the CDK has no button primitive
 };
 
+const MARKER = ".fgu-component.json";
+const hashOf = (text) => createHash("sha256").update(text).digest("hex").slice(0, 16);
 const FRAMEWORKS = { react, vue, svelte, angular };
 
 /** Where the components go: src/components/fgu, or fgu under the shadcn components alias. */
@@ -83,6 +87,11 @@ export function planScaffold({ spec, stack, profile, root, force = false }) {
   const css = `${readFileSync(join(refDir, `${spec.name}.css`), "utf8").trimEnd()}\n\n${profileCss(profile, spec).trimEnd()}\n`;
   const rendered = family ? FRAMEWORKS[family](view, { shared, prim, typescript }) : plain(spec, COMPONENTS_ROOT);
 
+  // The css is written against the skill's token names: say so when the project's own tokens lack some.
+  const defined = definedVars(root);
+  const missing = defined ? usedVars(css).filter((v) => !defined.has(v)) : [];
+  if (missing.length) notes.push(`the project's tokens do not define ${missing.join(", ")}: add them (emit-tokens.mjs --format css writes the skill's set) or those declarations are dropped`);
+
   const out = [
     { path: `${dir}/${spec.name}.css`, content: css },
     ...rendered.map((r) => ({ path: `${dir}/${spec.name}${r.ext}`, content: r.content })),
@@ -91,9 +100,26 @@ export function planScaffold({ spec, stack, profile, root, force = false }) {
     ...(shared ? [{ path: `${dir}/${spec.name}.behaviour.js`, content: readFileSync(join(refDir, `${spec.name}.js`), "utf8") }] : []),
     // Typings next to the script, so a strict TypeScript project can import it without allowJs.
     ...(shared && typescript ? [{ path: `${dir}/${spec.name}.behaviour.d.ts`, content: behaviourTypes(spec) }] : []),
-    { path: `${dir}/.fgu-component.json`, content: `${JSON.stringify({ name: spec.name, source, framework }, null, 2)}\n` },
   ];
-  const files = out.map((f) => (!force && exists(join(root, f.path)) ? { ...f, skipped: "exists" } : f));
+  // A file that exists is rewritten only when the scaffold wrote it and nobody touched it since (the marker keeps a hash of
+  // what it wrote), so a profile change refreshes the css but never destroys a hand-rewritten component. --force rewrites everything.
+  const marker = readJson(join(root, dir, MARKER));
+  const written = marker?.files ?? {};
+  const decide = (f) => {
+    const abs = join(root, f.path);
+    if (force || !exists(abs)) return f;
+    const mine = written[basename(f.path)];
+    return mine && mine === hashOf(readFileSync(abs, "utf8")) ? f : { ...f, skipped: "exists" };
+  };
+  const files = out.map(decide);
+  // The marker records what is on disk after this run: new content for the files written, the old hash for the ones skipped.
+  const hashes = {};
+  for (const f of files) hashes[basename(f.path)] = f.skipped ? written[basename(f.path)] : hashOf(f.content);
+  for (const k of Object.keys(hashes)) if (hashes[k] === undefined) delete hashes[k];
+  const markerFile = { path: `${dir}/${MARKER}`, content: `${JSON.stringify({ name: spec.name, source, framework, files: hashes }, null, 2)}\n` };
+  // Always written when anything else is, so a stale marker never describes files it did not produce.
+  const anyWritten = files.some((f) => !f.skipped);
+  files.push(!force && exists(join(root, markerFile.path)) && !anyWritten ? { ...markerFile, skipped: "exists" } : markerFile);
   return { files, source, notes };
 }
 
