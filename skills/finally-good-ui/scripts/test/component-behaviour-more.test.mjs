@@ -339,3 +339,34 @@ test("table: syncSelection(ids) checks exactly those rows without an event", asy
   assert.ok(p.rows.every((r) => !r.box.checked));
   assert.deepEqual(seen, []);
 });
+
+// ---- ArrowUp with nothing focused lands on the last item
+test("select: ArrowUp from the search field goes to the last option, ArrowDown to the first", async () => {
+  const { attach } = await load("select");
+  const p = selectPage({ search: true });
+  attach(p.root);
+  p.list.showPopover();
+  keys(p.searchBox, "ArrowUp");
+  assert.equal(p.doc.activeElement, p.options[3], "the last enabled option, not the one before it");
+  p.searchBox.focus();
+  keys(p.searchBox, "ArrowDown");
+  assert.equal(p.doc.activeElement, p.options[0]);
+});
+
+test("menu: ArrowUp inside the list with no item focused goes to the last item", async () => {
+  const { attach } = await load("menu");
+  const doc = new Doc();
+  const root = make(doc, "div", { "data-fgu": "menu", "data-part": "root" });
+  const trigger = make(doc, "button", { "data-part": "trigger", id: "mt" });
+  const list = make(doc, "div", { "data-part": "list", id: "ml" });
+  const items = ["A", "B", "C"].map((t) => make(doc, "button", { "data-part": "item" }, t));
+  list.append(...items);
+  root.append(trigger, list);
+  doc.body = make(doc, "body"); doc.body.append(root);
+  attach(root);
+  list.showPopover();
+  items[0].focus();
+  doc.activeElement = list; // focus on the list itself: no current item
+  keys(list, "ArrowUp");
+  assert.equal(doc.activeElement, items[2]);
+});

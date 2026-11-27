@@ -71,7 +71,6 @@ export function attach(root) {
       focused = root.contains(root.ownerDocument.activeElement);
       sync();
     };
-    finish.cancel = () => { if (fallback !== null) clearTimeout(fallback); }; // detach must not leave this timer behind
     leaving.set(toast, finish);
     const ms = exitMs(toast);
     if (ms === 0) finish(); else fallback = setTimeout(finish, ms + EXIT_GRACE_MS);
@@ -116,7 +115,8 @@ export function attach(root) {
     observer?.disconnect();
     for (const entry of counting.values()) if (entry.timer !== null) clearTimeout(entry.timer);
     counting.clear();
-    for (const finish of leaving.values()) finish.cancel();
+    // A toast that is mid-exit must not stay in the DOM with data-leaving: finish it now (it clears its own fallback timer).
+    for (const finish of [...leaving.values()]) finish();
     leaving.clear();
   };
 }

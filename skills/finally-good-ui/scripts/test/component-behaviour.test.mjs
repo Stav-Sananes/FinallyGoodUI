@@ -875,3 +875,16 @@ test("toast: detach clears the exit fallback timer of a toast that is still leav
     assert.equal(clock.pending(), 0, "nothing is left running after detach");
   });
 });
+
+test("toast: detach finishes a toast that is mid-exit instead of leaving it stuck with data-leaving", async () => {
+  const { attach } = await load("toast");
+  await withClock(async () => {
+    const p = toastPage({ duration: "200ms" });
+    const detach = attach(p.root);
+    p.made[0].dismiss.dispatch("click", { bubbles: true });
+    assert.equal(p.leaving(), true);
+    assert.equal(p.gone(), false, "still exiting (positive control)");
+    detach();
+    assert.equal(p.gone(), true, "removed on detach");
+  });
+});

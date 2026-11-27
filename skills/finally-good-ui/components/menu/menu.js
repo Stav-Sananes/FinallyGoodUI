@@ -110,7 +110,7 @@ export function attach(root) {
     if (!list || !triggerOf.has(list)) return;
     const items = itemsOf(list);
     const i = items.indexOf(list.ownerDocument.activeElement);
-    const moves = { ArrowDown: i + 1, ArrowUp: i - 1 + items.length, Home: 0, End: items.length - 1 };
+    const moves = { ArrowDown: i + 1, ArrowUp: i < 0 ? items.length - 1 : i - 1 + items.length, Home: 0, End: items.length - 1 };
     if (event.key in moves) { event.preventDefault(); focusAt(list, moves[event.key], items); return; }
     if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeMenu(list); return; }
     if (event.key === "Tab") { closeMenu(list, { restoreFocus: false }); return; }

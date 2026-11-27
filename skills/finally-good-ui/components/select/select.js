@@ -75,7 +75,7 @@ const focusOption = (root, option) => {
   option.setAttribute("tabindex", "0");
   option.focus();
 };
-const step = (root, from, by) => { const all = optionsOf(root).filter(usable); if (!all.length) return null; const i = all.indexOf(from); return all.at(by === "first" ? 0 : by === "last" ? -1 : (i + by + all.length) % all.length); };
+const step = (root, from, by) => { const all = optionsOf(root).filter(usable); if (!all.length) return null; const i = all.indexOf(from); return all.at(by === "first" ? 0 : by === "last" ? -1 : i < 0 ? (by < 0 ? -1 : 0) : (i + by + all.length) % all.length); };
 
 export function attach(root) {
   for (const el of within(root, ROOT)) wire(el);
