@@ -85,10 +85,20 @@
   box-shadow: var(--shadow-md);
 }
 
+[data-fgu="menu"] [data-part="trigger"] {
+  border-radius: var(--radius-md);
+}
+
 [data-fgu="menu"] [data-part="item"] {
   min-height: var(--size-control-md);
   padding-inline: var(--space-3);
   gap: var(--space-2);
+}
+
+@media (pointer: coarse) {
+  [data-fgu="menu"] [data-part="item"] {
+    min-height: var(--size-control-lg);
+  }
 }
 
 [data-fgu="menu"] [data-part="item"] {

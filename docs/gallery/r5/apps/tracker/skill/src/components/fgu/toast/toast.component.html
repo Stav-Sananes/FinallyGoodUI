@@ -6,17 +6,11 @@
       [attr.data-id]="t.id"
       [attr.data-timeout]="t.timeout"
     >
-      <p data-part="message">
-        {{ t.message }}
-      </p>
+      <p data-part="message">{{ t.message }}</p>
       @if (t.action) {
-        <button data-part="action" type="button" (click)="t.onAction && t.onAction(t)">
-          {{ t.action }}
-        </button>
+        <button data-part="action" type="button" (click)="t.onAction && t.onAction(t)">{{ t.action }}</button>
       }
-      <button data-part="dismiss" type="button" aria-label="Dismiss">
-        &times;
-      </button>
+      <button data-part="dismiss" type="button" aria-label="Dismiss">&times;</button>
     </div>
   }
   <ng-content />

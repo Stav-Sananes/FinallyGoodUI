@@ -7,7 +7,8 @@
     [checked]="checked"
     [attr.disabled]="disabled ? '' : null"
     [attr.aria-invalid]="invalid ? 'true' : null"
-    [attr.role]="variant === 'switch' ? 'switch' : null"
+    [attr.role]="variant === 'switch' ? 'switch' : undefined"
+    (change)="onCheckedChange($event)"
   />
   <span data-part="label">
     <ng-content />

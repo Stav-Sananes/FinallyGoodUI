@@ -60,6 +60,12 @@
 [data-fgu="field"] [data-part="error"]:not(:empty) { animation: none; }
 }
 
+/* Multiline: a textarea is the same control part. */
+[data-fgu="field"] textarea[data-part="control"] {
+  padding-block: var(--space-2);
+  resize: vertical;
+}
+
 /* field: radius=sharp material=layered density=dense motion=productive motif="postmark: a round cancellation ring stamped on every sorted letter, plus a perforated stamp edge on the intake tray" */
 
 [data-fgu="field"] [data-part="control"] {
@@ -73,6 +79,12 @@
   min-height: var(--size-control-sm);
   padding-inline: var(--space-2);
   gap: var(--space-1);
+}
+
+@media (pointer: coarse) {
+  [data-fgu="field"] [data-part="control"] {
+    min-height: var(--size-control-lg);
+  }
 }
 
 [data-fgu="field"] [data-part="control"] {

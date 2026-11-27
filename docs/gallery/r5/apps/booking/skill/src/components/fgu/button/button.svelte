@@ -1,11 +1,11 @@
-<script lang="ts">
+<script>
 import { attach } from "./button.behaviour.js";
 import "./button.css";
 
 let { variant = "primary", disabled = false, loading = false, type = "button", children, icon, ...rest } = $props();
 
 // attach wires the keyboard, focus and ARIA that the markup leaves to the shared behaviour; it returns the cleanup.
-function behaviour(node: HTMLElement) {
+function behaviour(node) {
   const detach = attach(node);
   return { destroy: detach };
 }

@@ -2,7 +2,7 @@
    Enter and exit follow recipes/motion/toast-stack.md (transform and opacity only). */
 [data-fgu="toast"][data-part="root"] {
   position: fixed;
-  inset: auto var(--space-4) var(--space-4) auto;
+  inset: auto var(--toast-offset, var(--space-4)) var(--toast-offset, var(--space-4)) auto; /* set --toast-offset on the region to move it */
   z-index: var(--z-toast);
   display: flex;
   flex-direction: column;

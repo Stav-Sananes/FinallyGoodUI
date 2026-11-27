@@ -21,10 +21,8 @@ export function Menu({ items = [], children, ...rest }: MenuProps) {
         aria-haspopup="menu"
         aria-expanded="false"
         aria-controls={uid + '-list'}
-        popoverTarget={uid + "-list"} // project fix: React 19 wants popoverTarget (scaffold emitted popovertarget)
-      >
-        {children}
-      </button>
+        {...{ popoverTarget: uid + '-list' }}
+      >{children}</button>
       <div data-part="list" id={uid + '-list'} role="menu" aria-labelledby={uid + '-trigger'} {...{ popover: "" }}>
         {items.map((item, i) => (
           <button
@@ -35,9 +33,7 @@ export function Menu({ items = [], children, ...rest }: MenuProps) {
             tabIndex={-1}
             aria-disabled={item.disabled ? "true" : undefined}
             onClick={() => item.onSelect && item.onSelect(item)}
-          >
-            {item.label}
-          </button>
+          >{item.label}</button>
         ))}
       </div>
     </div>

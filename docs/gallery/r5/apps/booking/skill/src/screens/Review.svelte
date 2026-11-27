@@ -59,12 +59,12 @@ async function book(event) {
   </Ticket>
 
   <form class="form" onsubmit={book} novalidate>
-    <Field label="Your name" value={app.form.name} oninput={(e) => (app.form.name = e.target.value)} required autocomplete="name" data-msg-value-missing="Enter your name so the groomer knows who to hand the lead to." />
-    <Field label="Mobile number" hint="For the reminder and if we're running late." value={app.form.phone} oninput={(e) => (app.form.phone = e.target.value)} type="tel" inputmode="tel" autocomplete="tel" required pattern={"(?:\\+44\\s?7\\d{3}|07\\d{3})\\s?\\d{3}\\s?\\d{3}"} data-msg-value-missing="Enter a UK mobile number, like 07700 900123." data-msg-pattern-mismatch="Enter a UK mobile number, like 07700 900123." />
-    <Field label="Anything we should know" hint="Tender spots, allergies, how {dog().name} behaves with clippers." value={app.form.notes} oninput={(e) => (app.form.notes = e.target.value)} />
+    <Field label="Your name" bind:value={app.form.name} required autocomplete="name" data-msg-value-missing="Enter your name so the groomer knows who to hand the lead to." />
+    <Field label="Mobile number" hint="For the reminder and if we're running late." bind:value={app.form.phone} type="tel" inputmode="tel" autocomplete="tel" required pattern={"(?:\\+44\\s?7\\d{3}|07\\d{3})\\s?\\d{3}\\s?\\d{3}"} data-msg-value-missing="Enter a UK mobile number, like 07700 900123." data-msg-pattern-mismatch="Enter a UK mobile number, like 07700 900123." />
+    <Field label="Anything we should know" hint="Tender spots, allergies, how {dog().name} behaves with clippers." multiline rows={3} bind:value={app.form.notes} />
     <div class="toggles">
-      <Toggle checked={app.form.nervous} onchange={(e) => (app.form.nervous = e.target.checked)}>{dog().name} is nervous with clippers</Toggle>
-      <Toggle variant="switch" checked={app.form.reminder} onchange={(e) => (app.form.reminder = e.target.checked)}>Text me a reminder the day before</Toggle>
+      <Toggle bind:checked={app.form.nervous}>{dog().name} is nervous with clippers</Toggle>
+      <Toggle variant="switch" bind:checked={app.form.reminder}>Text me a reminder the day before</Toggle>
     </div>
 
     {#if problem}<p class="notice notice-error" role="alert"><Icon name="wifi" size="sm" /> {problem}</p>{/if}

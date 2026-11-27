@@ -79,7 +79,7 @@ async function copyList() {
     </section>
 
     <form class="add" novalidate @submit="add">
-      <Field id="extra-line" :value="extra" @input="extra = ($event.target as HTMLInputElement).value" label="Add something else" required autocomplete="off" placeholder="Washing-up liquid" data-msg-value-missing="Type what to buy, for example “Washing-up liquid”." />
+      <Field id="extra-line" v-model="extra" label="Add something else" required autocomplete="off" placeholder="Washing-up liquid" data-msg-value-missing="Type what to buy, for example “Washing-up liquid”." />
       <div class="sel"><label for="extra-aisle">Aisle</label><select id="extra-aisle" v-model="extraAisle"><option v-for="a in AISLES" :key="a.name" :value="a.name">{{ a.number }} · {{ a.name }}</option></select></div>
       <Button type="submit"><template #icon><Icon name="plus" /></template>Add</Button>
     </form>
@@ -100,12 +100,12 @@ async function copyList() {
             </template>
             <ul class="lines">
               <li v-for="l in g.lines" :key="l.key" class="line" :data-have="hasIt(l.key) || undefined">
-                <Toggle :checked="isTicked(l.key)" :disabled="hasIt(l.key)" @change="toggleTicked(l.key, ($event.target as HTMLInputElement).checked)">
+                <Toggle :model-value="isTicked(l.key)" @update:model-value="toggleTicked(l.key, $event)" :disabled="hasIt(l.key)">
                   <span class="lname" :data-done="isTicked(l.key) || undefined">{{ l.name }}</span>
                   <span class="qty num">{{ formatQty(l.qty, l.unit) }}</span>
                 </Toggle>
                 <span class="from meta">{{ l.from.join(", ") }}</span>
-                <Toggle variant="switch" :checked="hasIt(l.key)" @change="toggleHave(l.key, ($event.target as HTMLInputElement).checked)"><span class="meta">At home</span></Toggle>
+                <Toggle variant="switch" :model-value="hasIt(l.key)" @update:model-value="toggleHave(l.key, $event)"><span class="meta">At home</span></Toggle>
                 <button v-if="l.custom" type="button" class="rm" :aria-label="`Remove ${l.name}`" @click="removeCustom(l.key.split('|')[1])">&times;</button>
               </li>
             </ul>

@@ -14,7 +14,7 @@ let nextId = 0;
 })
 export class MenuComponent implements AfterViewInit, OnDestroy {
   readonly uid = `fgu-menu-${++nextId}`;
-  @Input() items: { label: string; disabled?: boolean; onSelect?: (item: { label: string }) => void }[] = [];
+  @Input() items: readonly { label: string; disabled?: boolean; onSelect?: (item: { label: string }) => void }[] = [];
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private detach?: () => void;
 

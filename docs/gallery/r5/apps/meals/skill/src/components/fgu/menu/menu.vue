@@ -36,9 +36,7 @@ onBeforeUnmount(() => detach?.());
         tabindex="-1"
         :aria-disabled="item.disabled ? 'true' : undefined"
         @click="item.onSelect && item.onSelect(item)"
-      >
-        {{ item.label }}
-      </button>
+      >{{ item.label }}</button>
     </div>
   </div>
 </template>

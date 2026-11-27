@@ -1,20 +1,20 @@
-<script lang="ts">
+<script>
 import { attach } from "./toast.behaviour.js";
 import "./toast.css";
 
 let { toasts = [], label = "Notifications", children, ondismiss, ...rest } = $props();
 
 // attach wires the keyboard, focus and ARIA that the markup leaves to the shared behaviour; it returns the cleanup.
-function behaviour(node: HTMLElement) {
+function behaviour(node) {
   const detach = attach(node);
   return { destroy: detach };
 }
 
-// A leaving toast fires a cancelable `dismiss`; keep the node and hand the id to the parent, which owns the list.
-function dismissListener(node: HTMLElement) {
-  const handle = (event: Event) => {
+// dismiss: keep the node and hand the value to the parent, which owns the list.
+function listenDismiss(node) {
+  const handle = (event) => {
     event.preventDefault();
-    ondismiss?.((event.target as HTMLElement).dataset.id ?? "");
+    ondismiss?.(event.target.dataset.id ?? "");
   };
   node.addEventListener("dismiss", handle);
   return { destroy: () => node.removeEventListener("dismiss", handle) };
@@ -27,7 +27,7 @@ function dismissListener(node: HTMLElement) {
   role="status"
   aria-label={label}
   use:behaviour
-  use:dismissListener
+  use:listenDismiss
   {...rest}
 >
   {#each toasts as t (t.id)}
@@ -37,17 +37,11 @@ function dismissListener(node: HTMLElement) {
       data-id={t.id}
       data-timeout={t.timeout}
     >
-      <p data-part="message">
-        {t.message}
-      </p>
+      <p data-part="message">{t.message}</p>
       {#if t.action}
-        <button data-part="action" type="button" onclick={() => t.onAction && t.onAction(t)}>
-          {t.action}
-        </button>
+        <button data-part="action" type="button" onclick={() => t.onAction && t.onAction(t)}>{t.action}</button>
       {/if}
-      <button data-part="dismiss" type="button" aria-label="Dismiss">
-        &times;
-      </button>
+      <button data-part="dismiss" type="button" aria-label="Dismiss">&times;</button>
     </div>
   {/each}
   {@render children?.()}

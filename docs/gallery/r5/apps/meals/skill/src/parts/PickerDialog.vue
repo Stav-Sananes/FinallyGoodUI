@@ -26,10 +26,10 @@ defineExpose({ open });
 </script>
 
 <template>
-  <Dialog :open="isOpen" @close="isOpen = false">
+  <Dialog v-model:open="isOpen" initial-focus="[data-part=control]" @submit.prevent>
     <template #title>Pick {{ dayLabel }}'s dinner</template>
     <template #description>{{ store.dinners.length }} dinners the household knows. Search by name or tag such as quick or vegetarian.</template>
-    <div class="search"><Field label="Search dinners" type="search" autocomplete="off" placeholder="Try “curry” or “quick”" autofocus :value="q" @input="q = ($event.target as HTMLInputElement).value" /></div>
+    <div class="search"><Field label="Search dinners" type="search" autocomplete="off" placeholder="Try “curry” or “quick”" v-model="q" /></div>
     <ul v-if="results.length" class="list" aria-label="Dinners">
       <li v-for="d in results" :key="d.id">
         <button type="button" class="pick" @click="pick(d.id)">

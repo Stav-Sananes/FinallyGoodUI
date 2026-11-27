@@ -44,7 +44,10 @@ function place(list) {
   list.style.setProperty("--indicator-scale", String(box.width ? rect.width / box.width : 0));
 }
 
-function select(list, tab) {
+// `notify`: a change made by the user or the API (not the first render) tells the world through a bubbling
+// `tabchange` event on the list, detail = the new index, so a framework wrapper can keep a controlled `selected` in step.
+function select(list, tab, notify = false) {
+  const changed = tabsOf(list).find((t) => t.getAttribute("aria-selected") === "true") !== tab;
   for (const other of tabsOf(list)) {
     const on = other === tab;
     other.setAttribute("aria-selected", String(on));
@@ -53,13 +56,14 @@ function select(list, tab) {
     if (panel) panel.hidden = !on;
   }
   place(list);
+  if (notify && changed) list.dispatchEvent(new CustomEvent("tabchange", { bubbles: true, detail: tabsOf(list).indexOf(tab) }));
 }
 
 /** Selects a tab of the tabs inside `scope` (the root, the list, or any ancestor): a tab element or its index. */
 export function selectTab(scope, which) {
   const list = scope.matches?.(LIST) ? scope : scope.querySelector(LIST);
   const tab = typeof which === "number" ? tabsOf(list)[which] : which;
-  if (list && tab) select(list, tab);
+  if (list && tab) select(list, tab, true);
 }
 
 export function attach(root) {
@@ -77,7 +81,7 @@ export function attach(root) {
     const tab = event.target.closest?.(TAB);
     const list = tab?.closest(LIST);
     if (!list) return;
-    select(list, tab);
+    select(list, tab, true);
     tab.focus();
   };
 
@@ -94,7 +98,7 @@ export function attach(root) {
     if (next === undefined) return;
     event.preventDefault();
     const target = all[next % all.length];
-    select(list, target);
+    select(list, target, true);
     target.focus();
   };
 

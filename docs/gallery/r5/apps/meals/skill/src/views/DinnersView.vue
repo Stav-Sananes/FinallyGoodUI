@@ -8,7 +8,6 @@ import Icon from "../parts/Icon.vue";
 import { AISLES, type Aisle } from "../data";
 import { addDinner, dayName, load, loadError, loadState, startFresh, store } from "../store";
 import { pushToast } from "../toasts";
-import { validateForm } from "../forms";
 
 const q = ref("");
 const dialogOpen = ref(false);
@@ -24,13 +23,10 @@ function openNew() {
   form.value = { name: "", minutes: "30", main: "", qty: "1", aisle: "Produce" };
   dialogOpen.value = true;
 }
-function save(e: Event) {
-  e.preventDefault();
-  if (!validateForm(e.currentTarget as HTMLFormElement)) return;
+function save() {
   const f = form.value;
   const id = `own-${Date.now()}`;
   addDinner({ id, name: f.name.trim(), minutes: Number(f.minutes), tags: ["Our own"], ingredients: [{ name: f.main.trim(), qty: Number(f.qty) || 1, unit: "", aisle: f.aisle }] });
-  dialogOpen.value = false;
   pushToast(`${f.name.trim()} is on the list of dinners. Pick it from any night.`);
 }
 </script>
@@ -54,7 +50,7 @@ function save(e: Event) {
       <div><h1>Dinners</h1><p class="num">{{ store.dinners.length }} the household knows</p></div>
       <div class="actions"><Button @click="openNew"><template #icon><Icon name="plus" /></template>New dinner</Button></div>
     </header>
-    <div class="find"><Field :value="q" @input="q = ($event.target as HTMLInputElement).value" label="Search dinners or ingredients" type="search" autocomplete="off" placeholder="Try “lentils” or “vegetarian”" /></div>
+    <div class="find"><Field v-model="q" label="Search dinners or ingredients" type="search" autocomplete="off" placeholder="Try “lentils” or “vegetarian”" /></div>
 
     <ul v-if="results.length" class="grid" aria-label="Dinners">
       <li v-for="d in results" :key="d.id" class="card dinner">
@@ -70,19 +66,19 @@ function save(e: Event) {
       <div class="row"><Button variant="secondary" @click="q = ''">Clear search</Button><Button variant="ghost" @click="openNew">Add it as a new dinner</Button></div>
     </section>
 
-    <Dialog :open="dialogOpen" @close="dialogOpen = false">
+    <Dialog v-model:open="dialogOpen" initial-focus="[data-part=control]" @submit="save">
       <template #title>New dinner</template>
       <template #description>Add one the household cooks. It shows up when you pick a night, and its main ingredient lands on the shopping list.</template>
-      <form class="form" novalidate @submit="save">
-        <Field :value="form.name" @input="form.name = ($event.target as HTMLInputElement).value" autofocus label="Name of the dinner" required autocomplete="off" data-msg-value-missing="Give it a name, for example “Lamb koftas”." />
-        <Field :value="form.minutes" @input="form.minutes = ($event.target as HTMLInputElement).value" label="Cooking time in minutes" required type="number" inputmode="numeric" min="5" max="240" data-msg-value-missing="How long does it take? Enter minutes." data-msg-range-underflow="Five minutes or more." data-msg-range-overflow="Four hours at most." />
-        <Field :value="form.main" @input="form.main = ($event.target as HTMLInputElement).value" label="Main ingredient to buy" required autocomplete="off" data-msg-value-missing="Name one thing to put on the list, for example “Lamb mince”." />
+      <div class="form">
+        <Field v-model="form.name" label="Name of the dinner" required autocomplete="off" data-msg-value-missing="Give it a name, for example “Lamb koftas”." />
+        <Field v-model="form.minutes" label="Cooking time in minutes" required type="number" inputmode="numeric" min="5" max="240" data-msg-value-missing="How long does it take? Enter minutes." data-msg-range-underflow="Five minutes or more." data-msg-range-overflow="Four hours at most." />
+        <Field v-model="form.main" label="Main ingredient to buy" required autocomplete="off" data-msg-value-missing="Name one thing to put on the list, for example “Lamb mince”." />
         <div class="two">
-          <Field :value="form.qty" @input="form.qty = ($event.target as HTMLInputElement).value" label="How many" type="number" inputmode="numeric" min="1" max="50" />
+          <Field v-model="form.qty" label="How many" type="number" inputmode="numeric" min="1" max="50" />
           <div class="sel"><label for="aisle">Aisle</label><select id="aisle" v-model="form.aisle"><option v-for="a in AISLES" :key="a.name" :value="a.name">{{ a.number }} · {{ a.name }}</option></select></div>
         </div>
-        <div class="foot"><Button variant="ghost" @click="dialogOpen = false">Cancel</Button><Button type="submit">Save dinner</Button></div>
-      </form>
+      </div>
+      <template #actions><Button variant="ghost" @click="dialogOpen = false">Cancel</Button><Button type="submit">Save dinner</Button></template>
     </Dialog>
   </template>
 </template>
@@ -99,5 +95,4 @@ function save(e: Event) {
 .sel { display: grid; gap: var(--space-1); font-size: var(--text-sm); }
 .sel label { font-weight: 600; }
 .sel select { min-block-size: var(--size-control-lg); padding-inline: var(--space-3); font: inherit; font-size: max(var(--text-base), 1rem); border: var(--border-width-hairline) solid var(--color-input); border-radius: var(--radius-md); background: var(--color-card); color: var(--color-foreground); }
-.foot { display: flex; justify-content: flex-end; gap: var(--space-2); margin-block-start: var(--space-2); }
 </style>

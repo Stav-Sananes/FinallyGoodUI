@@ -72,12 +72,6 @@ kbd {
   [data-fgu="field"] [data-part="control"] { font-size: var(--text-base); }
 }
 
-/* App-level fixes on top of scaffolded components (recorded in README, friction 3 and 4). */
-/* Checkbox target is 24px, the WCAG 2.2 minimum; the scaffold draws 20px. */
-fgu-toggle [data-fgu="toggle"] [data-part="control"] { inline-size: var(--icon-lg); block-size: var(--icon-lg); }
-/* The scaffold's spinner loops forever even when the button is not busy; only a busy button spins. */
-fgu-button [data-fgu="button"]:not([aria-busy="true"]) [data-part="spinner"] { animation: none; }
-
 /* Touch screens get 44px targets (a11y.target-size); the density profile's 32px stays for the pointer. */
 @media (pointer: coarse) {
   :root button[data-fgu],

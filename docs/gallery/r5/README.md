@@ -8,12 +8,12 @@ Only the skill side was built this round (no control side).
 
 | App | Framework | Direction | Build / checks |
 |---|---|---|---|
-| [Finance, "Saltmarsh & Rook"](apps/finance/skill) | React 19 + Vite + TS | Tide Table: money as a water level, wavy waterline motif | build passes; `check-components` 0 findings; `check-static` 0 findings (after fixes) |
-| [Booking, "Tailwag Grooming"](apps/booking/skill) | Svelte 5 + Vite (JS) | Appointment Card: ticket-stub motif, biscuit and teal | build passes; `check-components` 0; `check-static` 0 high / 0 medium / 1 low |
+| [Finance, "Saltmarsh & Rook"](apps/finance/skill) | React 19 + Vite + TS | Tide Table: money as a water level, wavy waterline motif | build passes; `check-components` 0; `check-static` 0 |
+| [Booking, "Tailwag Grooming"](apps/booking/skill) | Svelte 5 + Vite (JS) | Appointment Card: ticket-stub motif, biscuit and teal | build passes; `check-components` 0; `check-static` 0 high / 0 medium / 0 low |
 | [Tracker, "Sorting Office"](apps/tracker/skill) | Angular 21 | Sorting Office: triage as sorting mail, postmark stamps | build passes; `check-components` 0; `check-static` 0; `check-flows` and `component-smoke` not run |
-| [Meals, "Supper Board"](apps/meals/skill) | Vue 3 + Vite + TS | Greengrocer's Board: price board, punched hang-tags | build (vue-tsc + vite) passes; `check-components --strict` 0; `check-static` 0 high / 0 medium / 2 low |
+| [Meals, "Supper Board"](apps/meals/skill) | Vue 3 + Vite + TS | Greengrocer's Board: price board, punched hang-tags | build (vue-tsc + vite) passes; `check-components --strict` 0; `check-static` 0 |
 
-Status is as reported in each app's own README. No independent reviewer ran on any app.
+Status is as reported in each app's own README (details below).
 
 ## Screenshots (desktop 1440x900, light)
 
@@ -33,7 +33,7 @@ More views:
 | Tracker | [desktop-dark](captures/tracker-desktop-dark.jpg) | [phone](captures/tracker-phone.jpg) |
 | Meals | [desktop-dark](captures/meals-desktop-dark.jpg) | [phone](captures/meals-phone.jpg) |
 
-These are first-screen stills of each production build, served locally. All 12 loaded with no console errors, page errors or failed requests. Regenerate with `node capture.mjs [app ...]` (needs `playwright-core` and a cached Chromium; the script falls back between two known locations).
+These are first-screen stills of each production build, served locally. All 12 (re-captured 2026-11-27 from fresh builds) loaded with no console errors, page errors or failed requests. Regenerate with `node capture.mjs [app ...]` (needs `playwright-core` and a cached Chromium; the script falls back between two known locations).
 
 ## How to run
 
@@ -45,30 +45,54 @@ npm run dev        # tracker (Angular): npm start
 
 `npm run build` makes a production build. Tracker review states: `?state=loading|error|empty`. Finance bank-feed error: `#/?feed=down`.
 
-## Known limits
+## Status of each app
 
-The apps were built **before the final scaffold fixes** (commit `9ea6aad`, "output compiles under strict tsc, vue-tsc, svelte-check and ngc strictTemplates; two-way props, multiline field, dialog form" and neighbours). Several patches below are therefore already fixed upstream in `skills/finally-good-ui`. The apps were not rebuilt against the fixed scaffold, so their code still carries the patches.
+Facts as reported in each app's own README; the builds and captures were re-run on 2026-11-27. No independent reviewer ran on any app.
 
-Scaffold patches the builders applied by hand (likely fixed upstream, unverified here):
-- **Finance (React):** `button.tsx` `type` typed as `string`, `toggle.tsx` `role={... : null}`, unused `ReactNode` import in `field.tsx` (all failed `tsc -b`); `popovertarget` should be `popoverTarget` in `menu.tsx`; toggle switch CSS used a descendant selector so switches rendered as checkboxes.
-- **Meals (Vue):** same `button` and `toggle` type errors under `vue-tsc`; same switch selector bug (5 selectors fixed).
-- **Tracker (Angular):** permanent "!" under every field because the error `<p>` was never `:empty` (one-line fix in `field.component.html`); `required` and `readonly` array inputs too strict for templates.
-- **Booking (Svelte):** scaffold emits `<script lang="ts">` in a JS project (works via vitePreprocess).
+| App | Build | `check-components --strict` | `check-static` | Console errors | Patches removed vs earlier r5 build |
+|---|---|---|---|---|---|
+| Finance (React) | `tsc -b` + vite passes | 0 findings | 0 findings | 0 (README browser pass); 0 in the 3 captures | 11 |
+| Booking (Svelte) | passes | 0 findings | 0 high / 0 medium / 0 low | 0 (README browser pass); 0 in the 3 captures | 8 |
+| Tracker (Angular) | passes | 0 findings | 0 high / 0 medium / 0 low | 0, plus a dev-only NG0956 warning (README); 0 in the 3 captures | 9 |
+| Meals (Vue) | `vue-tsc` + vite passes | 0 findings | 0 findings | 0 (README browser pass); 0 in the 3 captures | 6, plus 1 partial |
 
-Friction the apps reported that may or may not be closed (not re-checked this round):
-- **No bindable or controlled props:** `bind:value` / `v-model` do nothing; apps used `value` + `oninput` and the like (Booking, Meals). The upstream note says two-way props now exist.
-- **Tabs:** selection lives in the DOM, no change output or selected prop (all four apps).
-- **Dialog:** `open` is one-way; Escape closes in the DOM, so apps mirror it via `onclose` / `@close`. Tracker also lacks an autofocus path and a form submit on Enter.
-- **Field:** no multiline (Booking), validation only on `focusout` so apps dispatch `focusout` on submit (Booking, Meals); passing `error` fights the behaviour (Booking).
-- **Toast:** no provider or `useToast` (Finance hand-wrote one); fixed bottom-right placement collides with a bottom tab bar (Booking, Meals); string vs number ids (Booking).
-- **Density and touch:** `dense` has no touch variant, controls under 44px on phones; toggle control 20px; button spinner animates forever when not busy (Tracker).
-- **Disabled button contrast** is very low in both themes (Booking). Visible in its capture: the "Choose a time" button is barely readable.
-- **Tooling:** no tool derives a light/dark token pair from a hex palette (Finance, Tracker); autonomous "never install" vs a chosen font that must load (Finance, Tracker); `check-flows` and `component-smoke` need full `playwright` (Tracker).
-- Style profile gave the Vue menu trigger no surface (square beside soft cards).
+`check-flows` and `component-smoke` were not run (Tracker README: they need the full `playwright` package). Reduced-motion and screen-reader passes are not covered for Finance and Meals.
 
-Visible in the captures, not mentioned in the app READMEs (my reading, not verified in the browser beyond the stills):
-- Meals: the punched-hole dot on the hang-tags sits tight against the label text ("MON 23", "3 AT THE TABLE"); the active-tab bar in the phone bottom nav spans only the first third.
-- Booking phone: the bottom nav shows icons without labels.
+## Built with the final scaffold
+
+All four apps were regenerated with the final `scripts/scaffold-component.mjs` (commit `9ea6aad` and neighbours) and rebuilt. Generated component files are used as emitted: no hand patches to scaffold output. The earlier r5 build carried such patches (typing fixes, a toggle selector fix, a field error element fix and similar); the counts above are what each README lists as removed, along with app-side workarounds the new scaffold API made unnecessary (two-way props, `initialFocus`, dialog form submit, tabs selection output).
+
+## Remaining friction (skill gaps)
+
+Taken from each app's "Remaining friction" list and merged. These are tracked for the scaffold; none is claimed as fixed here.
+
+| Gap | Seen in | App-side workaround today |
+|---|---|---|
+| No submit-time "show every error" on Field (validates on blur or focusout only) | Finance, Booking, Tracker, Meals | App computes messages and passes `error`, or dispatches `focusout` on invalid controls (`src/forms.ts`, `Review.svelte`) |
+| `--toast-offset` moves both axes, so clearance above a bottom tab bar needs a CSS override | Finance, Booking, Meals | One `inset-block-end` rule in app CSS |
+| No toast provider or `useToast` | Finance, Booking, Tracker (store wraps it) | App owns the toast list (`src/lib/toasts.tsx` in Finance) |
+| Toast callbacks: `dismiss` gives a string id (`dataset.id`), `onAction` gets the toast but dismiss only an id | Booking, Tracker | App converts with `String()` or wraps in the store |
+| `ng build` fails under `noPropertyAccessFromIndexSignature` (`toast.component.ts` reads `dataset.id`, TS4111); scaffold should use `dataset['id']` | Tracker | `"noPropertyAccessFromIndexSignature": false` in `tsconfig.json` |
+| Dialog form: no `novalidate`, so native bubbles precede app messages; Enter in a single-field body submits and closes a `method=dialog` form | Finance, Tracker, Meals | `formNoValidate` + `preventDefault`, or `@submit.prevent` on the dialog |
+| `toggle` `checked` is initial-only (React `defaultChecked`) | Finance | Switches follow `onChange` instead of re-passed `checked` |
+| `dense` density has no touch variant (controls 32px on touch) | Tracker | `(pointer: coarse)` override |
+| Field cannot hide its label visually; empty error line still takes space | Tracker | `.quiet-label` rule |
+| Menu trigger gets no surface from the style profile (square under `radius: soft`) | Meals | One rule in `base.css` |
+| Tabs take only `string[]` labels (no count badge, no id/label split); `panel` receives the label | Booking | App matches on the label |
+| Dialog `title` / `description` are snippets, not string props | Booking | Used as snippets |
+| `disclosure` is one item per component; menu has no label prop | Meals | Visually hidden span in the slot |
+| Libraries: `radix-ui` installed but the scaffold wires none of it (no `Primitive` export in the unified package) | Finance | Dead dependency |
+| Tooling: no light/dark token pair from a hex palette; `contrast.mjs` output verbose (a `--ratio` flag was suggested) | Finance, Tracker | Throwaway scripts |
+| Tooling: "never install" rule vs a chosen font that must load; `emit-tokens --format css` repeats the family name | Finance, Tracker | Fontsource installs, manual stack edit |
+| Tooling: `check-flows` and `component-smoke` need full `playwright`, not `playwright-core` | Tracker | Walk driven with `playwright-core` |
+| Tooling: probe focus walk inflates CLS (opens menus and disclosures); `dist/` not covered by the repo `.gitignore` | Tracker, Meals | Ignore the number; do not stage `dist/` |
+
+Not skill gaps, listed for completeness: Booking fixed a `When.svelte` default-day effect ordering bug and notes parallel agents sharing a scratchpad; Tracker has a dev-only NG0956 "track by identity" warning, not in the production build.
+
+Visible in the captures, not in the app READMEs (my reading of the stills only, not verified in a browser):
+- Meals: the punched-hole dot on the hang-tags touches the label text ("MON 23", "3 AT THE TABLE", "TONIGHT"); on the phone the active-tab bar spans only the first third of the bottom nav and the Shop label sits lower than its siblings.
+- Booking phone: the bottom nav shows icons without labels. The disabled "Choose a time" button is still low-contrast.
+- Finance phone: the brand name wraps to two lines next to the toggle and Studio button.
 
 ## Before / after (r4 skill side vs r5)
 

@@ -13,29 +13,35 @@ Keys: j/k move, u/h/m/l stamp urgent/high/medium/low, - wipe, 1-6 hand to a pers
 Data: 13 issues (billing, auth, search, API, mobile and so on), 6 teammates, activity log per issue, in-memory gateway behind an `IssueGateway` port.
 
 ## Component sources
-All 8 specs were scaffolded with `scripts/scaffold-component.mjs` from `.design/component-style.json` (sharp / layered / dense / productive / postmark motif) and kept as generated. Used: button (header, empty states, letter actions), field (search, compose dialog), menu (Stamp priority, Hand to), dialog (compose, key sheet), tabs (Intake / Mine / All, with counts), toast (all feedback), toggle (Show closed), disclosure (Activity log).
-Hand-written, app-specific: domain (`issue.ts`, `keys.ts`), data (seed, gateway), state (`issue-store.ts`, `toast-store.ts`), and the desk, tray, pigeonhole case, letter and postmark components with their CSS.
-Edits to scaffold output (1 file): `src/components/fgu/field/field.component.html`, the error `<p>` put on one line (friction 1). Everything else is untouched (`diff` against a pristine copy confirms). App-level overrides sit at the end of `src/styles.css`.
+All 8 specs were re-scaffolded with the final `scripts/scaffold-component.mjs` (Angular adapter, `--force`) from `.design/component-style.json` and are used as generated; no scaffold output is edited. Used: button, field (search, compose dialog), menu (Stamp priority, Hand to), dialog (compose, key sheet), tabs (Intake / Mine / All), toast, toggle (Show closed), disclosure (Activity log).
+Hand-written, app-specific: domain, data, state, and the desk, tray, case, letter and postmark components. App-level CSS lives in `src/styles.css`.
+
+### Round-5 regeneration: workarounds removed (9)
+1. Field error part permanently showing "!" (hand edit of `field.component.html`): gone, scaffold output is used as is.
+2. `[required]="true"` / `[id]="'x'"` workarounds: bare `required` and `controlId` now work.
+3. Search value pushed into the inner input by hand plus an `(input)` listener on a wrapper: `[value]` and `(valueChange)`.
+4. Tabs: `focusin` listener, `selectTab` calls in `ngAfterViewInit` and for `[` `]`: `[selected]="viewIndex()"` and `(selectedChange)`.
+5. Toggle: reading `event.target.checked` from `(change)`: `(checkedChange)`.
+6. Dialog: `setTimeout` focus of the title field: `initialFocus="#compose-title"`.
+7. Dialog: own nested `<form>`, hidden submit button and `requestSubmit()`: a real `type="submit"` button in the `actions` slot and `(submit)` on the dialog; field values via `[(value)]` instead of `querySelector`.
+8. Dialog open state: `[(open)]` / `(openChange)` instead of manual `closed` plumbing and form reset via DOM.
+9. CSS overrides for the always-spinning button spinner and the 20px toggle control: the scaffold now spins only while busy and draws a 24px control (verified in the browser).
 
 ## Checks
 - check-components: ok, 0 findings (8 components).
 - check-static: 0 high, 0 medium, 0 low (two highs found on the way, fixed: a clickable div wrapper around the tabs, and `outline: none` without a replacement).
 - Token contrast (scratch script over `scripts/lib/contrast.mjs`): text pairs on background, card, muted and accent surfaces, light and dark, all >= 4.5:1 after two fixes (orange and red on the selected-row tint); input/ring >= 3:1.
-- Real browser (playwright-core + cached Chromium, scratchpad, not part of the app): load, j/u/3/z flow, cursor advance, undo, intake-clear hero, `]` tab switch with URL update, `?` sheet, `c` compose with caret in the title and Enter to submit, offline save rollback + error toast, `?state=loading|error|empty`, dark, 390px mobile (no horizontal overflow). 0 console errors or warnings. Probe (`browser/probe.js`) light, dark, reduced motion: 0 findings; mobile: 0 high/medium, 2 low (skip link and the checkbox input itself under 44px; its label is 44px). The probe's own focus walk reports CLS 0.4 on mobile because it opens menus and disclosures; without the walk CLS is ~0.
+- Real browser, first run (playwright-core + cached Chromium, scratchpad, not part of the app): load, j/u/3/z flow, cursor advance, undo, intake-clear hero, `]` tab switch with URL update, `?` sheet, `c` compose with caret in the title and Enter to submit, offline save rollback + error toast, `?state=loading|error|empty`, dark, 390px mobile (no horizontal overflow). 0 console errors or warnings. Probe (`browser/probe.js`) light, dark, reduced motion: 0 findings; mobile: 0 high/medium, 2 low (skip link and the checkbox input itself under 44px; its label is 44px). The probe's own focus walk reports CLS 0.4 on mobile because it opens menus and disclosures; without the walk CLS is ~0.
 - Not run: `check-flows.mjs` and `component-smoke.mjs` (both need the full `playwright` package, not installed), no independent ui-reviewer (no subagents).
-- Build: `npm install && npm run build` ok. Initial bundle 243 kB raw (62.6 kB transfer), no warnings.
+- Build: `npm install && npm run build` ok. Initial bundle 245.8 kB raw (63.3 kB transfer), no warnings.
 
-## Friction and bugs in the skill (honest list)
-1. **Field error part is never `:empty`.** The scaffold template puts `{{ error }}` on its own lines, Angular leaves one space node, so the CSS `[data-part="error"]:not(:empty)::before { content: "!" }` shows a permanent "!" under every field. Fixed by hand in `field.component.html` (one line).
-2. **Input typing is too strict for templates.** `required` as a bare attribute fails TS2322 (string to boolean), so `[required]="true"`. Array inputs (`toasts`, `items`, `tabs`) are typed mutable, so a `readonly` signal array fails TS4104; the store holds mutable arrays.
-3. **Button spinner animates forever when not busy** (`btn-spin` loops at opacity 0 next to text; probe `anim-infinite-near-text`, medium, x2). App override: `animation: none` unless `aria-busy="true"`.
-4. **Toggle control is 20px** (probe `small-target` medium, under 24px). App override to `--icon-lg`.
-5. **Density profile has no touch variant.** `dense` fixes every control to 32px; on touch screens everything is under 44px. App override under `(pointer: coarse)` (note: `[data-fgu] button` misses the scaffolded buttons because they carry `data-fgu` themselves; needs `button[data-fgu]`).
-6. **Field `id` input plus a static `id="x"` attribute puts the id on the host and on the inner control** (duplicate ids); use `[id]="'x'"`. The field also has no value input or change output, so an initial value (the `?q=` search) is written to the inner input by hand and edits are read from the bubbling `input` event.
-7. **Dialog:** still no autofocus path (first focusable is the close button, I focus the title field with a `setTimeout`); the actions slot is outside any `<form>`, and a form with two text fields and no submit button does not submit on Enter, so a visually hidden submit button is needed and the primary action calls `requestSubmit()`.
-8. **Tabs have no change output or selected input.** Selection is DOM state (`aria-selected`); the app learns it from `focusin` on the tablist (the behaviour focuses the tab on click and arrow keys) and drives it with `selectTab` (initial URL tray, `[` `]` keys). The adapter doc should say so.
-9. **Probe focus walk inflates CLS** (opens menus and disclosures, counted as unexpected shift). Consider excluding shifts caused by the walk.
-10. **Playwright discovery:** `FGU_PLAYWRIGHT_ROOT` wants the full `playwright` package; there is none in the scratchpad path the brief named, and `playwright-core` alone is not accepted by `check-flows` / `component-smoke`. I installed `playwright-core` in the scratchpad and drove the cached Chromium with my own script.
-11. **No script for token edits.** To retune a default token set (palette, fonts, radii) I wrote a Python patch over `tokens/default.tokens.json` and then ran `emit-tokens --format dtcg` once; a documented way to derive `tokens.json` from a spec would help.
-12. **Autonomous "never install" vs. "no CDN":** self-hosted fonts need three Fontsource packages (`emit-tokens --format fonts --loader fontsource` prints exactly that). I treated the brief's no-CDN rule and the app's own `npm install` as the authorisation.
-Compared with r4's list, the scaffold now produces working data-driven components (menu items, tabs, toasts, dialog open state), `allowJs`/`.d.ts` is handled, profile CSS is scoped, and `check-static` no longer flags shared-behaviour roles; those friction items are gone.
+## Remaining friction (after the round-5 scaffold)
+1. **`ng build` fails under `noPropertyAccessFromIndexSignature`** (the Angular CLI default): `toast.component.ts` reads `dataset.id` (TS4111). Scaffold output is not edited; the app sets `"noPropertyAccessFromIndexSignature": false` in `tsconfig.json`. The scaffold should use `dataset['id']`.
+2. **Dialog form has no `novalidate`**, so a `required` field blocks the dialog's submit with the browser's native bubble before the app's own handler runs; the field's behaviour only shows messages on blur, not on the form's `invalid` event. The app keeps `required` (native bubble on empty) and its own error message only for a whitespace-only title.
+3. **Density profile has no touch variant.** `dense` fixes controls to 32px; the app keeps an override under `(pointer: coarse)` (`button[data-fgu]`, since scaffolded buttons carry `data-fgu` themselves).
+4. **Field cannot hide its label visually**, and the empty error line still occupies space: the search box keeps a `.quiet-label` rule in `styles.css`.
+5. **Toast `onAction` receives the toast and the dismiss output only an id**; the store wraps them. Minor.
+6. **Probe focus walk inflates CLS** (opens menus and disclosures). Unchanged from the first run.
+7. **Playwright discovery:** `check-flows` / `component-smoke` need the full `playwright` package; the walk was driven with `playwright-core` from career-ops.
+8. **Dev-mode NG0956 warning** ("track by identity", collection of size 1) from the letter's activity `@for` when the cursor moves between issues; present before the regeneration too, dev server only, not in the production build. Left as is.
+Verification: re-run on the final scaffold: `npm run build` ok (245.8 kB raw, 63.3 kB transfer), check-components --strict ok, check-static 0/0/0, real-browser walk (desktop 1280 and 390px, light and dark): j/u/3/z with toasts, `[` `]` and tab click with URL, search `/` with URL, Show closed, compose (caret in title, blank-title error, Enter submit), key sheet, Escape and reopen, no horizontal overflow at 390px; 0 console errors (only the NG0956 dev warning above).

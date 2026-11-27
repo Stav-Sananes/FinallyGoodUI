@@ -54,6 +54,12 @@
   gap: var(--space-1);
 }
 
+@media (pointer: coarse) {
+  [data-fgu="tabs"] [data-part="tab"] {
+    min-height: var(--size-control-lg);
+  }
+}
+
 [data-fgu="tabs"] [data-part="tab"] {
   transition-property: background-color, border-color, box-shadow, color, opacity, transform;
   transition-duration: var(--duration-micro);

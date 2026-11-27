@@ -1,11 +1,10 @@
-import { AfterViewInit, Component, ElementRef, HostListener, computed, effect, inject, viewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, computed, inject, viewChild } from '@angular/core';
 import { ButtonComponent } from '../../components/fgu/button/button.component';
 import { DialogComponent } from '../../components/fgu/dialog/dialog.component';
 import { FieldComponent } from '../../components/fgu/field/field.component';
 import { TabsComponent } from '../../components/fgu/tabs/tabs.component';
 import { ToastComponent } from '../../components/fgu/toast/toast.component';
 import { ToggleComponent } from '../../components/fgu/toggle/toggle.component';
-import { selectTab } from '../../components/fgu/tabs/tabs.behaviour.js';
 import { Command, SHORTCUTS, commandForKey } from '../domain/keys';
 import { CURRENT_USER_ID, VIEWS, personBySlot } from '../domain/issue';
 import { IssueStore } from '../state/issue-store';
@@ -23,17 +22,17 @@ const TYPING = 'input, textarea, select, [contenteditable="true"]';
   templateUrl: './desk.component.html',
   styleUrl: './desk.component.css',
 })
-export class DeskComponent implements AfterViewInit {
+export class DeskComponent {
   protected readonly store = inject(IssueStore);
   protected readonly toasts = inject(ToastStore);
-  private readonly tabsHost = viewChild.required<ElementRef<HTMLElement>>('tabsHost');
-  private readonly composeForm = viewChild<ElementRef<HTMLFormElement>>('composeForm');
   private readonly searchHost = viewChild.required<ElementRef<HTMLElement>>('searchHost');
 
   protected readonly shortcuts = SHORTCUTS;
   protected readonly composeOpen = signal(false);
   protected readonly helpOpen = signal(false);
   protected readonly titleError = signal('');
+  protected readonly title = signal('');
+  protected readonly area = signal('');
 
   protected readonly tabLabels = computed(() => {
     const counts = this.store.counts();
@@ -48,60 +47,36 @@ export class DeskComponent implements AfterViewInit {
 
   constructor() {
     void this.store.load();
-    // Opening the compose dialog: land the caret in the title (the dialog's first focusable is its close button).
-    effect(() => {
-      if (!this.composeOpen()) return;
-      setTimeout(() => document.querySelector<HTMLInputElement>('#compose-title')?.focus());
-    });
   }
 
-  ngAfterViewInit(): void {
-    // The URL may ask for a tray other than the first; the tabs and the store start in agreement.
-    selectTab(this.tabsHost().nativeElement, this.viewIndex());
-    const query = this.store.query();
-    const search = this.searchHost().nativeElement.querySelector<HTMLInputElement>('input');
-    if (search && query) search.value = query;
+  protected onTab(index: number): void {
+    if (VIEWS[index] && VIEWS[index].id !== this.store.view()) this.store.setView(VIEWS[index].id);
   }
 
-  /** Tabs own their keys and clicks; the desk learns the choice when focus lands on a tab. */
-  protected onTabsFocus(event: Event): void {
-    const tab = (event.target as HTMLElement).closest<HTMLElement>('[role="tab"]');
-    if (!tab) return;
-    const index = [...this.tabsHost().nativeElement.querySelectorAll('[role="tab"]')].indexOf(tab);
-    if (index !== -1 && VIEWS[index].id !== this.store.view()) this.store.setView(VIEWS[index].id);
-  }
-
-  protected onSearch(event: Event): void {
-    this.store.setQuery((event.target as HTMLInputElement).value);
-  }
-
-  protected onToggleClosed(event: Event): void {
-    this.store.toggleClosed((event.target as HTMLInputElement).checked);
-  }
 
   protected openCompose(): void {
     this.titleError.set('');
     this.composeOpen.set(true);
   }
 
-  protected submitCompose(event: SubmitEvent): void {
+  protected submitCompose(event: Event): void {
     event.preventDefault();
-    const form = event.target as HTMLFormElement;
-    const title = (form.querySelector<HTMLInputElement>('#compose-title')?.value ?? '').trim();
-    const area = (form.querySelector<HTMLInputElement>('#compose-area')?.value ?? '').trim();
+    const title = this.title().trim();
     if (!title) {
       this.titleError.set('Give the issue a title so the team can tell it apart.');
-      form.querySelector<HTMLInputElement>('#compose-title')?.focus();
       return;
     }
+    const area = this.area().trim();
     this.composeOpen.set(false);
     void this.store.create(title, area, CURRENT_USER_ID);
   }
 
-  protected onComposeClosed(): void {
-    this.composeOpen.set(false);
+  protected onComposeOpen(open: boolean): void {
+    this.composeOpen.set(open);
+    if (open) return;
     this.titleError.set('');
-    this.composeForm()?.nativeElement.reset();
+    this.title.set('');
+    this.area.set('');
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -121,11 +96,7 @@ export class DeskComponent implements AfterViewInit {
     const cursor = this.store.cursor();
     switch (command.kind) {
       case 'move': this.store.move(command.delta); this.focusRow(); break;
-      case 'view': {
-        const next = this.store.stepView(command.delta);
-        selectTab(this.tabsHost().nativeElement, VIEWS.findIndex((view) => view.id === next));
-        break;
-      }
+      case 'view': this.store.stepView(command.delta); break;
       case 'priority': if (cursor) this.store.setPriority(cursor.id, command.priority); break;
       case 'sort': {
         const member = personBySlot(command.slot);

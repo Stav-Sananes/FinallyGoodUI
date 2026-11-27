@@ -26,12 +26,10 @@ export function Toggle({ variant = "checkbox", checked = false, disabled = false
         defaultChecked={checked}
         disabled={disabled}
         aria-invalid={invalid ? "true" : undefined}
-        role={variant === 'switch' ? 'switch' : undefined} // project fix: scaffold emitted null
+        role={variant === 'switch' ? 'switch' : undefined}
         {...rest}
       />
-      <span data-part="label">
-        {children}
-      </span>
+      <span data-part="label">{children}</span>
     </label>
   );
 }

@@ -11,9 +11,8 @@ import { attach } from "./toast.behaviour.js";
   host: { style: "display: contents" },
 })
 export class ToastComponent implements AfterViewInit, OnDestroy {
-  @Input() toasts: { id: string; message: string; variant?: "status" | "error"; timeout?: number; action?: string; onAction?: (toast: { id: string }) => void }[] = [];
+  @Input() toasts: readonly { id: string; message: string; variant?: "status" | "error"; timeout?: number; action?: string; onAction?: (toast: { id: string }) => void }[] = [];
   @Input() label: string = "Notifications";
-  /** Emits the toast id when one leaves: remove it from `toasts`. */
   @Output() dismissed = new EventEmitter<string>();
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private detach?: () => void;
@@ -23,9 +22,8 @@ export class ToastComponent implements AfterViewInit, OnDestroy {
   }
   ngOnDestroy() { this.detach?.(); }
 
-  // A leaving toast fires a cancelable `dismiss`; keep the node and hand the id to the parent, which owns the list.
   onDismiss(event: Event) {
     event.preventDefault();
-    this.dismissed.emit((event.target as HTMLElement).dataset["id"] ?? "");
+    this.dismissed.emit((event.target as HTMLElement).dataset.id ?? "");
   }
 }

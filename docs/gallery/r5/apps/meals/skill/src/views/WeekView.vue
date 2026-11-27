@@ -138,7 +138,7 @@ function lastWeek() { useSampleWeek(); pushToast("Started from last week's plan.
     </template>
 
     <PickerDialog ref="picker" @pick="onPick" />
-    <Dialog variant="confirm" :open="confirmOpen" @close="confirmOpen = false">
+    <Dialog variant="confirm" v-model:open="confirmOpen">
       <template #title>Clear the whole week?</template>
       <template #description>All seven dinners come off the board and the shopping list empties. Ticks and your own extra lines stay. You can undo this for a few seconds.</template>
       <template #actions>

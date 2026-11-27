@@ -43,9 +43,8 @@
   border: var(--border-width-strong) solid currentColor;
   border-inline-end-color: transparent;
   border-radius: var(--radius-full);
-  animation: btn-spin var(--duration-hero) linear infinite;
 }
-[data-fgu="button"][data-part="root"][aria-busy="true"] [data-part="spinner"] { opacity: 1; }
+[data-fgu="button"][data-part="root"][aria-busy="true"] [data-part="spinner"] { opacity: 1; animation: btn-spin var(--duration-hero) linear infinite; } /* spins only while busy: an invisible spinner must not animate */
 [data-fgu="button"][data-part="root"][aria-busy="true"] [data-part="label"],
 [data-fgu="button"][data-part="root"][aria-busy="true"] [data-part="icon"] { opacity: 0; }
 [data-fgu="button"][data-part="root"][aria-busy="true"] { cursor: progress; }
@@ -57,16 +56,18 @@
   outline: var(--ring-width) solid var(--color-ring);
   outline-offset: var(--ring-offset);
 }
+/* Disabled without opacity: a muted fill with the muted text role keeps the label readable (contrast >= 4.5:1 in the default tokens). */
 [data-fgu="button"][data-part="root"]:disabled {
-  opacity: 0.5;
-  color: var(--color-muted-foreground);
+  --btn-bg: var(--color-muted);
+  --btn-fg: var(--color-muted-foreground);
+  border-color: var(--color-border);
   cursor: not-allowed;
 }
 @keyframes btn-spin { to { transform: rotate(1turn); } }
 @media (prefers-reduced-motion: reduce) {
 [data-fgu="button"][data-part="root"] { transition: opacity var(--duration-short) linear; }
 [data-fgu="button"][data-part="root"]:active:not(:disabled):not([aria-busy="true"]) { transform: none; opacity: 0.85; }
-[data-fgu="button"] [data-part="spinner"] { animation: none; }
+[data-fgu="button"][data-part="root"][aria-busy="true"] [data-part="spinner"] { animation: none; }
 [data-fgu="button"] [data-part="label"],
 [data-fgu="button"] [data-part="icon"] { transition: none; }
 }
@@ -84,6 +85,12 @@
   min-height: var(--size-control-md);
   padding-inline: var(--space-3);
   gap: var(--space-2);
+}
+
+@media (pointer: coarse) {
+  [data-fgu="button"][data-part="root"] {
+    min-height: var(--size-control-lg);
+  }
 }
 
 [data-fgu="button"][data-part="root"] {

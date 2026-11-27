@@ -19,9 +19,7 @@
         tabindex="-1"
         [attr.aria-disabled]="item.disabled ? 'true' : null"
         (click)="item.onSelect && item.onSelect(item)"
-      >
-        {{ item.label }}
-      </button>
+      >{{ item.label }}</button>
     }
   </div>
 </div>

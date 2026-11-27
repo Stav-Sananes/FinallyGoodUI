@@ -27,16 +27,12 @@ export function Disclosure({ variant = "multiple", open = false, disabled = fals
             aria-controls={uid + '-panel'}
             disabled={disabled}
           >
-            <span>
-              {trigger}
-            </span>
+            <span>{trigger}</span>
             <span data-part="indicator" aria-hidden="true"></span>
           </button>
         </h3>
         <div data-part="panel" id={uid + '-panel'} role="region" aria-labelledby={uid + '-trigger'}>
-          <div data-part="content">
-            {children}
-          </div>
+          <div data-part="content">{children}</div>
         </div>
       </div>
     </div>

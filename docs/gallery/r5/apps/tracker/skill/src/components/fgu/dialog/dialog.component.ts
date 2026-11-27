@@ -1,4 +1,4 @@
-import { Component, Input, ViewEncapsulation, Output, EventEmitter, ElementRef, AfterViewInit, OnDestroy, inject, OnChanges } from "@angular/core";
+import { Component, Input, ViewEncapsulation, booleanAttribute, Output, EventEmitter, ElementRef, AfterViewInit, OnDestroy, inject, OnChanges } from "@angular/core";
 import { attach, openDialog, closeDialog } from "./dialog.behaviour.js";
 
 let nextId = 0;
@@ -15,20 +15,25 @@ let nextId = 0;
 export class DialogComponent implements AfterViewInit, OnDestroy, OnChanges {
   readonly uid = `fgu-dialog-${++nextId}`;
   @Input() variant: string = "modal";
-  @Input() open: boolean = false;
-  @Output() closed = new EventEmitter<Event>();
+  @Input({ transform: booleanAttribute }) open: boolean = false;
+  @Input() initialFocus: string | undefined;
+  @Output() openChange = new EventEmitter<boolean>();
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private detach?: () => void;
 
   ngAfterViewInit() {
     this.detach = attach(this.host.nativeElement);
-    this.syncOpen();
+    this.syncControlled();
   }
   ngOnDestroy() { this.detach?.(); }
-  ngOnChanges() { this.syncOpen(); }
-  private syncOpen() {
+  ngOnChanges() { this.syncControlled(); }
+  private syncControlled() {
+    if (!this.detach) return;
     const dialog = this.host.nativeElement.querySelector<HTMLDialogElement>('[data-part="root"]');
-    if (!dialog || !this.detach) return;
-    if (this.open) openDialog(dialog); else closeDialog(dialog);
+    if (dialog) { if (this.open) openDialog(dialog); else closeDialog(dialog); }
+  }
+
+  onClose() {
+    this.openChange.emit(false);
   }
 }

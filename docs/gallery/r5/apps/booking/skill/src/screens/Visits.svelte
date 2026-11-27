@@ -10,6 +10,7 @@ import { app, cancelVisit, isLate, resetVisits, startBooking, toast } from "../l
 
 let loading = $state(app.visitsLoading);
 let target = $state(null);
+let dialogOpen = $state(false);
 
 onMount(() => {
   if (!app.visitsLoading) return;
@@ -22,12 +23,12 @@ const upcoming = $derived(app.visits.filter((v) => v.status === "booked" && new 
 const past = $derived(app.visits.filter((v) => !(v.status === "booked" && new Date(v.start).getTime() > now())).sort((a, b) => b.start.localeCompare(a.start)));
 const tabs = ["Upcoming", "Past"];
 
-function ask(v) { target = v; }
+function ask(v) { target = v; dialogOpen = true; }
 function confirmCancel() {
   const name = dogById(target.dogId).name;
   cancelVisit(target.id);
   toast(`${name}'s visit is cancelled.`);
-  target = null;
+  dialogOpen = false;
 }
 function rebook(v) { startBooking({ dogId: v.dogId, serviceId: v.serviceId }); location.hash = "#/book/when"; }
 </script>
@@ -94,11 +95,11 @@ function rebook(v) { startBooking({ dogId: v.dogId, serviceId: v.serviceId }); l
   {/if}
 </div>
 
-<Dialog variant="confirm" open={target !== null} onclose={() => (target = null)}>
+<Dialog variant="confirm" bind:open={dialogOpen} initialFocus="[data-dialog-close]" onclose={() => (target = null)}>
   {#snippet title()}{target ? `Cancel ${dogById(target.dogId).name}'s visit?` : "Cancel visit"}{/snippet}
   {#snippet description()}{target ? (isLate(target) ? `It is within 24 hours, so you'll still pay half (${money(target.price / 2)}).` : "It is more than 24 hours away, so it's free to cancel.") : ""}{/snippet}
   {#snippet actions()}
-    <Button variant="secondary" data-dialog-close autofocus>Keep visit</Button>
+    <Button variant="secondary" data-dialog-close>Keep visit</Button>
     <Button variant="destructive" onclick={confirmCancel}>Cancel visit</Button>
   {/snippet}
 </Dialog>

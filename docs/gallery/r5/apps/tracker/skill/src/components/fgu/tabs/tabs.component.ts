@@ -1,6 +1,6 @@
-import { Component, Input, ViewEncapsulation, TemplateRef, ElementRef, AfterViewInit, OnDestroy, inject } from "@angular/core";
+import { Component, Input, ViewEncapsulation, numberAttribute, Output, EventEmitter, TemplateRef, ElementRef, AfterViewInit, OnDestroy, inject, OnChanges } from "@angular/core";
 import { NgTemplateOutlet } from "@angular/common";
-import { attach } from "./tabs.behaviour.js";
+import { attach, selectTab } from "./tabs.behaviour.js";
 
 let nextId = 0;
 
@@ -14,17 +14,30 @@ let nextId = 0;
   encapsulation: ViewEncapsulation.None,
   host: { style: "display: contents" },
 })
-export class TabsComponent implements AfterViewInit, OnDestroy {
+export class TabsComponent implements AfterViewInit, OnDestroy, OnChanges {
   readonly uid = `fgu-tabs-${++nextId}`;
-  @Input() tabs: string[] = [];
+  @Input() tabs: readonly string[] = [];
   @Input() label: string | undefined;
+  @Input({ transform: numberAttribute }) selected: number | undefined;
   /** Template for each panel: <ng-template let-item let-index="index">. */
-  @Input() panel: TemplateRef<{ $implicit: string; index: number }> | undefined;
+  @Input() panel: TemplateRef<{ $implicit: string; index: number }> | null = null;
+  @Output() selectedChange = new EventEmitter<number>();
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private detach?: () => void;
 
   ngAfterViewInit() {
     this.detach = attach(this.host.nativeElement);
+    this.syncControlled();
   }
   ngOnDestroy() { this.detach?.(); }
+  ngOnChanges() { this.syncControlled(); }
+  private syncControlled() {
+    if (!this.detach) return;
+    const root = this.host.nativeElement.querySelector<HTMLElement>('[data-part="root"]');
+    if (root && this.selected !== undefined) selectTab(root, this.selected);
+  }
+
+  onTabchange(event: Event) {
+    this.selectedChange.emit((event as CustomEvent<number>).detail);
+  }
 }

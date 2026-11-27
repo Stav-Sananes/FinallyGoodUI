@@ -1,11 +1,11 @@
-<script lang="ts">
+<script>
 import { attach } from "./toggle.behaviour.js";
 import "./toggle.css";
 
-let { variant = "checkbox", checked = false, disabled = false, invalid = false, name, value, children, ...rest } = $props();
+let { variant = "checkbox", checked = $bindable(false), disabled = false, invalid = false, name, value, children, ...rest } = $props();
 
 // attach wires the keyboard, focus and ARIA that the markup leaves to the shared behaviour; it returns the cleanup.
-function behaviour(node: HTMLElement) {
+function behaviour(node) {
   const detach = attach(node);
   return { destroy: detach };
 }
@@ -20,7 +20,8 @@ function behaviour(node: HTMLElement) {
     checked={checked}
     disabled={disabled}
     aria-invalid={invalid ? "true" : undefined}
-    role={variant === 'switch' ? 'switch' : null}
+    role={variant === 'switch' ? 'switch' : undefined}
+    onchange={(e) => (checked = e.currentTarget.checked)}
     {...rest}
   />
   <span data-part="label">

@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "../components/fgu/button/button";
 import { Field } from "../components/fgu/field/field";
 import { Menu } from "../components/fgu/menu/menu";
 import { Tabs } from "../components/fgu/tabs/tabs";
-import { selectTab } from "../components/fgu/tabs/tabs.behaviour.js";
 import type { Invoice } from "../data/seed";
 import { useStore } from "../lib/store";
 import { useActions } from "../lib/actions";
@@ -47,13 +46,7 @@ export default function Invoices({ route }: { route: Route }) {
   const { books, status, retry } = useStore();
   const { addInvoice } = useDialogs();
   const [q, setQ] = useState(route.params.get("q") ?? "");
-  const wrap = useRef<HTMLDivElement>(null);
-  const want = ORDER.indexOf((route.params.get("status") ?? "open") as (typeof ORDER)[number]);
-
-  useEffect(() => {
-    const root = wrap.current?.querySelector('[data-fgu="tabs"]');
-    if (root && want >= 0) selectTab(root, want);
-  }, [want, status]);
+  const want = Math.max(0, ORDER.indexOf((route.params.get("status") ?? "open") as (typeof ORDER)[number]));
 
   if (status === "loading") return <ListSkeleton />;
   if (status === "error") return <FeedError onRetry={retry} />;
@@ -79,7 +72,7 @@ export default function Invoices({ route }: { route: Route }) {
   };
 
   return (
-    <div className="page" ref={wrap}>
+    <div className="page">
       <header className="page-head">
         <div>
           <h1 className="h1">Invoices</h1>
@@ -90,7 +83,7 @@ export default function Invoices({ route }: { route: Route }) {
       <div className="search">
         <Field label="Search invoices" type="search" name="q" placeholder="Client, project or SR-0412" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
-      <Tabs tabs={labels} label="Invoice status" panel={panel} />
+      <Tabs tabs={labels} label="Invoice status" panel={panel} selected={want} onSelectedChange={(n) => setParams("/invoices", { status: ORDER[n] })} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Component, Input, ViewEncapsulation, ElementRef, AfterViewInit, OnDestroy, inject } from "@angular/core";
+import { Component, Input, ViewEncapsulation, booleanAttribute, ElementRef, AfterViewInit, OnDestroy, inject } from "@angular/core";
 import { attach } from "./disclosure.behaviour.js";
 
 let nextId = 0;
@@ -15,8 +15,8 @@ let nextId = 0;
 export class DisclosureComponent implements AfterViewInit, OnDestroy {
   readonly uid = `fgu-disclosure-${++nextId}`;
   @Input() variant: string = "multiple";
-  @Input() open: boolean = false;
-  @Input() disabled: boolean = false;
+  @Input({ transform: booleanAttribute }) open: boolean = false;
+  @Input({ transform: booleanAttribute }) disabled: boolean = false;
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private detach?: () => void;
 

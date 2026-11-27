@@ -1,4 +1,4 @@
-import { Component, Input, ViewEncapsulation, ElementRef, AfterViewInit, OnDestroy, inject } from "@angular/core";
+import { Component, Input, ViewEncapsulation, booleanAttribute, Output, EventEmitter, ElementRef, AfterViewInit, OnDestroy, inject } from "@angular/core";
 import { attach } from "./toggle.behaviour.js";
 
 @Component({
@@ -12,11 +12,12 @@ import { attach } from "./toggle.behaviour.js";
 })
 export class ToggleComponent implements AfterViewInit, OnDestroy {
   @Input() variant: string = "checkbox";
-  @Input() checked: boolean = false;
-  @Input() disabled: boolean = false;
-  @Input() invalid: boolean = false;
+  @Input({ transform: booleanAttribute }) checked: boolean = false;
+  @Input({ transform: booleanAttribute }) disabled: boolean = false;
+  @Input({ transform: booleanAttribute }) invalid: boolean = false;
   @Input() name: string | undefined;
   @Input() value: string | undefined;
+  @Output() checkedChange = new EventEmitter<boolean>();
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private detach?: () => void;
 
@@ -24,4 +25,9 @@ export class ToggleComponent implements AfterViewInit, OnDestroy {
     this.detach = attach(this.host.nativeElement);
   }
   ngOnDestroy() { this.detach?.(); }
+
+  onCheckedChange(event: Event) {
+    this.checked = (event.target as HTMLInputElement).checked;
+    this.checkedChange.emit(this.checked);
+  }
 }

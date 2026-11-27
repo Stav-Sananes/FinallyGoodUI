@@ -2,8 +2,12 @@
 import { onBeforeUnmount, onMounted, ref, getCurrentInstance, watch } from "vue";
 import { attach, openDialog, closeDialog } from "./dialog.behaviour.js";
 
-const props = withDefaults(defineProps<{ variant?: string; open?: boolean }>(), { variant: "modal", open: false });
+const props = withDefaults(defineProps<{ variant?: string; open?: boolean; initialFocus?: string }>(), { variant: "modal", open: false });
+const emit = defineEmits<{ "update:open": [value: boolean] }>();
 const uid = `fgu-dialog-${getCurrentInstance()?.uid ?? 0}`;
+function onClose() {
+  emit("update:open", false);
+}
 const el = ref<HTMLDialogElement | null>(null);
 let detach: (() => void) | undefined;
 onMounted(() => {
@@ -19,20 +23,28 @@ watch(() => props.open, (value) => {
 </script>
 
 <template>
-  <dialog ref="el" data-fgu="dialog" data-part="root" :data-variant="variant" :aria-labelledby="uid + '-title'">
+  <dialog
+    ref="el"
+    data-fgu="dialog"
+    data-part="root"
+    :data-variant="variant"
+    :aria-labelledby="uid + '-title'"
+    :data-initial-focus="initialFocus"
+    @close="onClose"
+  >
     <h2 data-part="title" :id="uid + '-title'">
       <slot name="title" />
     </h2>
     <p v-if="$slots.description" data-part="description">
       <slot name="description" />
     </p>
-    <button data-part="close" type="button" aria-label="Close">
-      &times;
-    </button>
-    <slot />
-    <div v-if="$slots.actions" data-part="actions">
-      <slot name="actions" />
-    </div>
+    <button data-part="close" type="button" aria-label="Close">&times;</button>
+    <form data-part="form" method="dialog">
+      <slot />
+      <div v-if="$slots.actions" data-part="actions">
+        <slot name="actions" />
+      </div>
+    </form>
   </dialog>
 </template>
 

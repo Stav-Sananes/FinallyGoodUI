@@ -1,4 +1,4 @@
-import { Component, Input, ViewEncapsulation, ElementRef, AfterViewInit, OnDestroy, inject } from "@angular/core";
+import { Component, Input, ViewEncapsulation, booleanAttribute, ElementRef, AfterViewInit, OnDestroy, inject } from "@angular/core";
 import { attach } from "./button.behaviour.js";
 
 @Component({
@@ -12,9 +12,9 @@ import { attach } from "./button.behaviour.js";
 })
 export class ButtonComponent implements AfterViewInit, OnDestroy {
   @Input() variant: string = "primary";
-  @Input() disabled: boolean = false;
-  @Input() loading: boolean = false;
-  @Input() type: string = "button";
+  @Input({ transform: booleanAttribute }) disabled: boolean = false;
+  @Input({ transform: booleanAttribute }) loading: boolean = false;
+  @Input() type: "button" | "submit" | "reset" = "button";
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private detach?: () => void;
 

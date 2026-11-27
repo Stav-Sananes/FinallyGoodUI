@@ -1,4 +1,4 @@
-import { Component, Input, ViewEncapsulation, ElementRef, AfterViewInit, OnDestroy, inject } from "@angular/core";
+import { Component, Input, ViewEncapsulation, booleanAttribute, numberAttribute, Output, EventEmitter, ElementRef, AfterViewInit, OnDestroy, inject } from "@angular/core";
 import { attach } from "./field.behaviour.js";
 
 let nextId = 0;
@@ -18,14 +18,18 @@ export class FieldComponent implements AfterViewInit, OnDestroy {
   @Input() label: string | undefined;
   @Input() hint: string | undefined;
   @Input() error: string | undefined;
-  @Input() invalid: boolean = false;
-  @Input() disabled: boolean = false;
-  @Input() required: boolean = false;
+  @Input({ transform: booleanAttribute }) invalid: boolean = false;
+  @Input({ transform: booleanAttribute }) disabled: boolean = false;
+  @Input({ transform: booleanAttribute }) required: boolean = false;
   @Input() type: string = "text";
   @Input() name: string | undefined;
-  @Input() id: string | undefined;
+  @Input({ alias: "controlId" }) controlId: string | undefined;
   @Input() placeholder: string | undefined;
-  @Input() autocomplete: string | undefined;
+  @Input() autocomplete: AutoFill | undefined;
+  @Input({ transform: numberAttribute }) rows: number | undefined;
+  @Input({ transform: booleanAttribute }) multiline: boolean = false;
+  @Input() value: string | undefined;
+  @Output() valueChange = new EventEmitter<string>();
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private detach?: () => void;
 
@@ -33,4 +37,9 @@ export class FieldComponent implements AfterViewInit, OnDestroy {
     this.detach = attach(this.host.nativeElement);
   }
   ngOnDestroy() { this.detach?.(); }
+
+  onValueInput(event: Event) {
+    this.value = (event.target as HTMLInputElement | HTMLTextAreaElement).value;
+    this.valueChange.emit(this.value);
+  }
 }

@@ -11,13 +11,13 @@
   <main class="floor">
     <div class="tray-col">
       <div class="toolbar">
-        <div #tabsHost class="tabs" (focusin)="onTabsFocus($event)">
-          <fgu-tabs [tabs]="tabLabels()" label="Trays" [panel]="panel" />
+        <div class="tabs">
+          <fgu-tabs [tabs]="tabLabels()" label="Trays" [panel]="panel" [selected]="viewIndex()" (selectedChange)="onTab($event)" />
         </div>
-        <div class="quiet-label search" #searchHost (input)="onSearch($event)">
-          <fgu-field [id]="'search'" label="Search issues" type="search" placeholder="Search id, title, area, holder  /" autocomplete="off" />
+        <div class="quiet-label search" #searchHost>
+          <fgu-field controlId="search" label="Search issues" type="search" placeholder="Search id, title, area, holder  /" autocomplete="off" [value]="store.query()" (valueChange)="store.setQuery($event)" />
         </div>
-        <fgu-toggle [checked]="store.showClosed()" (change)="onToggleClosed($event)">Show closed</fgu-toggle>
+        <fgu-toggle [checked]="store.showClosed()" (checkedChange)="store.toggleClosed($event)">Show closed</fgu-toggle>
       </div>
     </div>
 
@@ -59,21 +59,20 @@
   }
 </ng-template>
 
-<fgu-dialog [open]="composeOpen()" (closed)="onComposeClosed()">
+<fgu-dialog [open]="composeOpen()" (openChange)="onComposeOpen($event)" initialFocus="#compose-title" (submit)="submitCompose($event)">
   <span slot="title">Compose an issue</span>
   <span slot="description">It lands in intake, unstamped and unassigned, ready to sort.</span>
-  <form #composeForm class="compose" id="compose-form" (submit)="submitCompose($event)" novalidate>
-    <fgu-field [id]="'compose-title'" label="Title" placeholder="What is going wrong, in one line" autocomplete="off" [invalid]="!!titleError()" [error]="titleError()" [required]="true" />
-    <fgu-field [id]="'compose-area'" label="Area (optional)" placeholder="Billing, Auth, Search…" autocomplete="off" />
-    <button type="submit" class="visually-hidden" tabindex="-1" aria-hidden="true">Add to intake</button>
-  </form>
+  <div class="compose">
+    <fgu-field controlId="compose-title" label="Title" placeholder="What is going wrong, in one line" autocomplete="off" [invalid]="!!titleError()" [error]="titleError()" required [(value)]="title" />
+    <fgu-field controlId="compose-area" label="Area (optional)" placeholder="Billing, Auth, Search…" autocomplete="off" [(value)]="area" />
+  </div>
   <span slot="actions">
     <fgu-button variant="ghost" (click)="composeOpen.set(false)">Cancel</fgu-button>
-    <fgu-button (click)="composeForm.requestSubmit()">Add to intake</fgu-button>
+    <fgu-button type="submit">Add to intake</fgu-button>
   </span>
 </fgu-dialog>
 
-<fgu-dialog [open]="helpOpen()" (closed)="helpOpen.set(false)">
+<fgu-dialog [(open)]="helpOpen">
   <span slot="title">Keys</span>
   <span slot="description">Everything on this desk has a key. Keys pause while you type in a box.</span>
   <dl class="keys">
