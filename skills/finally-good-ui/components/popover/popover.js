@@ -9,12 +9,14 @@
 const ROOT = '[data-fgu="popover"][data-part="root"]';
 const TRIGGER = '[data-fgu="popover"] [data-part="trigger"]';
 const PANEL = '[data-fgu="popover"] [data-part="panel"]';
+// Copied into every behaviour file (each is shipped standalone): keep in sync with dialog.js, menu.js, popover.js, toast.js, tooltip.js.
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]';
 let counter = 0;
 
+// Copied into every behaviour file: keep in sync with dialog, field, menu, popover, select, table, tabs, tooltip.
 const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
 const isOpen = (panel) => { try { return panel.matches(":popover-open"); } catch { return false; } };
-const cssAnchors = () => typeof CSS !== "undefined" && typeof CSS.supports === "function" && CSS.supports("anchor-name", "--a");
+const CSS_ANCHORS = typeof CSS !== "undefined" && typeof CSS.supports === "function" && CSS.supports("anchor-name", "--a"); // false on a server: nothing runs there
 const partsOf = (scope) => {
   const root = scope.closest?.(ROOT) ?? (scope.matches?.(ROOT) ? scope : scope.querySelector(ROOT) ?? scope);
   return { root, trigger: root.querySelector(TRIGGER), panel: root.querySelector(PANEL) };
@@ -34,7 +36,7 @@ function wire(root) {
   if (!panel.hasAttribute("role")) panel.setAttribute("role", "dialog");
   if (!panel.hasAttribute("aria-label") && !panel.hasAttribute("aria-labelledby")) panel.setAttribute("aria-labelledby", trigger.id);
   if (!panel.hasAttribute("tabindex")) panel.setAttribute("tabindex", "-1");
-  if (cssAnchors()) {
+  if (CSS_ANCHORS) {
     root.setAttribute("data-anchor", "css");
     trigger.style.setProperty("anchor-name", `--fgu-pop-${n}`);
     panel.style.setProperty("position-anchor", `--fgu-pop-${n}`);

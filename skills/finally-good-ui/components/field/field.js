@@ -7,6 +7,7 @@ const FIELD = '[data-fgu="field"][data-part="root"]';
 const CONTROL = '[data-fgu="field"] [data-part="control"]';
 let counter = 0;
 
+// Copied into every behaviour file: keep in sync with dialog, field, menu, popover, select, table, tabs, tooltip.
 const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
 
 // Fixed order (the browser's own order for the most useful message first), not for..in over ValidityState.

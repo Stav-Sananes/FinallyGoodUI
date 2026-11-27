@@ -13,6 +13,7 @@
 // Every selector is scoped to data-fgu="toast": attach may be given a whole page, or the region itself.
 const TOAST = '[data-fgu="toast"] [data-part="toast"]';
 const DISMISS = '[data-fgu="toast"] [data-part="dismiss"]';
+// Copied into every behaviour file (each is shipped standalone): keep in sync with dialog.js, menu.js, popover.js, toast.js, tooltip.js.
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]';
 const focusTarget = (el) => (el.matches?.(FOCUSABLE) ? el : el.querySelector?.(FOCUSABLE) ?? el);
 const DEFAULT_TIMEOUT_MS = 5000; // reading time, not animation: not a motion token
@@ -70,6 +71,7 @@ export function attach(root) {
       focused = root.contains(root.ownerDocument.activeElement);
       sync();
     };
+    finish.cancel = () => { if (fallback !== null) clearTimeout(fallback); }; // detach must not leave this timer behind
     leaving.set(toast, finish);
     const ms = exitMs(toast);
     if (ms === 0) finish(); else fallback = setTimeout(finish, ms + EXIT_GRACE_MS);
@@ -114,6 +116,7 @@ export function attach(root) {
     observer?.disconnect();
     for (const entry of counting.values()) if (entry.timer !== null) clearTimeout(entry.timer);
     counting.clear();
+    for (const finish of leaving.values()) finish.cancel();
     leaving.clear();
   };
 }

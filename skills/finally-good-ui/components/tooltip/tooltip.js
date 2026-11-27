@@ -8,12 +8,14 @@
 const ROOT = '[data-fgu="tooltip"][data-part="root"]';
 const TRIGGER = '[data-fgu="tooltip"] [data-part="trigger"]';
 const CONTENT = '[data-fgu="tooltip"] [data-part="content"]';
+// Copied into every behaviour file (each is shipped standalone): keep in sync with dialog.js, menu.js, popover.js, toast.js, tooltip.js.
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]';
 const DEFAULT_DELAY_MS = 500; // hover intent, not animation: not a motion token
 let counter = 0;
 const timers = new WeakMap(); // tooltip root -> pending show
 const open = new Set(); // tooltip roots currently shown
 
+// Copied into every behaviour file: keep in sync with dialog, field, menu, popover, select, table, tabs, tooltip.
 const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
 const rootOf = (el) => el.closest?.(ROOT) ?? null;
 const contentOf = (tip) => tip.querySelector(CONTENT);

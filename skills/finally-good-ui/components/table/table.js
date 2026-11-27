@@ -11,6 +11,7 @@
 const ROOT = '[data-fgu="table"][data-part="root"]';
 const part = (name) => `[data-fgu="table"] [data-part="${name}"]`;
 
+// Copied into every behaviour file: keep in sync with dialog, field, menu, popover, select, table, tabs, tooltip.
 const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
 const rootOf = (el) => el.closest?.(ROOT) ?? null;
 const rowBoxes = (root) => [...root.querySelectorAll(`${part("body")} [data-part="select"]`)];

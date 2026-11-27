@@ -11,10 +11,12 @@
 // attach may be given the dialog itself or any ancestor. openDialog / closeDialog are the programmatic API.
 const DIALOG = '[data-fgu="dialog"][data-part="root"]';
 const CLOSE = '[data-fgu="dialog"] [data-part="close"], [data-dialog-close]';
+// Copied into every behaviour file (each is shipped standalone): keep in sync with dialog.js, menu.js, popover.js, toast.js, tooltip.js.
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]';
 let counter = 0;
 const openers = new WeakMap(); // dialog -> the element to give focus back to
 
+// Copied into every behaviour file: keep in sync with dialog, field, menu, popover, select, table, tabs, tooltip.
 const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
 const focusTarget = (el) => (el.matches?.(FOCUSABLE) ? el : el.querySelector?.(FOCUSABLE) ?? el);
 

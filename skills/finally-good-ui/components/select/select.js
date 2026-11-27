@@ -13,6 +13,7 @@ const TYPEAHEAD_RESET_MS = 500; // input timing, not animation: not a motion tok
 let counter = 0;
 const typed = new WeakMap();
 
+// Copied into every behaviour file: keep in sync with dialog, field, menu, popover, select, table, tabs, tooltip.
 const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
 const rootOf = (el) => el.closest?.(ROOT) ?? null;
 const q = (root, name) => root.querySelector(part(name));
@@ -21,10 +22,10 @@ const isOpen = (list) => { try { return list.matches(":popover-open"); } catch {
 const usable = (o) => !o.hidden && o.getAttribute("aria-disabled") !== "true";
 const labelOf = (o) => o.textContent.trim();
 
-function syncDisplay(root) {
+function syncDisplay(root, options = optionsOf(root)) {
   const display = q(root, "display");
   if (!display) return;
-  const chosen = optionsOf(root).find((o) => o.getAttribute("aria-selected") === "true");
+  const chosen = options.find((o) => o.getAttribute("aria-selected") === "true");
   const text = chosen ? labelOf(chosen) : display.getAttribute("data-placeholder") ?? "";
   if (display.textContent !== text) display.textContent = text;
   if (chosen) display.removeAttribute("data-empty"); else display.setAttribute("data-empty", "");
@@ -34,9 +35,10 @@ function syncDisplay(root) {
 
 function choose(root, option, notify) {
   const value = option?.getAttribute("data-value") ?? "";
-  const before = optionsOf(root).find((o) => o.getAttribute("aria-selected") === "true");
-  for (const o of optionsOf(root)) o.setAttribute("aria-selected", String(o === option));
-  syncDisplay(root);
+  const options = optionsOf(root);
+  const before = options.find((o) => o.getAttribute("aria-selected") === "true");
+  for (const o of options) o.setAttribute("aria-selected", String(o === option));
+  syncDisplay(root, options);
   if (notify && before !== option) root.dispatchEvent(new CustomEvent("selectchange", { bubbles: true, detail: value }));
 }
 
@@ -63,11 +65,16 @@ function wire(root) {
   if (!list.hasAttribute("popover")) list.setAttribute("popover", "auto");
   if (!list.hasAttribute("role")) list.setAttribute("role", "listbox");
   if (!list.hasAttribute("aria-labelledby")) list.setAttribute("aria-labelledby", trigger.id);
-  for (const o of optionsOf(root)) { if (!o.hasAttribute("role")) o.setAttribute("role", "option"); if (!o.hasAttribute("tabindex")) o.setAttribute("tabindex", "-1"); }
+  for (const o of optionsOf(root)) { if (!o.hasAttribute("role")) o.setAttribute("role", "option"); o.setAttribute("tabindex", "-1"); }
   syncDisplay(root);
 }
 
-const focusOption = (root, option) => { if (!option) return; for (const o of optionsOf(root)) o.setAttribute("tabindex", "-1"); option.setAttribute("tabindex", "0"); option.focus(); };
+const focusOption = (root, option) => {
+  if (!option) return;
+  root.querySelector(`${part("option")}[tabindex="0"]`)?.setAttribute("tabindex", "-1"); // only the previous stop needs resetting
+  option.setAttribute("tabindex", "0");
+  option.focus();
+};
 const step = (root, from, by) => { const all = optionsOf(root).filter(usable); if (!all.length) return null; const i = all.indexOf(from); return all.at(by === "first" ? 0 : by === "last" ? -1 : (i + by + all.length) % all.length); };
 
 export function attach(root) {

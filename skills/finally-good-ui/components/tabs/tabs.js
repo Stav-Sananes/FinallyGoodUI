@@ -11,6 +11,7 @@ const TAB = '[data-fgu="tabs"] [data-part="tab"]';
 const PANEL = '[data-fgu="tabs"] [data-part="panel"]';
 let counter = 0;
 
+// Copied into every behaviour file: keep in sync with dialog, field, menu, popover, select, table, tabs, tooltip.
 const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
 const tabsOf = (list) => [...list.querySelectorAll(TAB)];
 const panelOf = (tab) => { const id = tab.getAttribute("aria-controls"); return id ? tab.ownerDocument.getElementById(id) : null; };
@@ -47,8 +48,9 @@ function place(list) {
 // `notify`: a change made by the user or the API (not the first render) tells the world through a bubbling
 // `tabchange` event on the list, detail = the new index, so a framework wrapper can keep a controlled `selected` in step.
 function select(list, tab, notify = false) {
-  const changed = tabsOf(list).find((t) => t.getAttribute("aria-selected") === "true") !== tab;
-  for (const other of tabsOf(list)) {
+  const tabs = tabsOf(list);
+  const changed = tabs.find((t) => t.getAttribute("aria-selected") === "true") !== tab;
+  for (const other of tabs) {
     const on = other === tab;
     other.setAttribute("aria-selected", String(on));
     other.setAttribute("tabindex", on ? "0" : "-1");
@@ -56,7 +58,7 @@ function select(list, tab, notify = false) {
     if (panel) panel.hidden = !on;
   }
   place(list);
-  if (notify && changed) list.dispatchEvent(new CustomEvent("tabchange", { bubbles: true, detail: tabsOf(list).indexOf(tab) }));
+  if (notify && changed) list.dispatchEvent(new CustomEvent("tabchange", { bubbles: true, detail: tabs.indexOf(tab) }));
 }
 
 /** Selects a tab of the tabs inside `scope` (the root, the list, or any ancestor): a tab element or its index. */
@@ -90,7 +92,8 @@ export function attach(root) {
     const list = tab?.closest(LIST);
     if (!list) return;
     const vertical = list.getAttribute("aria-orientation") === "vertical";
-    const rtl = !vertical && list.ownerDocument.defaultView?.getComputedStyle?.(list).direction === "rtl";
+    // the computed direction is only needed to swap Left and Right
+    const rtl = !vertical && (event.key === "ArrowLeft" || event.key === "ArrowRight") && list.ownerDocument.defaultView?.getComputedStyle?.(list).direction === "rtl";
     const [back, forward] = vertical ? ["ArrowUp", "ArrowDown"] : rtl ? ["ArrowRight", "ArrowLeft"] : ["ArrowLeft", "ArrowRight"];
     const all = tabsOf(list);
     const i = all.indexOf(tab);

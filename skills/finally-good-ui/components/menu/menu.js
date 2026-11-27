@@ -12,12 +12,14 @@ const ROOT = '[data-fgu="menu"][data-part="root"]';
 const TRIGGER = '[data-fgu="menu"] [data-part="trigger"]';
 const LIST = '[data-fgu="menu"] [data-part="list"]';
 const ITEM = '[data-fgu="menu"] [data-part="item"]';
+// Copied into every behaviour file (each is shipped standalone): keep in sync with dialog.js, menu.js, popover.js, toast.js, tooltip.js.
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]';
 const TYPEAHEAD_RESET_MS = 500; // input timing, not animation: not a motion token
 let counter = 0;
 const triggerOf = new WeakMap(); // list -> trigger
 const typed = new WeakMap(); // list -> { text, at }
 
+// Copied into every behaviour file: keep in sync with dialog, field, menu, popover, select, table, tabs, tooltip.
 const within = (root, selector) => [...(root.matches?.(selector) ? [root] : []), ...root.querySelectorAll(selector)];
 const focusTarget = (el) => (el.matches?.(FOCUSABLE) ? el : el.querySelector?.(FOCUSABLE) ?? el);
 const itemsOf = (list) => [...list.querySelectorAll(ITEM)];
@@ -26,18 +28,18 @@ const isOpen = (list) => list.matches(":popover-open");
 function prepareItems(list) {
   for (const item of itemsOf(list)) {
     if (!item.hasAttribute("role")) item.setAttribute("role", "menuitem");
-    if (!item.hasAttribute("tabindex")) item.setAttribute("tabindex", "-1");
+    item.setAttribute("tabindex", "-1"); // one tab stop: focusItem hands the 0 to the item that has focus
   }
 }
 
 const setExpanded = (list, open) => triggerOf.get(list)?.setAttribute("aria-expanded", String(open));
 function focusItem(list, item) {
   if (!item) return;
-  for (const other of itemsOf(list)) other.setAttribute("tabindex", "-1");
+  list.querySelector(`${ITEM}[tabindex="0"]`)?.setAttribute("tabindex", "-1"); // only the previous stop needs resetting
   item.setAttribute("tabindex", "0");
   item.focus();
 }
-const focusAt = (list, index) => { const items = itemsOf(list); focusItem(list, items.at(index % items.length)); };
+const focusAt = (list, index, items = itemsOf(list)) => focusItem(list, items.at(index % items.length));
 
 // The list a scope stands for: the list itself, a trigger's list, or the first list inside a root.
 function listOf(scope) {
@@ -65,8 +67,7 @@ export function closeMenu(scope, { restoreFocus = true } = {}) {
   if (restoreFocus) { const trigger = triggerOf.get(list); if (trigger) focusTarget(trigger).focus(); }
 }
 
-function typeahead(list, event) {
-  const items = itemsOf(list);
+function typeahead(list, event, items) {
   const i = items.indexOf(list.ownerDocument.activeElement);
   const prev = typed.get(list);
   const text = prev && event.timeStamp - prev.at <= TYPEAHEAD_RESET_MS ? prev.text + event.key : event.key;
@@ -110,10 +111,10 @@ export function attach(root) {
     const items = itemsOf(list);
     const i = items.indexOf(list.ownerDocument.activeElement);
     const moves = { ArrowDown: i + 1, ArrowUp: i - 1 + items.length, Home: 0, End: items.length - 1 };
-    if (event.key in moves) { event.preventDefault(); focusAt(list, moves[event.key]); return; }
+    if (event.key in moves) { event.preventDefault(); focusAt(list, moves[event.key], items); return; }
     if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); closeMenu(list); return; }
     if (event.key === "Tab") { closeMenu(list, { restoreFocus: false }); return; }
-    if (event.key.length === 1 && /\S/.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) typeahead(list, event);
+    if (event.key.length === 1 && /\S/.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) typeahead(list, event, items);
   };
 
   // Capture phase, so a disabled item is stopped before any handler on or inside it.

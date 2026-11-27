@@ -158,8 +158,9 @@ const CHECKS = [
     await page.keyboard.press("Escape");
     expect(await content.evaluate((el) => !el.matches(":popover-open")), "Escape did not hide it");
     await button.hover();
-    await page.waitForTimeout(700);
-    expect(await content.evaluate((el) => el.matches(":popover-open")), "hover did not show it after the delay");
+    // the 500ms hover delay: wait for the state itself, not a fixed sleep
+    const shown = await page.waitForFunction((el) => el.matches(":popover-open"), await content.elementHandle(), { timeout: 3000 }).then(() => true, () => false);
+    expect(shown, "hover did not show it after the delay");
     return "focus shows, Escape hides, hover shows after the delay";
   }],
   ["popover: opens with focus inside, Escape closes and focus returns to the trigger, outside click dismisses", async (page) => {
