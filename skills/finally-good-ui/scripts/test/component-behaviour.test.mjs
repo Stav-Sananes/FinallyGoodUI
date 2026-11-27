@@ -862,3 +862,16 @@ test("toast: dismissing the toast that holds focus resumes the other countdowns 
     assert.equal(p.gone(1), true, "the second toast leaves after its reading time");
   });
 });
+
+test("toast: detach clears the exit fallback timer of a toast that is still leaving", async () => {
+  const { attach } = await load("toast");
+  await withClock(async (clock) => {
+    const p = toastPage({ duration: "200ms" }); // a transition that never ends in the fake DOM: only the fallback timer finishes it
+    const detach = attach(p.root);
+    p.made[0].dismiss.dispatch("click", { bubbles: true });
+    assert.equal(p.leaving(), true);
+    assert.ok(clock.pending() > 0, "the fallback timer is waiting (positive control)");
+    detach();
+    assert.equal(clock.pending(), 0, "nothing is left running after detach");
+  });
+});
