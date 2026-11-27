@@ -807,3 +807,43 @@ test("field: while a framework marks the error line data-controlled, validation 
   input.dispatch("focusout", { bubbles: true });
   assert.equal(error.textContent, "required", "positive control: without the marker validation writes");
 });
+
+// ---- form-level validation
+const formPage = () => {
+  const doc = new Doc();
+  const form = make(doc, "form");
+  const mk = (valid) => {
+    const field = make(doc, "div", { "data-fgu": "field", "data-part": "root" });
+    const control = make(doc, "input", { "data-part": "control" });
+    control.validity = valid ? { valid: true } : { valid: false, valueMissing: true };
+    control.validationMessage = "required"; control.dataset = { msgValueMissing: "Enter it" };
+    const error = make(doc, "p", { "data-part": "error" });
+    field.append(control, error);
+    return { field, control, error };
+  };
+  const a = mk(true), b = mk(false), c = mk(false);
+  form.append(a.field, b.field, c.field);
+  return { doc, form, a, b, c };
+};
+
+test("field: validate(form) shows every message at once, focuses the first invalid control and returns false", async () => {
+  const { validate } = await load("field");
+  const p = formPage();
+  assert.equal(validate(p.form), false);
+  assert.equal(p.b.error.textContent, "Enter it");
+  assert.equal(p.c.error.textContent, "Enter it");
+  assert.equal(p.a.error.textContent, "", "a valid field shows nothing");
+  assert.equal(p.doc.activeElement, p.b.control, "the first invalid control");
+  p.b.control.validity = { valid: true }; p.c.control.validity = { valid: true };
+  assert.equal(validate(p.form), true, "positive control: all valid");
+});
+
+test("field: attach cancels the submit of an invalid form (so a method=dialog form stays open) and lets a valid one through", async () => {
+  const { attach } = await load("field");
+  const p = formPage();
+  attach(p.doc.listeners && p.form);
+  const submit = () => p.form.dispatch("submit", { bubbles: true, cancelable: true });
+  assert.equal(submit().defaultPrevented, true);
+  p.b.control.validity = { valid: true }; p.c.control.validity = { valid: true };
+  assert.equal(submit().defaultPrevented, false);
+});

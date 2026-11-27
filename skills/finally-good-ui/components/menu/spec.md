@@ -62,3 +62,5 @@ The key table (trigger and list, typeahead, wrap, Escape, Tab) is the menu colum
 
 ## Scaffold API
 Props `items` (`{ label, disabled?, onSelect? }[]`); slot `default` is the trigger's label. Programmatic: `openMenu(scope, start?)` and `closeMenu(scope, { restoreFocus? })` from `<name>.behaviour.js` (scope: the menu root, trigger or list). The list is a native `popover`; `onSelect` runs from the item's click, which also closes the menu.
+
+Round 6: the trigger button takes the same surface from the style profile as the list (radius, border, shadow).

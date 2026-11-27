@@ -136,7 +136,9 @@ export function loadedFontCss(name, tok) {
   const [named, ...rest] = Array.isArray(tok.$value) ? tok.$value : [tok.$value];
   const face = baseFace(named);
   const names = isVariableFont(fontLoad(tok)) || namedVariable(named) ? [`${face} Variable`, face] : [face];
-  return [`var(--font-${name}-loaded, ${fontCss(names)})`, ...(rest.length ? [fontCss(rest)] : [])].join(", ");
+  // The family is already named inside var(): repeating it in the fallback stack is noise.
+  const fallbacks = rest.filter((f) => ![face, `${face} Variable`].some((own) => own.toLowerCase() === String(f).toLowerCase()));
+  return [`var(--font-${name}-loaded, ${fontCss(names)})`, ...(fallbacks.length ? [fontCss(fallbacks)] : [])].join(", ");
 }
 
 /**

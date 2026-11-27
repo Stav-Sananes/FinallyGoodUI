@@ -117,3 +117,12 @@ test("google, next and nuxt use the base family and a weight axis for a variable
   assert.match(css, /--font-sans: var\(--font-sans-loaded, "Figtree Variable", Figtree\)/);
   assert.doesNotMatch(css, /Variable Variable/);
 });
+
+test("a family listed again in its own stack is not repeated after the var()", () => {
+  const f = variableTokens({ source: "google", weights: "100 900" }, "Figtree");
+  const t = JSON.parse(readFileSync(f, "utf8"));
+  t.font.sans.$value = ["Figtree", "Figtree Variable", "figtree", "ui-sans-serif", "sans-serif"];
+  writeFileSync(f, JSON.stringify(t));
+  const css = run("emit-tokens.mjs", ["--in", f, "--format", "css"]).stdout;
+  assert.match(css, /--font-sans: var\(--font-sans-loaded, "Figtree Variable", Figtree\), ui-sans-serif, sans-serif;/);
+});

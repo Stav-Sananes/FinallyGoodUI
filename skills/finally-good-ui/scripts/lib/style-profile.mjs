@@ -47,7 +47,7 @@ const FORM_BORDER_COLOR = ["--color-input", "--color-border"];
 export function profileParts(spec) {
   const p = spec.profile ?? {};
   const pick = (key) => (key in p ? p[key] : DEFAULT_PARTS[key]);
-  return { surface: pick("surface"), density: pick("density"), interactive: pick("interactive"), radius: p.radius ?? true, also: p.also ?? [] };
+  return { surface: pick("surface"), density: pick("density"), interactive: pick("interactive"), radius: p.radius ?? true, also: p.also ?? [], touch: p.touch ?? [] };
 }
 
 export function profileCss(profile, spec) {
@@ -66,17 +66,19 @@ export function profileCss(profile, spec) {
     const control = parts.surface === "control";
     const width = material === "flat" ? null : ref(BORDER_W[material]);
     const outlined = material === "outlined" && width;
-    blocks.push(rule(at(parts.surface), [
+    const surface = [
       ["border-radius", parts.radius ? ref(RADIUS[radius]) : null],
       ["border-style", outlined ? "solid" : null],
       ["border-width", width],
       ["border-color", width ? ref(control ? FORM_BORDER_COLOR : BORDER_COLOR) : null],
       ["box-shadow", material === "layered" ? ref(SHADOW.layered) : material === "flat" && !control ? "none" : null],
-    ]));
+    ];
+    blocks.push(rule(at(parts.surface), surface));
+    // Parts that share the surface treatment (a menu's trigger button): same radius, border and shadow from the same tokens.
+    for (const part of parts.also) blocks.push(rule(at(part), surface));
+  } else {
+    for (const part of parts.also) blocks.push(rule(at(part), [["border-radius", parts.radius ? ref(RADIUS[radius]) : null]]));
   }
-  // Parts that share the surface's radius without taking its material (a menu's trigger button).
-  const alsoRadius = parts.radius ? ref(RADIUS[radius]) : null;
-  for (const part of parts.also) blocks.push(rule(at(part), [["border-radius", alsoRadius]]));
   if (parts.density) {
     blocks.push(rule(at(parts.density), [
       ["min-height", ref(CONTROL[density])],
@@ -87,6 +89,10 @@ export function profileCss(profile, spec) {
   // Coarse pointers: controls reach 44px whatever the density (touch target size), under the same scope.
   if (parts.density && ref(["--size-control-lg"]) && density !== "airy") {
     blocks.push(`@media (pointer: coarse) {\n  ${at(parts.density)} {\n    min-height: var(--size-control-lg);\n  }\n}`);
+  }
+  // Touch targets: parts that are small whatever the density (toggle label, close, toast buttons) reach 44px under a coarse pointer.
+  if (ref(["--size-control-lg"]) && parts.touch.length) {
+    blocks.push(`@media (pointer: coarse) {\n${parts.touch.map((part) => `  ${at(part)} {\n    min-height: var(--size-control-lg);\n    min-width: var(--size-control-lg);\n  }`).join("\n")}\n}`);
   }
   if (parts.interactive) {
     blocks.push(rule(at(parts.interactive), [

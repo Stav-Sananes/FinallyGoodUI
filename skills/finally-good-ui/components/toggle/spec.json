@@ -118,6 +118,9 @@
   "profile": {
     "surface": null,
     "interactive": "control",
-    "density": null
+    "density": null,
+    "touch": [
+      "root"
+    ]
   }
 }

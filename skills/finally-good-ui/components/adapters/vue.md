@@ -30,3 +30,5 @@ Every component is written whole (parts, props, slots, the `attach` call from th
 ## v-model, events and controlled props
 - `field` and `toggle` put native attributes on the inner control (`inheritAttrs: false`), so `v-model` goes through `modelValue` / `update:modelValue` (a string for the field, a boolean for the toggle): `<Field v-model="email" label="Email" />`. Do not also pass `value` or `checked`.
 - `tabs`: `selected` (index) is controlled; the component emits `change` and `update:selected` with the new index (`v-model:selected`). `dialog`: `open` is controlled and emits `update:open` with `false` when it closes by Escape, the close button or a submit (`v-model:open`). `toast` emits `dismiss` with the id: remove it from `toasts`.
+
+Round 6: `toast-store.ts` exports `useToast()` (`toasts`, `push` returning the id, `dismiss(id)`): `<Toast :toasts="toasts" @dismiss="dismiss" />` once near the root. Toggle also supports `v-model:checked`. Dialog: `:native-validation` re-enables the browser's bubbles; field `hide-label`.

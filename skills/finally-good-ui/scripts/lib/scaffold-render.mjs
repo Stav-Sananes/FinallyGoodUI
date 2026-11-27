@@ -98,12 +98,14 @@ const baseAttrs = (view, node) => [
 ];
 
 // ===================================================================== React
-const REACT_NAME = { for: "htmlFor", tabindex: "tabIndex", autocomplete: "autoComplete", checked: "defaultChecked" };
+const REACT_NAME = { for: "htmlFor", tabindex: "tabIndex", novalidate: "noValidate", autocomplete: "autoComplete", checked: "defaultChecked" };
 
 function reactAttrs(view, node) {
   const out = [], spread = [];
   for (const [name, v] of baseAttrs(view, node)) {
     const n = REACT_NAME[name] ?? name;
+    // Toggle: `checked` makes the checkbox controlled (pair it with onChange); without it the input is uncontrolled (defaultChecked passes through rest).
+    if (name === "checked" && node.model === "checked") { spread.push("...(checked === undefined ? {} : { checked })"); continue; }
     if (NONSTANDARD.has(name)) { spread.push(`${REACT_SPREAD_NAME[name] ?? name}: ${v === true ? '""' : typeof v === "string" ? JSON.stringify(v) : v.js}`); continue; }
     if (typeof v === "string") out.push(name === "tabindex" ? `${n}={${v}}` : `${n}="${v}"`);
     else if (v === true) out.push(n);
@@ -163,7 +165,7 @@ export function react(view, c) {
   const propNames = view.props.map((p) => p.js);
   const slotProps = view.slots.map(slotName);
   const callbacks = view.events.filter((e) => e.react).map((e) => e.react);
-  const destructure = [...view.props.map((p) => `${p.js}${hasDefault(p) ? ` = ${lit(p)}` : ""}`), ...slotProps, ...callbacks, "...rest"];
+  const destructure = [...view.props.map((p) => `${p.js}${hasDefault(p) && !(view.models.has("checked") && p.js === "checked") ? ` = ${lit(p)}` : ""}`), ...slotProps, ...callbacks, "...rest"];
   const omit = [...propNames, ...slotProps, ...callbacks, ...(view.slots.includes("default") ? [] : ["children"])].map((n) => `"${n}"`).join(" | ");
   const types = c.typescript
     ? `\nexport type ${Name}Props = {\n${[
@@ -235,7 +237,7 @@ function vueNode(view, node, c, extra = []) {
     case "expr": return [`{{ ${node.js} }}`];
     case "slot": return [node.name === "default" ? "<slot />" : `<slot name="${node.name}" />`];
     case "scoped": return [`<slot name="${node.name}" :${node.args[0]}="${node.args[0]}" :index="${node.args[1]}" />`];
-    case "whenSlot": return node.kids.flatMap((k) => vueNode(view, k, c, [`v-if="$slots.${node.name}"`]));
+    case "whenSlot": return node.kids.flatMap((k) => vueNode(view, k, c, [`v-if="$slots['${node.name}']"`]));
     case "when": return node.kids.flatMap((k) => vueNode(view, k, c, [`v-if="${node.js}"`]));
     case "choose": return [...node.a.flatMap((k) => vueNode(view, k, c, [`v-if="${node.js}"`])), ...node.b.flatMap((k) => vueNode(view, k, c, ["v-else"]))];
     case "each": return node.kids.flatMap((k) => vueNode(view, k, c, [`v-for="(${node.as}${indexVar(node)}) in ${node.list}"`, `:key="${node.key}"`]));
@@ -251,7 +253,7 @@ function vueEl(view, node, c, extra) {
   attrs = [...extra, ...(root && c.shared ? ['ref="el"'] : []), ...attrs];
   for (const [event, handler] of Object.entries(node.on ?? {})) if (event === "click") attrs.push(`@click="${handler}"`);
   if (node.model === "value") attrs.push(':value="modelValue"', `@input="emit('update:modelValue', ($event.target as HTMLInputElement | HTMLTextAreaElement).value)"`);
-  if (node.model === "checked") attrs.push(':checked="modelValue ?? checked"', `@change="emit('update:modelValue', ($event.target as HTMLInputElement).checked)"`);
+  if (node.model === "checked") attrs.push(':checked="modelValue ?? checked"', `@change="onChecked($event)"`);
   if (root) for (const e of view.events) attrs.push(`@${e.dom}="${handlerName(e)}"`);
   if (root && c.prim) { const g = vueGuard(view); if (g) attrs.push(g); }
   if (node.rest && !root) attrs.push('v-bind="$attrs"');
@@ -281,6 +283,7 @@ export function vue(view, c) {
   const emits = [
     ...view.events.flatMap((e) => [...(e.vue ? [`${e.vue}: [value: ${e.type}]`] : []), ...(e.sync ? [`"update:${e.sync}": [value: ${e.type}]`] : [])]),
     ...(view.models.size ? [`"update:modelValue": [value: ${modelType}]`] : []),
+    ...(view.models.has("checked") ? ['"update:checked": [value: boolean]'] : []), // v-model:checked, parity with Svelte bind:checked
   ];
   const handlers = view.events.flatMap((e) => [
     `function ${handlerName(e)}(${usesEvent(e, c) ? "event: Event" : ""}) {`,
@@ -289,6 +292,13 @@ export function vue(view, c) {
     ...(e.sync ? [`  emit("update:${e.sync}", ${e.payload.ts});`] : []),
     "}",
   ]);
+  const modelHandler = view.models.has("checked") ? [
+    "function onChecked(event: Event) {",
+    "  const value = (event.target as HTMLInputElement).checked;",
+    '  emit("update:modelValue", value);',
+    '  emit("update:checked", value);',
+    "}",
+  ] : [];
   const script = [
     ...(vueImports.length ? [`import { ${vueImports.join(", ")} } from "vue";`] : []),
     ...(c.prim ? [c.prim.imp] : []),
@@ -300,6 +310,7 @@ export function vue(view, c) {
     ...(emits.length ? [`const emit = defineEmits<{ ${emits.join("; ")} }>();`] : []),
     ...(view.usesUid ? [`const uid = \`fgu-${name}-\${getCurrentInstance()?.uid ?? 0}\`;`] : []),
     ...handlers,
+    ...modelHandler,
     ...(c.shared ? [
       `const el = ref<${ELEMENT_TYPE[view.rootTag] ?? "HTMLElement"} | null>(null);`,
       "let detach: (() => void) | undefined;",
@@ -546,6 +557,117 @@ export function angular(view, c) {
   const ts = `${imports.join("\n")}\n${view.usesUid ? "\nlet nextId = 0;\n" : ""}\n@Component({\n  selector: "fgu-${name}",\n  standalone: true,\n  ${slotInputs.length ? "imports: [NgTemplateOutlet],\n  " : ""}templateUrl: "./${name}.component.html",\n  styleUrl: "./${name}.css",\n  // The css is already scoped by data-fgu, and projected content has to be styled too.\n  encapsulation: ViewEncapsulation.None,\n  host: { style: "display: contents" },\n})\nexport class ${Name}Component${impls.length ? ` implements ${impls.join(", ")}` : ""} {\n${members.join("\n")}\n}\n`;
   const html = `${angularNode(view, view.tree, c).join("\n")}\n`;
   return [{ ext: ".component.ts", content: ts }, { ext: ".component.html", content: html }];
+}
+
+// ===================================================================== toast store
+/** The optional second file of the toast: where the list lives, per framework. null for plain HTML. */
+export function toastStore(family, c) {
+  const ts = c.typescript;
+  const item = `{ id: string; message: string; variant?: "status" | "error"; timeout?: number; action?: string; onAction?: (id: string) => void }`;
+  const types = ts ? `export type ToastItem = ${item};\nexport type ToastInput = Omit<ToastItem, "id">;\n\n` : "";
+  const head = "// Where the toast list lives. The component keeps the node and hands you the id (onDismiss / dismiss / ondismiss / dismissed): remove it here.\n";
+  const T_ = (t) => (ts ? t : "");
+  if (family === "react") {
+    const content = `${head}import { createContext, useCallback, useContext, useMemo, useState } from "react";
+${ts ? 'import type { ReactNode } from "react";\n' : ""}import { Toast } from "./toast";
+
+${types}${ts ? "type ToastApi = { toasts: ToastItem[]; push: (toast: ToastInput) => string; dismiss: (id: string) => void };\n" : ""}const ToastContext = createContext${T_("<ToastApi | null>")}(null);
+let counter = 0;
+
+/** Put it once near the root: it renders the live region and owns the list. */
+export function ToastProvider({ children }${T_(": { children?: ReactNode }")}) {
+  const [toasts, setToasts] = useState${T_("<ToastItem[]>")}([]);
+  const dismiss = useCallback((id${T_(": string")}) => setToasts((all) => all.filter((t) => t.id !== id)), []);
+  const push = useCallback((toast${T_(": ToastInput")}) => {
+    const id = \`toast-\${++counter}\`;
+    setToasts((all) => [...all, { ...toast, id }]);
+    return id;
+  }, []);
+  const api = useMemo(() => ({ toasts, push, dismiss }), [toasts, push, dismiss]);
+  return (
+    <ToastContext.Provider value={api}>
+      {children}
+      <Toast toasts={toasts} onDismiss={dismiss} />
+    </ToastContext.Provider>
+  );
+}
+
+/** const { push } = useToast(); push({ message: "Saved" }) */
+export function useToast()${T_(": ToastApi")} {
+  const api = useContext(ToastContext);
+  if (!api) throw new Error("useToast needs a <ToastProvider> above it");
+  return api;
+}
+`;
+    return { file: `toast-store.${ts ? "tsx" : "jsx"}`, content };
+  }
+  if (family === "vue") {
+    return { file: "toast-store.ts", content: `${head}import { reactive } from "vue";
+
+export type ToastItem = ${item};
+export type ToastInput = Omit<ToastItem, "id">;
+
+// One list for the app: <Toast :toasts="toasts" @dismiss="dismiss" /> once, near the root; useToast() anywhere.
+const toasts = reactive<ToastItem[]>([]);
+let counter = 0;
+
+export function useToast() {
+  function push(toast: ToastInput): string {
+    const id = \`toast-\${++counter}\`;
+    toasts.push({ ...toast, id });
+    return id;
+  }
+  function dismiss(id: string) {
+    const at = toasts.findIndex((t) => t.id === id);
+    if (at >= 0) toasts.splice(at, 1);
+  }
+  return { toasts, push, dismiss };
+}
+` };
+  }
+  if (family === "svelte") {
+    return { file: `toast-store.${ts ? "ts" : "js"}`, content: `${head}import { writable } from "svelte/store";
+
+${types}// <Toast toasts={$toasts} ondismiss={dismissToast} /> once, near the root; pushToast() anywhere.
+export const toasts = writable${T_("<ToastItem[]>")}([]);
+let counter = 0;
+
+export function pushToast(toast${T_(": ToastInput")})${T_(": string")} {
+  const id = \`toast-\${++counter}\`;
+  toasts.update((all) => [...all, { ...toast, id }]);
+  return id;
+}
+
+export function dismissToast(id${T_(": string")}) {
+  toasts.update((all) => all.filter((t) => t.id !== id));
+}
+` };
+  }
+  if (family === "angular") {
+    return { file: "toast-store.service.ts", content: `${head}import { Injectable, signal } from "@angular/core";
+
+export type ToastItem = ${item};
+export type ToastInput = Omit<ToastItem, "id">;
+
+// <fgu-toast [toasts]="store.toasts()" (dismissed)="store.dismiss($event)" /> once, near the root; inject(ToastStore).push(...) anywhere.
+@Injectable({ providedIn: "root" })
+export class ToastStore {
+  readonly toasts = signal<ToastItem[]>([]);
+  private counter = 0;
+
+  push(toast: ToastInput): string {
+    const id = \`toast-\${++this.counter}\`;
+    this.toasts.update((all) => [...all, { ...toast, id }]);
+    return id;
+  }
+
+  dismiss(id: string) {
+    this.toasts.update((all) => all.filter((t) => t.id !== id));
+  }
+}
+` };
+  }
+  return null;
 }
 
 // ===================================================================== plain

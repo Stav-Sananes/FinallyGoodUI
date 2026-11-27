@@ -53,6 +53,21 @@ function show(field, control) {
   if (error && error.textContent !== text) setText(error, text);
 }
 
+/** Shows every field's message at once (what blur does one control at a time) and focuses the first invalid control.
+ *  Returns true when the form is valid. Call it from a submit handler, or let attach do it: attach validates a form's
+ *  fields on submit and cancels the submit (so a method="dialog" form stays open) when one is invalid. Pair it with
+ *  `novalidate` on the form so the browser's own bubbles do not pre-empt these messages. */
+export function validate(form) {
+  let first = null;
+  for (const control of form.querySelectorAll(CONTROL)) {
+    const field = control.closest(FIELD);
+    if (field) show(field, control);
+    if (!control.validity?.valid && !first) first = control;
+  }
+  first?.focus();
+  return !first;
+}
+
 export function attach(root) {
   for (const field of within(root, FIELD)) wire(field);
 
@@ -70,9 +85,16 @@ export function attach(root) {
     const hit = owner(event);
     if (hit?.field && hit.control.getAttribute("aria-invalid") === "true") show(hit.field, hit.control);
   };
+  // Capture phase: this runs before the page's own submit handlers and before a method="dialog" form closes its dialog.
+  const onSubmit = (event) => {
+    const form = event.target;
+    if (form.matches?.("form") && form.querySelector(CONTROL) && !validate(form)) event.preventDefault();
+  };
+  root.addEventListener("submit", onSubmit, true);
   root.addEventListener("focusout", onFocusOut, true);
   root.addEventListener("input", onInput, true);
   return () => {
+    root.removeEventListener("submit", onSubmit, true);
     root.removeEventListener("focusout", onFocusOut, true);
     root.removeEventListener("input", onInput, true);
   };

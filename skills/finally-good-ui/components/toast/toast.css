@@ -2,7 +2,8 @@
    Enter and exit follow recipes/motion/toast-stack.md (transform and opacity only). */
 [data-fgu="toast"][data-part="root"] {
   position: fixed;
-  inset: auto var(--toast-offset, var(--space-4)) var(--toast-offset, var(--space-4)) auto; /* set --toast-offset on the region to move it */
+  /* --toast-offset moves both edges; --toast-offset-block (bottom, e.g. above a tab bar) and --toast-offset-inline (right) move one */
+  inset: auto var(--toast-offset-inline, var(--toast-offset, var(--space-4))) var(--toast-offset-block, var(--toast-offset, var(--space-4))) auto;
   z-index: var(--z-toast);
   display: flex;
   flex-direction: column;

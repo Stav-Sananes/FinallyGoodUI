@@ -113,7 +113,7 @@ export function selectorProblems(spec, css) {
   return problems;
 }
 
-const isFrameworkFile = (name, spec) => !name.endsWith(".css") && name !== MARKER && name !== `${spec.name}.behaviour.js` && name !== `${spec.name}.behaviour.d.ts`;
+const isFrameworkFile = (name, spec) => !name.endsWith(".css") && name !== MARKER && name !== `${spec.name}.behaviour.js` && name !== `${spec.name}.behaviour.d.ts` && !/^toast-store\./.test(name);
 // The plain-html output is a static demo page: it renders only the root, with no state attributes.
 const isDemoPage = (files) => files.every((f) => /\.html$/.test(f) && !/\.component\.html$/.test(f));
 

@@ -118,3 +118,6 @@ If dark mode is applied by attribute, class or localStorage rather than `prefers
 
 ## 5. Record
 Append the decisions (palette inputs, type pairing, scale, radius, motion position) to `.design/decisions.md`, with card ids. Then continue to build.
+
+**From a hex palette to the light/dark pair.** When the brief gives hex colours and no token file, build the pair by hand and let the scripts check it: convert each brand hex to OKLCH (`node scripts/color-scale.mjs <hex> --format json` prints its scale and the seed's step), write the light roles (`background`, `foreground`, `primary`, `primary-foreground`, `muted`, `muted-foreground`, `border`, ...) from those steps in `.design/tokens.json`, then derive the dark roles by re-picking steps (lighter primary, darker background; not an inversion; `color.dark-mode-not-inverted`) in `.design/tokens.dark.json`. `node scripts/check-palette.mjs` and the contrast report then fail any pair under 4.5:1. `import-tokens.mjs` does the same job when the palette already exists as Figma or Tokens Studio files.
+

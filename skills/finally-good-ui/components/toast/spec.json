@@ -8,7 +8,7 @@
     {
       "name": "toasts",
       "type": "array",
-      "ts": "{ id: string; message: string; variant?: \"status\" | \"error\"; timeout?: number; action?: string; onAction?: (toast: { id: string }) => void }[]",
+      "ts": "{ id: string; message: string; variant?: \"status\" | \"error\"; timeout?: number; action?: string; onAction?: (id: string) => void }[]",
       "default": "[]"
     },
     {
@@ -91,6 +91,10 @@
   "profile": {
     "surface": "toast",
     "interactive": null,
-    "density": null
+    "density": null,
+    "touch": [
+      "action",
+      "dismiss"
+    ]
   }
 }

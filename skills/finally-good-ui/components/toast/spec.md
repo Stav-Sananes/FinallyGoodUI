@@ -63,3 +63,5 @@ Enter: `transform` and `opacity` over `--duration-medium` with `--ease-enter`, f
 Props `toasts` (`{ id, message, variant?, timeout?, action?, onAction? }[]`) and `label`; slot `default` for anything extra in the region. You own the list: when a toast leaves (timer or the dismiss button) the component keeps the node, calls `onDismiss(id)` (Vue `@dismiss`, Svelte `ondismiss`, Angular `(dismissed)`) and you remove it from `toasts`. The region is rendered once at the app root and never conditionally.
 
 `--toast-offset` on the region moves it from the bottom-right corner (default `--space-4`).
+
+Round 6: callbacks are uniform: `onAction(id)` and `onDismiss(id)` both receive the toast id (a string). `--toast-offset-block` (bottom, for example above a tab bar) and `--toast-offset-inline` (right) move one edge; `--toast-offset` still moves both. A second scaffold file, `toast-store.*`, owns the list: React `ToastProvider` + `useToast()` (`push` returns the id), Vue `useToast()` composable, Svelte `toasts` store with `pushToast` / `dismissToast`, Angular `ToastStore` service (signals). Plain HTML has none.

@@ -67,6 +67,11 @@
       "name": "multiline",
       "type": "boolean",
       "default": "false"
+    },
+    {
+      "name": "hideLabel",
+      "type": "boolean",
+      "default": "false"
     }
   ],
   "events": [
@@ -148,5 +153,8 @@
     "surface": "control",
     "interactive": "control",
     "density": "control"
-  }
+  },
+  "api": [
+    "validate(form: Element): boolean"
+  ]
 }

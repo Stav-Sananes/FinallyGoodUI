@@ -31,3 +31,5 @@ Every component is written whole: parts, props, slots and the `attach` effect (`
 - `field` and `toggle` spread their native props on the input: control them as usual with `value` + `onChange` (or `defaultValue`, `defaultChecked`). The `checked` prop is the initial state (`defaultChecked`).
 - `dialog`: `open` plus `onOpenChange(false)` when it closes (Escape, close button, form submit); the native `onClose` still passes through. `tabs`: `selected` plus `onSelectedChange(index)`. `toast`: `onDismiss(id)` then remove the toast. The menu trigger uses React 19's `popoverTarget`.
 - `field` takes `multiline` (+ `rows`) for a textarea; its `error` prop wins over the built-in validation message while it is non-empty.
+
+Round 6: `toast-store.tsx` holds `ToastProvider` (renders the region, owns the list) and `useToast()` (`push(toast)` returns the id, `dismiss(id)`). Toast `onAction(id)` and `onDismiss(id)` both get the id. Toggle: pass `checked` + `onChange` to control it, or `defaultChecked` to leave it uncontrolled. Dialog's form is `noValidate` unless `nativeValidation`; field `hideLabel`.

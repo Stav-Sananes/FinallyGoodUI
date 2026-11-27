@@ -32,3 +32,5 @@ Every component is written whole (`.component.ts` + `.component.html`, standalon
 ## Inputs and outputs
 - Boolean and number inputs use `booleanAttribute` / `numberAttribute`, so a bare attribute works under strict templates (`<fgu-field required>`); array inputs are `readonly`. The field's `id` input is `controlId` (an `id` input would also set the host element's id). Two-way: `[(value)]` on field, `[(checked)]` on toggle, `[(open)]` on dialog, `[(selected)]` on tabs; toast `(dismissed)`. Field `multiline` renders a textarea.
 - Compile check: `ngc` with `strictTemplates` over the generated files is part of `scripts/test/compile-scaffold.mjs`.
+
+Round 6: `toast-store.service.ts` is `ToastStore` (signal `toasts`, `push` returning the id, `dismiss(id)`): `<fgu-toast [toasts]="store.toasts()" (dismissed)="store.dismiss($event)" />`. Generated TypeScript reads `dataset["id"]` (index-signature safe). Dialog `nativeValidation`, field `hideLabel` and `validate` from the behaviour for form-level checks.

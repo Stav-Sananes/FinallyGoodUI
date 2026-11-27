@@ -75,7 +75,7 @@ test("material changes the surface only: flat removes a dialog shadow, layered s
   assert.match(profileCss(profile("flat"), spec), /box-shadow:\s*none/);
   assert.match(profileCss(profile("layered"), spec), /box-shadow:\s*var\(--shadow-/);
   assert.match(profileCss(profile("outlined"), spec), /border-style:\s*solid/);
-  assert.doesNotMatch(profileCss(profile("outlined"), spec), /\[data-part="(title|close|actions)"\]/);
+  assert.doesNotMatch(profileCss(profile("outlined"), spec).replace(/@media[\s\S]*$/, ""), /\[data-part="(title|close|actions)"\]/, "no material on the title, close or actions");
 });
 
 test("a dialog's profile layer leaves its padding and enter transition alone", () => {

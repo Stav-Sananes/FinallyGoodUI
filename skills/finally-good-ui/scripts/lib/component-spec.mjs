@@ -46,6 +46,7 @@ export function validateSpec(spec) {
     if (!isObj(spec.profile)) errors.push("profile: must be an object (surface, density, interactive: a part or null; radius: boolean)");
     else for (const [k, v] of Object.entries(spec.profile)) {
       if (k === "radius") { if (typeof v !== "boolean") errors.push("profile.radius: must be a boolean"); }
+      else if (k === "touch") { if (!Array.isArray(v) || v.some((x) => !(Array.isArray(spec.parts) && spec.parts.includes(x)))) errors.push("profile.touch: must be an array of parts (raised to 44px under pointer: coarse)"); }
       else if (k === "also") { if (!Array.isArray(v) || v.some((x) => !(Array.isArray(spec.parts) && spec.parts.includes(x)))) errors.push("profile.also: must be an array of parts (they also take the radius)"); }
       else if (["surface", "density", "interactive"].includes(k)) {
         if (v !== null && !(isText(v) && Array.isArray(spec.parts) && spec.parts.includes(v))) errors.push(`profile.${k}: must be null or one of parts`);

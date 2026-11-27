@@ -18,6 +18,11 @@
     {
       "name": "initialFocus",
       "type": "string"
+    },
+    {
+      "name": "nativeValidation",
+      "type": "boolean",
+      "default": "false"
     }
   ],
   "events": [
@@ -108,7 +113,10 @@
   "profile": {
     "surface": "root",
     "interactive": null,
-    "density": null
+    "density": null,
+    "touch": [
+      "close"
+    ]
   },
   "api": [
     "openDialog(dialog: HTMLElement, opener?: Element | null): void",

@@ -41,7 +41,7 @@ export const ariaBool = (e) => ({ ariaBool: e });
 // A DOM event a wrapper surfaces. `sync` names a prop kept in step (Vue update:<prop>, Svelte $bindable, Angular
 // <prop>Change); react / vue / svelte / angular are the callback names (null = none beyond the sync).
 export const EVENTS = {
-  dismiss: { dom: "dismiss", prevent: true, type: "string", payload: { ts: '(event.target as HTMLElement).dataset.id ?? ""', js: 'event.target.dataset.id ?? ""' },
+  dismiss: { dom: "dismiss", prevent: true, type: "string", payload: { ts: '(event.target as HTMLElement).dataset["id"] ?? ""', js: 'event.target.dataset.id ?? ""' },
     react: "onDismiss", vue: "dismiss", svelte: "ondismiss", angular: "dismissed" },
   tabchange: { dom: "tabchange", type: "number", payload: { ts: "(event as CustomEvent<number>).detail", js: "event.detail" },
     sync: "selected", react: "onSelectedChange", vue: "change", svelte: "onselectedchange", angular: null },
@@ -70,7 +70,7 @@ export const MARKUP = {
     // hint and error are always the ids the control describes itself with; the error line always renders so
     // showing a message moves nothing.
     tree: el("root", { "data-variant": js("variant") }, [
-      el("label", { for: js(CONTROL_ID) }, [expr("label")]),
+      el("label", { for: js(CONTROL_ID), "data-hidden": js("hideLabel ? '' : undefined") }, [expr("label")]),
       when("hint", [el("hint", { id: js("uid + '-hint'") }, [expr("hint")])]),
       choose("multiline", [
         el("control", { ...FIELD_CONTROL, rows: js("rows") }, [], { rest: true, model: "value", tag: "textarea" }),
@@ -115,7 +115,7 @@ export const MARKUP = {
       whenSlot("description", [el("description", {}, [slot("description")])]),
       el("close", { type: "button", "aria-label": "Close" }, [text("&times;")]),
       // method="dialog": a submit button in the actions closes the dialog, and Enter in a field of the body submits.
-      el("form", { method: "dialog" }, [
+      el("form", { method: "dialog", novalidate: bool("!nativeValidation") }, [
         slot("default"),
         whenSlot("actions", [el("actions", {}, [slot("actions")])]),
       ]),
@@ -161,7 +161,7 @@ export const MARKUP = {
       each("toasts", "t", "t.id", [
         el("toast", { "data-variant": js("t.variant ? t.variant : 'status'"), "data-id": js("t.id"), "data-timeout": js("t.timeout") }, [
           el("message", {}, [expr("t.message")]),
-          when("t.action", [el("action", { type: "button" }, [expr("t.action")], { on: { click: "t.onAction && t.onAction(t)" } })]),
+          when("t.action", [el("action", { type: "button" }, [expr("t.action")], { on: { click: "t.onAction && t.onAction(t.id)" } })]),
           el("dismiss", { type: "button", "aria-label": "Dismiss" }, [text("&times;")]),
         ]),
       ]),

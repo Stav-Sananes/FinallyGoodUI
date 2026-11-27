@@ -30,7 +30,7 @@ function project(framework) {
   return root;
 }
 const tsconfig = (root, extra = {}) => writeFileSync(join(root, "tsconfig.json"), JSON.stringify({
-  compilerOptions: { strict: true, noUnusedLocals: true, noUnusedParameters: true, noEmit: true, skipLibCheck: true, target: "ES2022", module: "ESNext", moduleResolution: "bundler", lib: ["ES2022", "DOM", "DOM.Iterable"], types: [], experimentalDecorators: true, ...extra.compilerOptions },
+  compilerOptions: { strict: true, noUnusedLocals: true, noUnusedParameters: true, noPropertyAccessFromIndexSignature: true, noEmit: true, skipLibCheck: true, target: "ES2022", module: "ESNext", moduleResolution: "bundler", lib: ["ES2022", "DOM", "DOM.Iterable"], types: [], experimentalDecorators: true, ...extra.compilerOptions },
   include: extra.include ?? ["src", "env.d.ts"],
 }));
 const sh = (cmd, args, cwd) => { const r = spawnSync(cmd, args, { cwd, encoding: "utf8" }); return { ok: r.status === 0, out: `${r.stdout}${r.stderr}` }; };

@@ -10,7 +10,7 @@ import { UsageError } from "./cli.mjs";
 import { profileCss } from "./style-profile.mjs";
 import { exists, readJson, isDir } from "./fs.mjs";
 import { MARKUP } from "./scaffold-markup.mjs";
-import { viewOf, react, vue, svelte, angular, plain } from "./scaffold-render.mjs";
+import { viewOf, react, vue, svelte, angular, plain, toastStore } from "./scaffold-render.mjs";
 
 export const COMPONENTS_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "components");
 const NATIVE = new Set(["expo", "react-native", "flutter", "swiftui", "compose"]);
@@ -86,6 +86,8 @@ export function planScaffold({ spec, stack, profile, root, force = false }) {
   const out = [
     { path: `${dir}/${spec.name}.css`, content: css },
     ...rendered.map((r) => ({ path: `${dir}/${spec.name}${r.ext}`, content: r.content })),
+    // The toast's list lives somewhere: an optional second file (provider and hook, composable, store, service).
+    ...(spec.name === "toast" && family ? [toastStore(family, { typescript })].map((f) => ({ path: `${dir}/${f.file}`, content: f.content })) : []),
     ...(shared ? [{ path: `${dir}/${spec.name}.behaviour.js`, content: readFileSync(join(refDir, `${spec.name}.js`), "utf8") }] : []),
     // Typings next to the script, so a strict TypeScript project can import it without allowJs.
     ...(shared && typescript ? [{ path: `${dir}/${spec.name}.behaviour.d.ts`, content: behaviourTypes(spec) }] : []),

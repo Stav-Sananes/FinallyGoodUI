@@ -222,3 +222,66 @@ test("profile: a coarse-pointer block raises dense and balanced controls to 44px
   const menu = profileCss(PROFILE, spec("menu"));
   assert.match(menu, /\[data-fgu="menu"\] \[data-part="trigger"\] \{\s*border-radius: var\(--radius-/);
 });
+
+// ---- round 6
+test("dialog form is novalidate unless nativeValidation is set; the field has hideLabel; toast actions get the id", () => {
+  assert.match(joined("dialog", "react"), /noValidate=\{!nativeValidation\}/);
+  assert.match(joined("dialog", "vue"), /:novalidate="!nativeValidation"/);
+  assert.match(joined("dialog", "svelte"), /novalidate=\{!nativeValidation\}/);
+  assert.match(joined("dialog", "angular"), /\[attr\.novalidate\]="!nativeValidation \? '' : null"/);
+  for (const fw of ["react", "vue", "svelte", "angular"]) {
+    assert.match(joined("field", fw), /hideLabel/, fw);
+    assert.match(joined("toast", fw), /t\.onAction && t\.onAction\(t\.id\)/, fw);
+    assert.doesNotMatch(joined("toast", fw), /onAction\(t\)/, fw);
+  }
+  assert.match(readFileSync(join(COMPONENTS_ROOT, "field/field.css"), "utf8"), /\[data-part="label"\]\[data-hidden\]/);
+  assert.match(readFileSync(join(COMPONENTS_ROOT, "toast/toast.css"), "utf8"), /--toast-offset-inline[\s\S]*--toast-offset-block/);
+});
+
+test("no generated TypeScript reads an index signature with dot access (noPropertyAccessFromIndexSignature)", () => {
+  for (const name of NAMES) for (const fw of ["react", "vue", "svelte", "angular"]) {
+    const text = joined(name, fw);
+    assert.doesNotMatch(text, /\.dataset\.\w|\$slots\.\w/, `${name}/${fw}`);
+  }
+});
+
+test("toast: an optional store file per framework (provider and hook, composable, store, service), not for plain HTML", () => {
+  const file = (fw, ext) => plan("toast", fw).files.find((f) => f.path.includes("toast-store"));
+  assert.match(file("react").path, /toast-store\.tsx$/);
+  assert.match(file("react").content, /export function ToastProvider/);
+  assert.match(file("react").content, /export function useToast/);
+  assert.match(file("vue").content, /export function useToast/);
+  assert.match(file("svelte").content, /export const toasts = writable/);
+  assert.match(file("angular").path, /toast-store\.service\.ts$/);
+  assert.match(file("angular").content, /@Injectable/);
+  assert.equal(file("html"), undefined);
+  assert.equal(plan("button", "react").files.find((f) => f.path.includes("toast-store")), undefined, "only the toast has one");
+  const js = planScaffold({ spec: spec("toast"), stack: { framework: "react", typescript: false, primitives: [] }, profile: PROFILE, root: join(tmp(), "none") }).files.find((f) => f.path.includes("toast-store"));
+  assert.match(js.path, /\.jsx$/);
+  assert.doesNotMatch(js.content, /ToastItem|: ReactNode|useState<|<ToastApi/);
+});
+
+test("toggle: React `checked` controls the input only when given; Vue also emits update:checked", () => {
+  const react = joined("toggle", "react");
+  assert.match(react, /\.\.\.\(checked === undefined \? \{\} : \{ checked \}\)/);
+  assert.doesNotMatch(react, /checked = false/);
+  assert.doesNotMatch(react, /defaultChecked=/, "uncontrolled use goes through rest (defaultChecked)");
+  assert.match(joined("toggle", "vue"), /"update:checked": \[value: boolean\]/);
+});
+
+test("profile: every component's controls reach 44px under a coarse pointer (dense and balanced), parts without a density rule through `touch`", () => {
+  const coarse = (n, density) => profileCss({ ...PROFILE, density }, spec(n)).match(/@media \(pointer: coarse\) \{[\s\S]*?\n\}/g)?.join("\n") ?? "";
+  for (const n of ["button", "field", "disclosure", "menu", "tabs"]) assert.match(coarse(n, "dense"), /min-height: var\(--size-control-lg\)/, n);
+  assert.match(coarse("toggle", "dense"), /\[data-part="root"\][\s\S]*min-width: var\(--size-control-lg\)/);
+  assert.match(coarse("dialog", "dense"), /\[data-part="close"\]/);
+  assert.match(coarse("toast", "dense"), /\[data-part="action"\][\s\S]*\[data-part="dismiss"\]/);
+  assert.equal(coarse("button", "airy"), "", "airy is already 44px");
+});
+
+test("profile: the menu trigger takes the surface (border, shadow, radius) from the profile like the list", () => {
+  const css = profileCss({ ...PROFILE, material: "outlined" }, spec("menu"));
+  const trigger = css.match(/\[data-fgu="menu"\] \[data-part="trigger"\] \{[^}]*\}/)[0];
+  assert.match(trigger, /border-style: solid/);
+  assert.match(trigger, /border-radius: var\(--radius-/);
+  assert.match(trigger, /border-width: var\(--border-width-/);
+});

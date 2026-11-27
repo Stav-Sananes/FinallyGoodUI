@@ -64,6 +64,7 @@
     "--ring-width",
     "--ring-offset",
     "--size-control-md",
+    "--size-control-lg",
     "--icon-md",
     "--space-1",
     "--space-2",

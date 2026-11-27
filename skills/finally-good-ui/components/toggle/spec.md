@@ -70,3 +70,5 @@ The thumb `transform`s and the mark's `opacity` fades (`motion.compositor-only`)
 Props `variant` (checkbox | switch), `checked` (initial state; the DOM owns it afterwards), `disabled`, `invalid`, `name`, `value`; slot `default` is the label text. Native attributes and listeners (`onChange`, `@change`) go to the input, not the label. A `switch` gets `role="switch"` in the markup.
 
 Controls are `--icon-lg` (24px) so the target meets the 24px minimum.
+
+Round 6: the React `checked` prop controls the input only when it is passed (pair it with `onChange`); without it the input is uncontrolled (`defaultChecked` passes through). Vue: `v-model` or `v-model:checked`; Svelte `bind:checked`; Angular `[(checked)]`. Under a coarse pointer the label is at least 44px.
