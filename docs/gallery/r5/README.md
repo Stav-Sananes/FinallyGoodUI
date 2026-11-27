@@ -89,10 +89,12 @@ Taken from each app's "Remaining friction" list and merged. These are tracked fo
 
 Not skill gaps, listed for completeness: Booking fixed a `When.svelte` default-day effect ordering bug and notes parallel agents sharing a scratchpad; Tracker has a dev-only NG0956 "track by identity" warning, not in the production build.
 
-Visible in the captures, not in the app READMEs (my reading of the stills only, not verified in a browser):
-- Meals: the punched-hole dot on the hang-tags touches the label text ("MON 23", "3 AT THE TABLE", "TONIGHT"); on the phone the active-tab bar spans only the first third of the bottom nav and the Shop label sits lower than its siblings.
-- Booking phone: the bottom nav shows icons without labels. The disabled "Choose a time" button is still low-contrast.
-- Finance phone: the brand name wraps to two lines next to the toggle and Studio button.
+Cosmetic fixes made after the first capture (app-side only; before-images are in [`captures/before`](captures/before)), each re-verified at 390px and 1440px, light and dark, with 0 console errors, `check-components --strict` ok and `check-static` 0 findings:
+- Meals: the hang-tag punch hole now has a gap before the label (`HangTag.vue`); the phone tab bar is three equal grid columns with the Shop count badge floated over the icon, so all labels share one baseline and each active bar is exactly one tab wide.
+- Booking: the disabled "Choose a time" button uses `--color-foreground` on `--color-muted` (about 11:1 light, 10.9:1 dark; was 5.4:1 and 6.1:1 with the generated muted-on-muted pair) plus a dashed border. The phone tab bar labels were being pushed off-screen on touch emulation: the `step-in` slide-in made the layout viewport 12px wider, so the fixed bar's bottom edge sat 26px below the screen; `.shell { overflow-x: clip }` fixes it.
+- Finance: the brand stays on one line at 390px (`text-base`, `nowrap`, tighter gaps).
+
+Friction worth feeding back to the scaffold: the generated button's disabled pair (muted-foreground on muted) passes 4.5:1 but reads faint, so Booking overrides it in app CSS; and a page-level entrance transform with no `overflow-x: clip` can widen the layout viewport on touch devices, which a desktop-viewport check will not show.
 
 ## Before / after (r4 skill side vs r5)
 

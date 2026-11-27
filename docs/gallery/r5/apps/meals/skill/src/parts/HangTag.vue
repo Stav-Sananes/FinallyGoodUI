@@ -36,7 +36,7 @@ withDefaults(defineProps<{ tone?: "paper" | "beet" | "leaf" | "carrot"; swing?: 
 .tag[data-tone="beet"] { --tag-bg: var(--color-primary); --tag-fg: var(--color-primary-foreground); border-color: transparent; }
 .tag[data-tone="leaf"] { --tag-bg: var(--color-success); --tag-fg: var(--color-success-foreground); border-color: transparent; }
 .tag[data-tone="carrot"] { --tag-bg: var(--color-warning); --tag-fg: var(--color-warning-foreground); border-color: transparent; }
-.tag { padding-inline-start: var(--space-4); }
+.tag { padding-inline-start: var(--space-6); } /* hole spans space-2..space-4; leaves a space-2 gap before the label */
 .hole {
   position: absolute;
   inset-inline-start: var(--space-2);

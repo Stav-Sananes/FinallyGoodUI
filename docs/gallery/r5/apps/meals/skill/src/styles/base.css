@@ -35,9 +35,11 @@ a { color: inherit; }
 /* Under 768px the same three destinations move to a bottom tab bar, same order. */
 @media (max-width: 47.99rem) {
   .topbar { padding-block: var(--space-2); }
-  .nav { position: fixed; inset-inline: 0; inset-block-end: 0; z-index: var(--z-overlay); justify-content: space-around; padding-block: var(--space-1) env(safe-area-inset-bottom); background: var(--color-card); border-block-start: var(--border-width-hairline) solid var(--color-border); }
-  .nav a { flex-direction: column; gap: 0; flex: 1; justify-content: center; font-size: var(--text-xs); border-block-end: 0; border-block-start: var(--border-width-strong) solid transparent; border-radius: 0; min-block-size: var(--size-control-lg); }
+  .nav { position: fixed; inset-inline: 0; inset-block-end: 0; z-index: var(--z-overlay); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; padding-block: var(--space-1) env(safe-area-inset-bottom); background: var(--color-card); border-block-start: var(--border-width-hairline) solid var(--color-border); }
+  .nav a { position: relative; flex-direction: column; gap: 0; justify-content: center; justify-self: stretch; text-align: center; font-size: var(--text-xs); border-block-end: 0; border-block-start: var(--border-width-strong) solid transparent; border-radius: 0; min-block-size: var(--size-control-lg); }
   .nav a[aria-current="page"] { border-block-start-color: var(--color-primary); }
+  /* The count badge floats over the icon so the label stays on the same baseline as its siblings. */
+  .nav .count { position: absolute; inset-block-start: var(--space-1); inset-inline-start: calc(50% + var(--space-2)); }
 }
 
 /* ---- page head ---- */

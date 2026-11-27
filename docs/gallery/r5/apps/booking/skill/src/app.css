@@ -31,7 +31,7 @@ main:focus:not(:focus-visible) { outline: none; }
 .icon-lg { inline-size: var(--icon-lg); block-size: var(--icon-lg); }
 
 /* shell: top bar on desktop, tab bar on phone, tab bar hidden inside the booking steps */
-.shell { min-block-size: 100dvh; display: flex; flex-direction: column; padding-block-end: calc(var(--space-16) + env(safe-area-inset-bottom)); }
+.shell { overflow-x: clip; /* the step-in slide starts off-screen; without this a touch browser widens its layout viewport and pushes the fixed tab bar's labels below the screen */ min-block-size: 100dvh; display: flex; flex-direction: column; padding-block-end: calc(var(--space-16) + env(safe-area-inset-bottom)); }
 .shell[data-flow="true"] { padding-block-end: 0; }
 .shell[data-flow="true"] .tabbar { display: none; }
 .topbar { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); }
@@ -101,6 +101,8 @@ main { flex: 1; inline-size: 100%; max-inline-size: 64rem; margin-inline: auto; 
 .actionbar-note { font-size: var(--text-sm); line-height: 1.35; min-inline-size: 0; }
 .linkbtn { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--size-control-lg); padding-inline: var(--space-4); border-radius: var(--radius-lg); background: var(--color-primary); color: var(--color-primary-foreground); font-weight: 600; text-decoration: none; }
 [data-fgu="button"][data-part="root"] { font-size: var(--text-base); font-weight: 600; }
+/* Disabled stays legible: the generated button pairs muted-foreground on muted (about 5.4:1 light, 6.1:1 dark, visibly faint). Foreground on muted gives well over 7:1; the dashed border still reads as "not available yet". */
+.actionbar [data-fgu="button"][data-part="root"]:disabled { --btn-fg: var(--color-foreground); border-style: dashed; border-color: var(--color-muted-foreground); }
 
 /* THE MOTIF: ticket stub. Half-round notches cut from both ends of the tear line. */
 .ticket { background: var(--color-card); border: var(--border-width-hairline) solid var(--color-border); border-radius: var(--radius-xl); overflow: clip; }
