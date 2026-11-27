@@ -15,7 +15,8 @@
 //   whenSlot(name, kids)          renders its children when the slot was given (Angular cannot tell: always)
 //   choose(js, a, b)              nodes a when the expression is truthy, else nodes b (a textarea or an input)
 // Element opts: ignore (Svelte lint rules to silence on this element, with a reason at the call site); model "value" | "checked" marks the control that Vue (v-model) and Svelte ($bindable) bind.
-// Component keys: openProp (dialog), selectProp (tabs): a controlled prop the wrapper keeps in step with the DOM;
+// Component keys: sync { prop, open, close } (a boolean prop shown/hidden by those behaviour functions) or { prop, set } (a value
+// prop applied by that function), the controlled prop the wrapper keeps in step with the DOM;
 // events: the custom DOM events a wrapper turns into its framework's callback / emit / output (see EVENTS).
 // Attribute values
 //   "text"        static                  true      bare attribute
@@ -116,7 +117,7 @@ export const MARKUP = {
   },
 
   dialog: {
-    openProp: "open",
+    sync: { prop: "open", open: "openDialog", close: "closeDialog" },
     events: ["close"],
     tree: el("root", { "data-variant": js("variant"), "aria-labelledby": js("uid + '-title'"), "data-initial-focus": js("initialFocus") }, [
       el("title", { id: js("uid + '-title'") }, [slot("title")]),
@@ -145,7 +146,7 @@ export const MARKUP = {
   },
 
   tabs: {
-    selectProp: "selected",
+    sync: { prop: "selected", set: "selectTab" },
     events: ["tabchange"],
     tree: el("root", {}, [
       el("list", { role: "tablist", "aria-label": js("label") }, [
@@ -191,7 +192,7 @@ export const partsOf = (tree) => { const out = new Set(); walk(tree, (n) => { if
 const SELECT_ID = "uid + '-trigger'";
 
 MARKUP.select = {
-  selectProp: "value", selectFn: "selectValue", events: ["selectchange"],
+  sync: { prop: "value", set: "selectValue" }, events: ["selectchange"],
   tree: el("root", { "data-variant": js("variant") }, [
     el("label", { id: js("uid + '-label'"), for: js(SELECT_ID), "data-hidden": js("hideLabel ? '' : undefined") }, [expr("label")]),
     choose("variant === 'native'", [
@@ -223,7 +224,7 @@ MARKUP.tooltip = {
 };
 
 MARKUP.popover = {
-  openProp: "open", openFns: ["openPopover", "closePopover"], events: ["popoverchange"],
+  sync: { prop: "open", open: "openPopover", close: "closePopover" }, events: ["popoverchange"],
   tree: el("root", {}, [
     el("trigger", { type: "button", "aria-haspopup": "dialog", "aria-expanded": "false", "aria-controls": js("uid + '-panel'"), popovertarget: js("uid + '-panel'") }, [slot("trigger")]),
     el("panel", { id: js("uid + '-panel'"), role: "dialog", "aria-label": js("label"), popover: true, tabindex: "-1" }, [slot("default")]),
@@ -232,7 +233,7 @@ MARKUP.popover = {
 
 const ROW_ID = "row.id";
 MARKUP.table = {
-  selectProp: "selected", selectFn: "syncSelection", events: ["sortchange", "selectionchange"],
+  sync: { prop: "selected", set: "syncSelection" }, events: ["sortchange", "selectionchange"],
   // the scroll region takes focus so the keyboard can scroll it (the data-table recipe); Svelte's lint calls that a noninteractive tabindex
   tree: el("root", { role: "region", "aria-labelledby": js("uid + '-caption'"), tabindex: "0", "data-sticky": js("sticky ? '' : undefined"), "aria-busy": aria("loading") }, [
     el("table", {}, [

@@ -40,18 +40,14 @@ export function viewOf(spec, markup) {
   visit(tree, null);
   const used = new Set(spec.slots);
   for (const s of slots) if (!used.has(s)) throw new Error(`scaffold: markup for "${spec.name}" uses slot "${s}" that the spec does not list`);
+  const sync = markup.sync ?? null;
   const props = spec.props.map((p) => ({ ...p, js: camel(p.name) }));
   const listProp = (name) => props.find((p) => p.name === name);
   return {
     name: spec.name, Name: pascal(spec.name), spec, tree, props, usesUid, restPart,
-    slots: spec.slots, scopedSlots, listProp, openProp: markup.openProp ?? null, selectProp: markup.selectProp ?? null,
-    // the behaviour functions a controlled prop calls (dialog: openDialog/closeDialog, tabs: selectTab); the renderers
-    // are written with those names and `rename` swaps in the component's own
-    rename: (text) => {
-      const [open, close] = markup.openFns ?? ["openDialog", "closeDialog"];
-      return text.replaceAll("openDialog", open).replaceAll("closeDialog", close).replaceAll("selectTab", markup.selectFn ?? "selectTab");
-    },
-    syncProp: markup.openProp ?? markup.selectProp ?? null, models, events: (markup.events ?? []).map((k) => ({ key: k, ...EVENTS[k] })),
+    slots: spec.slots, scopedSlots, listProp, sync, openProp: sync?.open ? sync.prop : null, selectProp: sync?.set ? sync.prop : null, syncProp: sync?.prop ?? null,
+    // what an import line needs from <name>.behaviour.js: attach plus the functions the controlled prop calls
+    behaviourImports: ["attach", ...(sync?.open ? [sync.open, sync.close] : sync ? [sync.set] : [])], models, events: (markup.events ?? []).map((k) => ({ key: k, ...EVENTS[k] })),
     tagOf: (node) => node.tag ?? tagOfPart(spec, node.part ?? "span"),
     restTag: tagOfPart(spec, restPart),
     rootTag: tagFor(spec),
@@ -181,7 +177,7 @@ export function react(view, c) {
     ].join("\n")}\n} & Omit<ComponentPropsWithoutRef<"${view.restTag}">, ${omit}>;\n`
     : "";
   const hooks = [...(c.shared ? ["useEffect", "useRef"] : []), ...(view.usesUid ? ["useId"] : [])];
-  const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : []), ...(view.selectProp ? ["selectTab"] : [])];
+  const { behaviourImports } = view;
   const typeImports = ["ComponentPropsWithoutRef", ...(view.slots.length ? ["ReactNode"] : [])];
   const imports = [
     ...(c.typescript ? [`import type { ${typeImports.join(", ")} } from "react";`] : []),
@@ -210,10 +206,10 @@ export function react(view, c) {
     ...(c.shared ? ["useEffect(() => (ref.current ? attach(ref.current) : undefined), []);"] : []),
     ...(c.shared && view.openProp ? [
       "useEffect(() => {", "  const dialog = ref.current;", "  if (!dialog) return;",
-      `  if (${view.openProp}) openDialog(dialog); else closeDialog(dialog);`, `}, [${view.openProp}]);`,
+      `  if (${view.openProp}) ${view.sync.open}(dialog); else ${view.sync.close}(dialog);`, `}, [${view.openProp}]);`,
     ] : []),
     ...(c.shared && view.selectProp ? [
-      "useEffect(() => {", `  if (ref.current && ${view.selectProp} !== undefined) selectTab(ref.current, ${view.selectProp});`, `}, [${view.selectProp}]);`,
+      "useEffect(() => {", `  if (ref.current && ${view.selectProp} !== undefined) ${view.sync.set}(ref.current, ${view.selectProp});`, `}, [${view.selectProp}]);`,
     ] : []),
     ...eventEffects,
   ];
@@ -285,7 +281,7 @@ export function vue(view, c) {
     ...(view.usesUid ? ["getCurrentInstance"] : []),
     ...(c.shared && view.syncProp ? ["watch"] : []),
   ];
-  const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : []), ...(view.selectProp ? ["selectTab"] : [])];
+  const { behaviourImports } = view;
   const emits = [
     ...view.events.flatMap((e) => [...(e.vue ? [`${e.vue}: [value: ${e.type}]`] : []), ...(e.sync ? [`"update:${e.sync}": [value: ${e.type}]`] : []), ...(e.modelAlso ? [`"update:modelValue": [value: ${e.type}]`] : [])]),
     ...(view.models.size ? [`"update:modelValue": [value: ${modelType}]`] : []),
@@ -321,10 +317,10 @@ export function vue(view, c) {
     ...(c.shared ? [
       `const el = ref<${ELEMENT_TYPE[view.rootTag] ?? "HTMLElement"} | null>(null);`,
       "let detach: (() => void) | undefined;",
-      `onMounted(() => {\n  if (!el.value) return;\n  detach = attach(el.value);${view.openProp ? `\n  if (props.${view.openProp}) openDialog(el.value);` : ""}${view.selectProp ? `\n  if (props.${view.selectProp} !== undefined) selectTab(el.value, props.${view.selectProp});` : ""}\n});`,
+      `onMounted(() => {\n  if (!el.value) return;\n  detach = attach(el.value);${view.openProp ? `\n  if (props.${view.openProp}) ${view.sync.open}(el.value);` : ""}${view.selectProp ? `\n  if (props.${view.selectProp} !== undefined) ${view.sync.set}(el.value, props.${view.selectProp});` : ""}\n});`,
       "onBeforeUnmount(() => detach?.());",
-      ...(view.openProp ? [`watch(() => props.${view.openProp}, (value) => {\n  if (!el.value) return;\n  if (value) openDialog(el.value); else closeDialog(el.value);\n});`] : []),
-      ...(view.selectProp ? [`watch(() => props.${view.selectProp}, (value) => {\n  if (el.value && value !== undefined) selectTab(el.value, value);\n});`] : []),
+      ...(view.openProp ? [`watch(() => props.${view.openProp}, (value) => {\n  if (!el.value) return;\n  if (value) ${view.sync.open}(el.value); else ${view.sync.close}(el.value);\n});`] : []),
+      ...(view.selectProp ? [`watch(() => props.${view.selectProp}, (value) => {\n  if (el.value && value !== undefined) ${view.sync.set}(el.value, value);\n});`] : []),
     ] : []),
   ];
   const tpl = vueNode(view, view.tree, c);
@@ -384,7 +380,7 @@ const svelteGuard = (view) => {
 
 export function svelte(view, c) {
   const { name } = view;
-  const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : []), ...(view.selectProp ? ["selectTab"] : [])];
+  const { behaviourImports } = view;
   const bindable = new Set([...view.events.map((e) => e.sync).filter(Boolean), ...(view.models.has("checked") ? ["checked"] : [])]);
   const props = [
     ...view.props.map((p) => (bindable.has(p.js) ? `${p.js} = $bindable(${hasDefault(p) ? lit(p) : ""})` : `${p.js}${hasDefault(p) ? ` = ${lit(p)}` : ""}`)),
@@ -407,14 +403,14 @@ export function svelte(view, c) {
   const syncTs = view.selectProp ? `${tsType(view.listProp(view.selectProp))} | undefined` : "boolean";
   const syncType = T(c, `: ${syncTs}`);
   const syncCall = view.openProp
-    ? "open ? openDialog(node) : closeDialog(node)"
-    : "if (value !== undefined) selectTab(node, value)";
+    ? `open ? ${view.sync?.open}(node) : ${view.sync?.close}(node)`
+    : `if (value !== undefined) ${view.sync?.set}(node, value)`;
   const behaviourFn = !c.shared ? [] : view.syncProp ? [
     "",
     "// attach wires the keyboard, focus and ARIA that the markup leaves to the shared behaviour; it returns the cleanup.",
     `function behaviour(node${T(c, ": HTMLElement")}, initial${syncType}) {`,
     "  const detach = attach(node);",
-    ...(view.openProp ? [`  const sync = (open${T(c, ": boolean")}) => { if (open) openDialog(node); else closeDialog(node); };`] : [`  const sync = (value${T(c, `: ${syncTs}`)}) => { ${syncCall}; };`]),
+    ...(view.openProp ? [`  const sync = (open${T(c, ": boolean")}) => { if (open) ${view.sync.open}(node); else ${view.sync.close}(node); };`] : [`  const sync = (value${T(c, `: ${syncTs}`)}) => { ${syncCall}; };`]),
     "  sync(initial);",
     "  return { update: sync, destroy: detach };",
     "}",
@@ -524,16 +520,16 @@ export function angular(view, c) {
   const attrFns = [...(view.props.some((p) => p.type === "boolean") ? ["booleanAttribute"] : []), ...(view.props.some((p) => p.type === "number") ? ["numberAttribute"] : [])];
   const core = ["Component", "Input", "ViewEncapsulation", ...attrFns, ...(outputs.length || models.length ? ["Output", "EventEmitter"] : []), ...(slotInputs.length ? ["TemplateRef"] : []),
     ...(c.shared ? ["ElementRef", "AfterViewInit", "OnDestroy", "inject"] : []), ...(syncs.length ? ["OnChanges"] : [])];
-  const behaviourImports = ["attach", ...(view.openProp ? ["openDialog", "closeDialog"] : []), ...(view.selectProp ? ["selectTab"] : [])];
+  const { behaviourImports } = view;
   const impls = [...(c.shared ? ["AfterViewInit", "OnDestroy"] : []), ...(syncs.length ? ["OnChanges"] : [])];
   const syncBody = [
     ...(view.openProp ? [
       '    const dialog = this.host.nativeElement.querySelector<HTMLDialogElement>(\'[data-part="root"]\');',
-      "    if (dialog) { if (this.open) openDialog(dialog); else closeDialog(dialog); }",
+      `    if (dialog) { if (this.${view.openProp}) ${view.sync.open}(dialog); else ${view.sync.close}(dialog); }`,
     ] : []),
     ...(view.selectProp ? [
       "    const root = this.host.nativeElement.querySelector<HTMLElement>('[data-part=\"root\"]');",
-      `    if (root && this.${view.selectProp} !== undefined) selectTab(root, this.${view.selectProp});`,
+      `    if (root && this.${view.selectProp} !== undefined) ${view.sync.set}(root, this.${view.selectProp});`,
     ] : []),
   ];
   const handlers = view.events.flatMap((e) => [
