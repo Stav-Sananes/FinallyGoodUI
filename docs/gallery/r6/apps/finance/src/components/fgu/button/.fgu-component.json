@@ -1,0 +1,11 @@
+{
+  "name": "button",
+  "source": "shared",
+  "framework": "react",
+  "files": {
+    "button.css": "1be04cf68edf206e",
+    "button.tsx": "aa8799419fc6b86f",
+    "button.behaviour.js": "3b838cb249331e00",
+    "button.behaviour.d.ts": "9288cba8267d857f"
+  }
+}

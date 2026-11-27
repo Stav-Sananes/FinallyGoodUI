@@ -1,0 +1,3 @@
+{ "radius": "sharp", "material": "layered", "density": "dense", "motion": "productive",
+  "motif": "pigeonhole slots with brass key caps; perforated tear line on every slip",
+  "surfaces": { "record": { "edge": "perforated", "material": "flat" }, "panel": { "material": "layered", "radius": "soft" }, "control": { "radius": "sharp", "material": "flat" } } }

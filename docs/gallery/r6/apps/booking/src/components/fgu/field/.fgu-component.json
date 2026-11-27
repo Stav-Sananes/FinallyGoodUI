@@ -1,0 +1,10 @@
+{
+  "name": "field",
+  "source": "shared",
+  "framework": "svelte",
+  "files": {
+    "field.css": "24b1c5c2c795b1bd",
+    "field.svelte": "4364843cf1491267",
+    "field.behaviour.js": "d5fd8cb08acb4f86"
+  }
+}

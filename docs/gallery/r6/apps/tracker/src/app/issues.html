@@ -1,0 +1,38 @@
+<div class="issues">
+  <header class="issues-head">
+    <h1 class="issues-title">Issues</h1>
+    <p class="issues-sub mono" aria-live="polite">{{ view() === 'ready' ? rows().length + ' of ' + total() + ' shown' : '' }}</p>
+  </header>
+
+  <div class="issues-filters">
+    <div class="f-search">
+      <fgu-field label="Search" controlId="issues-q" type="search" placeholder="Title, area, reporter, HRB number (press /)" [value]="q()" (valueChange)="setParam('q', $event)" />
+    </div>
+    <fgu-select label="Status" [options]="statusOptions" [value]="status()" (valueChange)="setParam('status', $event)" />
+    <fgu-select label="Owner" [options]="ownerOptions" [value]="owner()" (valueChange)="setParam('owner', $event)" />
+  </div>
+
+  @if (view() === 'error') {
+    <div class="issues-note" role="alert">
+      <h2 class="note-title">Can't reach Harbor</h2>
+      <p>The issue list did not load. Nothing was lost on your side.</p>
+      <fgu-button (click)="retry()">Try again</fgu-button>
+    </div>
+  } @else {
+    <div class="tbl" #tbl>
+      <fgu-table
+        caption="All issues, newest first unless sorted"
+        [columns]="columns()"
+        [rows]="view() === 'ready' ? rows() : []"
+        [loading]="view() === 'loading'"
+        [sort]="sort()"
+        (sortChange)="onSort($event)"
+        loadingText="Loading issues"
+        [emptyText]="filtered() ? 'No issue matches these filters.' : 'No issues yet. Press C to report the first one.'"
+      />
+    </div>
+    @if (view() === 'ready' && rows().length === 0 && filtered()) {
+      <div class="issues-note"><fgu-button variant="secondary" (click)="clear()">Clear filters</fgu-button></div>
+    }
+  }
+</div>

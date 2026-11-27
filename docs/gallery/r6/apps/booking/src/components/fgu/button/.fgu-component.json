@@ -1,0 +1,10 @@
+{
+  "name": "button",
+  "source": "shared",
+  "framework": "svelte",
+  "files": {
+    "button.css": "f14ba9e3eb0ef9f9",
+    "button.svelte": "e93ee33d6b23934a",
+    "button.behaviour.js": "3b838cb249331e00"
+  }
+}

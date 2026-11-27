@@ -1,0 +1,12 @@
+{
+  "name": "select",
+  "source": "shared",
+  "framework": "angular",
+  "files": {
+    "select.css": "58aae23aa74ca01c",
+    "select.component.ts": "b1b1d2998b55fcb4",
+    "select.component.html": "db7cb26116ab8bcf",
+    "select.behaviour.js": "c885dce41ecdb6fe",
+    "select.behaviour.d.ts": "c31a99d04e80e454"
+  }
+}

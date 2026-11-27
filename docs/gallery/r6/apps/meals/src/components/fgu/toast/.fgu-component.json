@@ -1,0 +1,12 @@
+{
+  "name": "toast",
+  "source": "shared",
+  "framework": "vue",
+  "files": {
+    "toast.css": "f11eb6ec5e357926",
+    "toast.vue": "59b65aaad8c3ee43",
+    "toast-store.ts": "f6ea118487302751",
+    "toast.behaviour.js": "c8fb4b74266516f6",
+    "toast.behaviour.d.ts": "9954a79ae6c34142"
+  }
+}

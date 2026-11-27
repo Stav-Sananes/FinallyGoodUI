@@ -1,0 +1,10 @@
+{
+  "name": "tabs",
+  "source": "shared",
+  "framework": "svelte",
+  "files": {
+    "tabs.css": "82bf8dc8e836138e",
+    "tabs.svelte": "472d7f6d24d718cc",
+    "tabs.behaviour.js": "9625be0a13aab233"
+  }
+}

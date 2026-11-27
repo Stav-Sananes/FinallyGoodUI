@@ -1,0 +1,28 @@
+.issue { display: grid; gap: var(--space-5); align-content: start; padding: var(--space-6); max-inline-size: 64rem; }
+.back { justify-self: start; display: inline-flex; align-items: center; min-block-size: var(--size-control-lg); font-size: var(--text-sm); }
+.issue-slip { max-inline-size: 52rem; }
+.issue-note { display: grid; gap: var(--space-3); justify-items: start; color: var(--color-muted-foreground); }
+.sorter { display: grid; gap: var(--space-3); align-content: start; max-inline-size: 64rem; }
+.sorter-title { font-size: var(--text-xl); line-height: var(--text-xl--line-height); }
+.minicase { display: grid; grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr)); gap: var(--space-2); padding: var(--space-2); background: var(--color-case); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+.mini {
+  display: grid; grid-template-columns: auto 1fr; grid-template-areas: "k n" "k a"; gap: 0 var(--space-2); align-items: center; inline-size: 100%;
+  padding: var(--space-2) var(--space-3); text-align: start; cursor: pointer;
+  background: var(--color-case-hole); color: var(--color-case-foreground); border: 0;
+  border-radius: calc(var(--radius-lg) - var(--space-2)); box-shadow: var(--shadow-inset);
+}
+.mini .keycap { grid-area: k; }
+.mini-name { grid-area: n; font-family: var(--font-display); font-weight: 600; }
+.mini-area { grid-area: a; color: color-mix(in oklch, var(--color-case-foreground), transparent 30%); }
+.mini[aria-pressed="true"] { background: var(--color-brass); color: var(--color-brass-foreground); box-shadow: none; }
+.mini[aria-pressed="true"] .mini-area { color: inherit; }
+.mini:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--space-1); }
+@media (hover: hover) and (pointer: fine) { .mini[aria-pressed="false"]:hover { background: color-mix(in oklch, var(--color-case-hole), var(--color-brass) 14%); } }
+.prio { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.act[aria-pressed="true"] { background: var(--color-primary); color: var(--color-primary-foreground); border-color: var(--color-primary); }
+.status-pick { max-inline-size: 16rem; }
+.activity { display: grid; gap: var(--space-2); max-inline-size: 52rem; }
+.log { display: grid; }
+.log li { display: grid; grid-template-columns: 6rem 1fr; gap: var(--space-3); padding-block: var(--space-2); border-block-end: var(--border-width-hairline) solid var(--color-border); font-size: var(--text-sm); }
+.log-at { color: var(--color-muted-foreground); font-size: var(--text-xs); }
+@media (max-width: 48rem) { .issue { padding: var(--space-4); } }

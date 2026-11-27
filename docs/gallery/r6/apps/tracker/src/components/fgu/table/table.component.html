@@ -1,0 +1,67 @@
+<div
+  data-fgu="table"
+  data-part="root"
+  role="region"
+  [attr.aria-labelledby]="uid + '-caption'"
+  tabindex="0"
+  [attr.data-sticky]="sticky ? '' : undefined"
+  [attr.aria-busy]="loading ? 'true' : null"
+  (sortchange)="onSortchange($event)"
+  (selectionchange)="onSelectionchange($event)"
+>
+  <table data-part="table">
+    <caption data-part="caption" [attr.id]="uid + '-caption'">{{ caption }}</caption>
+    <thead data-part="head">
+      <tr data-part="row">
+        @if (selectable) {
+          <th data-part="header" scope="col">
+            <input data-part="select" type="checkbox" aria-label="Select all rows" />
+          </th>
+        }
+        @for (col of columns; track col.key) {
+          <th
+            data-part="header"
+            scope="col"
+            [attr.data-key]="col.key"
+            [attr.data-align]="col.align === 'end' ? 'end' : undefined"
+            [attr.aria-sort]="col.sortable ? (sort === col.key + ':ascending' ? 'ascending' : sort === col.key + ':descending' ? 'descending' : 'none') : undefined"
+          >
+            @if (col.sortable) {
+              <button data-part="sort" type="button">{{ col.label }}</button>
+            } @else {
+              <span>{{ col.label }}</span>
+            }
+          </th>
+        }
+      </tr>
+    </thead>
+    <tbody data-part="body">
+      @if (loading || rows.length === 0) {
+        <tr data-part="row">
+          <td data-part="status" [attr.colspan]="columns.length + (selectable ? 1 : 0)" role="status">{{ loading ? loadingText : emptyText }}</td>
+        </tr>
+      }
+      @for (row of rows; track row.id) {
+        <tr
+          data-part="row"
+          [attr.data-row-id]="row.id"
+          [attr.aria-selected]="selectable ? (selected.indexOf(row.id) >= 0 ? 'true' : 'false') : undefined"
+        >
+          @if (selectable) {
+            <td data-part="cell">
+              <input
+                data-part="select"
+                type="checkbox"
+                [attr.aria-label]="'Select row ' + row.id"
+                [checked]="selected.indexOf(row.id) >= 0"
+              />
+            </td>
+          }
+          @for (col of columns; track col.key) {
+            <td data-part="cell" [attr.data-align]="col.align === 'end' ? 'end' : undefined">{{ row[col.key] }}</td>
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

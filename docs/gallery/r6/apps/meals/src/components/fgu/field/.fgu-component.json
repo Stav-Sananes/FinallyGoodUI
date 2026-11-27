@@ -1,0 +1,11 @@
+{
+  "name": "field",
+  "source": "shared",
+  "framework": "vue",
+  "files": {
+    "field.css": "0c08847a64a34787",
+    "field.vue": "b0d28d70536fbe54",
+    "field.behaviour.js": "d5fd8cb08acb4f86",
+    "field.behaviour.d.ts": "535ce92860bbea40"
+  }
+}

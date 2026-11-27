@@ -1,0 +1,11 @@
+{
+  "name": "select",
+  "source": "shared",
+  "framework": "vue",
+  "files": {
+    "select.css": "2e73dc6c53204947",
+    "select.vue": "edb2992070c82a4c",
+    "select.behaviour.js": "c885dce41ecdb6fe",
+    "select.behaviour.d.ts": "c31a99d04e80e454"
+  }
+}

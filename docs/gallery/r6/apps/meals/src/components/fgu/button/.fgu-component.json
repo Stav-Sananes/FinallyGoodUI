@@ -1,0 +1,11 @@
+{
+  "name": "button",
+  "source": "shared",
+  "framework": "vue",
+  "files": {
+    "button.css": "17a161a1d64f5d67",
+    "button.vue": "767437dde0b6bf5d",
+    "button.behaviour.js": "3b838cb249331e00",
+    "button.behaviour.d.ts": "9288cba8267d857f"
+  }
+}

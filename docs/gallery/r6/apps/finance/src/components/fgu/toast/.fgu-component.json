@@ -1,0 +1,12 @@
+{
+  "name": "toast",
+  "source": "shared",
+  "framework": "react",
+  "files": {
+    "toast.css": "1e06f62ab880766a",
+    "toast.tsx": "ef11fc8f01b7ca67",
+    "toast-store.tsx": "0f8afbdc927146ff",
+    "toast.behaviour.js": "c8fb4b74266516f6",
+    "toast.behaviour.d.ts": "9954a79ae6c34142"
+  }
+}

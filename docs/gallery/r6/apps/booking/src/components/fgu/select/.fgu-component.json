@@ -1,0 +1,10 @@
+{
+  "name": "select",
+  "source": "shared",
+  "framework": "svelte",
+  "files": {
+    "select.css": "f8075642ddad67b6",
+    "select.svelte": "823c5f318935de5c",
+    "select.behaviour.js": "c885dce41ecdb6fe"
+  }
+}

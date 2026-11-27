@@ -1,0 +1,121 @@
+<div class="triage" [attr.data-view]="view()">
+  <section class="queue" aria-labelledby="queue-h">
+    <header class="queue-head">
+      <h1 id="queue-h" class="queue-title">Unsorted</h1>
+      <span class="queue-count mono" [attr.aria-label]="queue().length + ' unsorted'">{{ view() === 'full' ? queue().length : 0 }}</span>
+    </header>
+
+    @switch (view()) {
+      @case ('loading') {
+        <ul class="queue-list skeleton" role="list" aria-busy="true" aria-label="Loading unsorted issues">
+          @for (n of [1, 2, 3, 4, 5]; track n) {
+            <li class="sk-row"><span class="sk-bar sk-no"></span><span class="sk-bar sk-t"></span><span class="sk-bar sk-m"></span></li>
+          }
+        </ul>
+      }
+      @case ('error') {
+        <div class="queue-note" role="alert">
+          <h2 class="note-title">Can't reach Harbor</h2>
+          <p>The unsorted list did not load. Nothing you sorted was lost.</p>
+          <fgu-button (click)="retry()">Try again</fgu-button>
+        </div>
+      }
+      @case ('empty') {
+        <div class="queue-note">
+          <h2 class="note-title">Nothing waiting</h2>
+          <p>Every issue has an owner. Press <kbd class="keycap small">C</kbd> when the next one comes in.</p>
+        </div>
+      }
+      @default {
+        <ul class="queue-list" role="list">
+          @for (i of queue(); track i.num) {
+            <fgu-record-row variant="compact" [current]="current()?.num === i.num">
+              <span slot="lead" class="q-no mono">{{ i.num }}</span>
+              <button type="button" class="q-pick" (click)="select(i)" [attr.aria-label]="'Pick ' + ref(i) + ': ' + i.title">{{ i.title }}</button>
+              <span slot="meta">{{ i.area }}, {{ i.reporter }}, {{ ago(i.createdAt) }}</span>
+              <span slot="status">
+                @if (i.later) { <span class="chip later">Later</span> } @else { <span class="chip" [attr.data-p]="i.priority">P{{ i.priority }}</span> }
+              </span>
+              <span slot="action">
+                @if (!i.later) { <button type="button" class="q-later" (click)="select(i); later()" [attr.aria-label]="'Put ' + ref(i) + ' aside for later'">Later</button> }
+              </span>
+            </fgu-record-row>
+          }
+        </ul>
+      }
+    }
+  </section>
+
+  <section class="desk" data-fgu-signature aria-label="Triage desk" [attr.aria-busy]="view() === 'loading' ? 'true' : null">
+    <header class="desk-head">
+      <p class="caps desk-kicker">
+        @switch (view()) {
+          @case ('full') { Now sorting, slip {{ position() }} of {{ queue().length }} }
+          @case ('loading') { Fetching the pile }
+          @case ('error') { Case closed until the pile loads }
+          @default { Case sorted }
+        }
+      </p>
+      <p class="desk-dealt mono">{{ dealt() }} in the case</p>
+    </header>
+
+    <div class="stage">
+      @switch (view()) {
+        @case ('full') {
+          @for (c of [current()]; track c!.num) {
+            <div class="slip-wrap" animate.enter="slip-in">
+              <app-slip [issue]="c!" [hero]="true">
+                <button type="button" class="act" (click)="bump(1)"><span class="keycap small">P</span> Priority</button>
+                <button type="button" class="act" (click)="later()"><span class="keycap small">S</span> Later</button>
+                <button type="button" class="act" (click)="close()"><span class="keycap small">X</span> Close</button>
+                <button type="button" class="act" (click)="openCurrent()">Open page</button>
+              </app-slip>
+            </div>
+          }
+        }
+        @case ('empty') {
+          <div class="sorted" animate.enter="stamp-in">
+            <p class="sorted-stamp" aria-hidden="true">Sorted</p>
+            <h2 class="sorted-title">Every slip has an owner.</h2>
+            <p class="sorted-text">The case below shows where they went. Report a new issue with <kbd class="keycap small">C</kbd>.</p>
+          </div>
+        }
+        @case ('error') {
+          <div class="sorted" role="status">
+            <h2 class="sorted-title">The case is shut.</h2>
+            <p class="sorted-text">Try again from the list, then sort as usual.</p>
+          </div>
+        }
+        @default {
+          <div class="slip-wrap sk-slip" aria-hidden="true">
+            <span class="sk-bar sk-big"></span><span class="sk-bar sk-line"></span><span class="sk-bar sk-line short"></span>
+          </div>
+        }
+      }
+    </div>
+
+    <ol class="case" [class.case-off]="!canAssign()" aria-label="The case: six pigeonholes, one per teammate">
+      @for (l of loads(); track l.person.id; let n = $index) {
+        <li class="hole-wrap" [class.fill]="fill" [style.--i]="n">
+          <button type="button" class="hole" [attr.data-hole]="l.person.id" [disabled]="!canAssign()"
+            [attr.data-suggested]="canAssign() && suggested()?.id === l.person.id ? '' : null"
+            [attr.aria-label]="(canAssign() ? 'Sort ' + ref(current()!) + ' to ' : '') + l.person.name + ', key ' + l.person.key + '. ' + l.mine.length + ' open' + (l.urgent ? ', ' + l.urgent + ' urgent' : '')"
+            (click)="assign(l.person)">
+            <span class="hole-top">
+              <span class="keycap">{{ l.person.key }}</span>
+              <span class="hole-who">
+                <span class="hole-name">{{ l.person.name }}</span>
+                <span class="hole-area caps">{{ l.person.area }}</span>
+              </span>
+              @if (suggested()?.id === l.person.id && canAssign()) { <span class="hole-hint caps">Suggested</span> }
+            </span>
+            <span class="hole-slips" aria-hidden="true">
+              @for (s of l.mine.slice(0, 9); track s.num) { <i class="hole-slip" [attr.data-p]="s.priority"></i> }
+            </span>
+            <span class="hole-load mono">{{ l.mine.length }} open{{ l.urgent ? ', ' + l.urgent + ' urgent' : '' }}</span>
+          </button>
+        </li>
+      }
+    </ol>
+  </section>
+</div>

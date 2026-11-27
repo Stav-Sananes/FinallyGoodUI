@@ -1,0 +1,104 @@
+{
+ "flows": [
+  {
+   "name": "triage-the-inbox",
+   "steps": [
+    {
+     "goto": "/triage"
+    },
+    {
+     "waitFor": ".slip-wrap .slip-num"
+    },
+    {
+     "screenshot": "S1-triage"
+    },
+    {
+     "press": "2"
+    },
+    {
+     "waitFor": "text=sorted to Dev"
+    },
+    {
+     "screenshot": "S1-after-assign"
+    }
+   ],
+   "states": [
+    {
+     "name": "empty",
+     "goto": "/triage?state=empty",
+     "waitFor": ".sorted-stamp"
+    },
+    {
+     "name": "error",
+     "goto": "/triage?state=error",
+     "waitFor": ".queue-note"
+    },
+    {
+     "name": "loading",
+     "goto": "/triage?state=loading",
+     "waitFor": ".sk-slip"
+    }
+   ]
+  },
+  {
+   "name": "find-and-fix",
+   "steps": [
+    {
+     "goto": "/issues"
+    },
+    {
+     "waitFor": "tbody tr[data-row-id]"
+    },
+    {
+     "screenshot": "S2-issues"
+    },
+    {
+     "goto": "/issues/224"
+    },
+    {
+     "waitFor": ".slip-num"
+    },
+    {
+     "screenshot": "S3-issue"
+    }
+   ],
+   "states": [
+    {
+     "name": "empty",
+     "goto": "/issues?q=zzzz",
+     "waitFor": "text=No issue matches"
+    },
+    {
+     "name": "error",
+     "goto": "/issues?state=error",
+     "waitFor": ".issues-note"
+    },
+    {
+     "name": "loading",
+     "goto": "/issues?state=loading",
+     "waitFor": "[aria-busy=true]"
+    }
+   ]
+  },
+  {
+   "name": "report-an-issue",
+   "steps": [
+    {
+     "goto": "/triage"
+    },
+    {
+     "waitFor": ".slip-wrap .slip-num"
+    },
+    {
+     "click": "role=button[name=\"New issue (C)\"]"
+    },
+    {
+     "waitFor": "dialog[open]"
+    },
+    {
+     "screenshot": "S4-new-issue"
+    }
+   ]
+  }
+ ]
+}

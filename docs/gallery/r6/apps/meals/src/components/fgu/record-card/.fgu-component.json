@@ -1,0 +1,11 @@
+{
+  "name": "record-card",
+  "source": "shared",
+  "framework": "vue",
+  "files": {
+    "record-card.css": "41490e1e074c70ae",
+    "record-card.vue": "226d6fad01361a9c",
+    "record-card.behaviour.js": "b84057180c6c5588",
+    "record-card.behaviour.d.ts": "5be3632b08720bd4"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "record-card",
+  "source": "shared",
+  "framework": "react",
+  "files": {
+    "record-card.css": "a81f0cfc97f6cf87",
+    "record-card.tsx": "f365608982a1fc80",
+    "record-card.behaviour.js": "b84057180c6c5588",
+    "record-card.behaviour.d.ts": "5be3632b08720bd4"
+  }
+}

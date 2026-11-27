@@ -1,0 +1,22 @@
+<li
+  data-fgu="record-row"
+  data-part="root"
+  [attr.data-variant]="variant"
+  [attr.aria-current]="current ? 'true' : null"
+>
+  <span data-part="lead">
+    <ng-content select="[slot=lead]" />
+  </span>
+  <span data-part="title">
+    <ng-content />
+  </span>
+  <span data-part="meta">
+    <ng-content select="[slot=meta]" />
+  </span>
+  <span data-part="status">
+    <ng-content select="[slot=status]" />
+  </span>
+  <span data-part="action">
+    <ng-content select="[slot=action]" />
+  </span>
+</li>

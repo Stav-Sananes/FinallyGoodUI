@@ -1,0 +1,10 @@
+{
+  "name": "dialog",
+  "source": "shared",
+  "framework": "svelte",
+  "files": {
+    "dialog.css": "ac51817d72817cda",
+    "dialog.svelte": "2f6af687a7ffbd37",
+    "dialog.behaviour.js": "1561ba1028e9b061"
+  }
+}

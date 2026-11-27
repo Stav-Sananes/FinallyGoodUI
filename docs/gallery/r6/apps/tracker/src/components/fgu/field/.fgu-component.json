@@ -1,0 +1,12 @@
+{
+  "name": "field",
+  "source": "shared",
+  "framework": "angular",
+  "files": {
+    "field.css": "42677833d3f0f8e1",
+    "field.component.ts": "c8742f1ace343c6f",
+    "field.component.html": "481a71300e036a89",
+    "field.behaviour.js": "d5fd8cb08acb4f86",
+    "field.behaviour.d.ts": "535ce92860bbea40"
+  }
+}

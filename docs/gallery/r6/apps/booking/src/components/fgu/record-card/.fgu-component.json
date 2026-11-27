@@ -1,0 +1,10 @@
+{
+  "name": "record-card",
+  "source": "shared",
+  "framework": "svelte",
+  "files": {
+    "record-card.css": "8022ae124aa86547",
+    "record-card.svelte": "f17dd36ed4b7c1e5",
+    "record-card.behaviour.js": "b84057180c6c5588"
+  }
+}

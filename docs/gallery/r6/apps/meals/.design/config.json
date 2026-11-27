@@ -1,0 +1,2 @@
+{ "mode": "autonomous", "directions": "one", "verify": "browser", "viewports": [[390, 844], [1440, 900]], "interviewDepth": "auto", "hook": "on",
+  "theme": { "attribute": "data-theme", "schemes": ["light", "dark"], "default": "light", "media": true } }

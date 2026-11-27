@@ -1,0 +1,11 @@
+{
+  "name": "record-row",
+  "source": "shared",
+  "framework": "vue",
+  "files": {
+    "record-row.css": "23464b79ed7ffb7a",
+    "record-row.vue": "f3761f9849d3511e",
+    "record-row.behaviour.js": "4ceed5148b9b8b66",
+    "record-row.behaviour.d.ts": "9245b4b756fa03b8"
+  }
+}

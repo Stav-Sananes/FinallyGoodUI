@@ -1,0 +1,22 @@
+<dialog
+  data-fgu="dialog"
+  data-part="root"
+  [attr.data-variant]="variant"
+  [attr.aria-labelledby]="uid + '-title'"
+  [attr.data-initial-focus]="initialFocus"
+  (close)="onClose()"
+>
+  <h2 data-part="title" [attr.id]="uid + '-title'">
+    <ng-content select="[slot=title]" />
+  </h2>
+  <p data-part="description">
+    <ng-content select="[slot=description]" />
+  </p>
+  <button data-part="close" type="button" aria-label="Close">&times;</button>
+  <form data-part="form" method="dialog" [attr.novalidate]="!nativeValidation ? '' : null">
+    <ng-content />
+    <div data-part="actions">
+      <ng-content select="[slot=actions]" />
+    </div>
+  </form>
+</dialog>

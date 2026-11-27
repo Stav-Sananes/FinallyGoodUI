@@ -1,0 +1,208 @@
+{
+ "color": {
+  "background": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.2,
+     0.035,
+     215
+    ],
+    "hex": "#001a20"
+   }
+  },
+  "foreground": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.94,
+     0.02,
+     190
+    ],
+    "hex": "#ddf0ee"
+   }
+  },
+  "card": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.27,
+     0.04,
+     212
+    ],
+    "hex": "#092c32"
+   }
+  },
+  "card-foreground": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.94,
+     0.02,
+     190
+    ],
+    "hex": "#ddf0ee"
+   }
+  },
+  "primary": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.82,
+     0.1,
+     195
+    ],
+    "hex": "#6cd9d8"
+   }
+  },
+  "primary-foreground": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.2,
+     0.04,
+     215
+    ],
+    "hex": "#001a21"
+   }
+  },
+  "muted": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.3,
+     0.04,
+     210
+    ],
+    "hex": "#113339"
+   }
+  },
+  "muted-foreground": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.76,
+     0.04,
+     195
+    ],
+    "hex": "#94b9b9"
+   }
+  },
+  "accent": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.34,
+     0.06,
+     80
+    ],
+    "hex": "#48340e"
+   }
+  },
+  "accent-foreground": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.92,
+     0.05,
+     80
+    ],
+    "hex": "#f6e2c0"
+   }
+  },
+  "destructive": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.72,
+     0.17,
+     25
+    ],
+    "hex": "#fd736d"
+   }
+  },
+  "destructive-foreground": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.2,
+     0.04,
+     25
+    ],
+    "hex": "#250e0d"
+   }
+  },
+  "border": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.46,
+     0.05,
+     205
+    ],
+    "hex": "#346065"
+   }
+  },
+  "input": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.55,
+     0.05,
+     205
+    ],
+    "hex": "#4d7a7f"
+   }
+  },
+  "ring": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.75,
+     0.11,
+     200
+    ],
+    "hex": "#42c3c9"
+   }
+  },
+  "towel": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.78,
+     0.14,
+     40
+    ],
+    "hex": "#ff9670"
+   }
+  },
+  "towel-foreground": {
+   "$type": "color",
+   "$value": {
+    "colorSpace": "oklch",
+    "components": [
+     0.22,
+     0.05,
+     40
+    ],
+    "hex": "#2d1107"
+   }
+  }
+ }
+}

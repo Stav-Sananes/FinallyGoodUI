@@ -1,0 +1,7 @@
+{ "radius": "sharp", "material": "layered", "density": "balanced", "motion": "productive",
+  "motif": "chalk tally marks: four strokes and a slash, chalk-yellow underline on a dish just written in",
+  "surfaces": {
+    "record": { "edge": "ruled", "material": "flat", "radius": "sharp" },
+    "panel": { "material": "layered", "radius": "soft", "corner": "asymmetric" },
+    "control": { "radius": "sharp", "material": "outlined" }
+  } }

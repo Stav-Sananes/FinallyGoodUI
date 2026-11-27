@@ -1,0 +1,102 @@
+/* Dialog reference: native <dialog> shown with showModal(). Tokens only; load tokens.css first.
+   Enter and exit follow recipes/motion/dialog-enter-exit.md (opacity and a short lift, no scale). */
+[data-fgu="dialog"][data-part="root"] {
+  box-sizing: border-box;
+  inline-size: min(calc(100vw - var(--space-8)), 32rem);
+  max-block-size: calc(100dvh - var(--space-8));
+  overflow: auto;
+  padding: var(--space-6);
+  border: 0;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  opacity: 0;
+  transform: translateY(var(--space-2));
+  transition:
+    opacity var(--duration-short) var(--ease-exit),
+    transform var(--duration-short) var(--ease-exit),
+    display var(--duration-short) allow-discrete,
+    overlay var(--duration-short) allow-discrete;
+}
+[data-fgu="dialog"][data-part="root"][open] {
+  opacity: 1;
+  transform: none;
+  transition-duration: var(--duration-standard);
+  transition-timing-function: var(--ease-enter);
+}
+@starting-style {
+[data-fgu="dialog"][data-part="root"][open] { opacity: 0; transform: translateY(var(--space-2)); }
+}
+[data-fgu="dialog"][data-part="root"]::backdrop {
+  background: var(--color-overlay);
+  opacity: 0;
+  transition:
+    opacity var(--duration-medium) var(--ease-exit),
+    display var(--duration-medium) allow-discrete,
+    overlay var(--duration-medium) allow-discrete;
+}
+[data-fgu="dialog"][data-part="root"][open]::backdrop { opacity: 1; }
+@starting-style {
+[data-fgu="dialog"][data-part="root"][open]::backdrop { opacity: 0; }
+}
+/* Header row: the title takes the space, the close button keeps its size, so content never reflows. */
+[data-fgu="dialog"] [data-part="title"] {
+  margin: 0;
+  padding-inline-end: var(--size-control-md);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+[data-fgu="dialog"] [data-part="description"] { margin-block: var(--space-2) 0; color: var(--color-muted-foreground); }
+[data-fgu="dialog"] [data-part="close"] {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-end: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--size-control-md);
+  block-size: var(--size-control-md);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+[data-fgu="dialog"] [data-part="close"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
+[data-fgu="dialog"][data-part="root"][data-variant="confirm"] [data-part="close"] { display: none; }
+[data-fgu="dialog"] [data-part="form"] { display: contents; margin: 0; }
+[data-fgu="dialog"] [data-part="actions"] { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); margin-block-start: var(--space-6); }
+/* Reduced motion: opacity only, no lift. */
+@media (prefers-reduced-motion: reduce) {
+[data-fgu="dialog"][data-part="root"],
+[data-fgu="dialog"][data-part="root"][open] { transform: none; }
+@starting-style {
+[data-fgu="dialog"][data-part="root"][open] { transform: none; }
+}
+}
+
+/* dialog: radius=soft material=layered density=dense motion=productive motif="pigeonhole slots with brass key caps; perforated tear line on every slip" role=panel edge=square corner=uniform */
+
+[data-fgu="dialog"][data-part="root"] {
+  border-radius: var(--radius-md);
+  border-width: var(--border-width-hairline);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-md);
+}
+
+@media (pointer: coarse) {
+  [data-fgu="dialog"] [data-part="close"] {
+    min-height: var(--size-control-lg);
+    min-width: var(--size-control-lg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="dialog"][data-part="root"] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

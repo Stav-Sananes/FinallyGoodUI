@@ -1,0 +1,118 @@
+{
+  "finance": {
+    "builtDir": "apps/finance/dist",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 142849,
+        "pixelStdDev": 53.14
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 135032,
+        "pixelStdDev": 37.36
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 122526,
+        "pixelStdDev": 61.92
+      }
+    }
+  },
+  "booking": {
+    "builtDir": "apps/booking/dist",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 87042,
+        "pixelStdDev": 38.05
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 90444,
+        "pixelStdDev": 45.18
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 103454,
+        "pixelStdDev": 49.7
+      }
+    }
+  },
+  "tracker": {
+    "builtDir": "apps/tracker/dist/tracker/browser",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 134253,
+        "pixelStdDev": 86.49
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 133387,
+        "pixelStdDev": 33.97
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 130082,
+        "pixelStdDev": 91.4
+      }
+    }
+  },
+  "meals": {
+    "builtDir": "apps/meals/dist",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 135528,
+        "pixelStdDev": 86.05
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 131425,
+        "pixelStdDev": 35.73
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 110693,
+        "pixelStdDev": 59.57
+      }
+    }
+  }
+}

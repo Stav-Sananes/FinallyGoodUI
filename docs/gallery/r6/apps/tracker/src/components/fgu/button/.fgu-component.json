@@ -1,0 +1,12 @@
+{
+  "name": "button",
+  "source": "shared",
+  "framework": "angular",
+  "files": {
+    "button.css": "fa3e3cd6ae61a9b0",
+    "button.component.ts": "2c7c19ae1907dbfd",
+    "button.component.html": "cac7ad041de6defd",
+    "button.behaviour.js": "3b838cb249331e00",
+    "button.behaviour.d.ts": "9288cba8267d857f"
+  }
+}

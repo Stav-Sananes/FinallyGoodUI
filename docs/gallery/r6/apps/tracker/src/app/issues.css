@@ -1,0 +1,25 @@
+.issues { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); align-content: start; padding: var(--space-6); max-inline-size: 90rem; }
+.issues-head { display: flex; align-items: baseline; gap: var(--space-4); flex-wrap: wrap; }
+.issues-title { font-size: var(--text-4xl); line-height: var(--text-4xl--line-height); letter-spacing: var(--text-4xl--letter-spacing); }
+.issues-sub { color: var(--color-muted-foreground); font-size: var(--text-sm); }
+.issues-filters { display: grid; grid-template-columns: minmax(16rem, 2fr) minmax(10rem, 1fr) minmax(10rem, 1fr); gap: var(--space-3); align-items: end; }
+.issues-note { display: grid; gap: var(--space-3); justify-items: start; padding: var(--space-4); color: var(--color-muted-foreground); background: var(--color-muted); border-radius: var(--radius-sm); }
+.tbl { min-inline-size: 0; }
+.tbl [data-fgu="table"] tr[data-row-id] { cursor: pointer; }
+.tbl tr[data-cursor] > * { background: var(--color-accent); }
+.tbl tr[data-cursor] > :first-child { box-shadow: inset var(--border-width-strong) 0 0 0 var(--color-primary); }
+@media (hover: hover) and (pointer: fine) { .tbl tbody tr[data-row-id]:hover > * { background: var(--color-accent); } }
+@media (max-width: 48rem) {
+  .issues { padding: var(--space-4); }
+  .issues-title { font-size: var(--text-3xl); }
+  .issues-filters { grid-template-columns: 1fr 1fr; }
+  .f-search { grid-column: 1 / -1; }
+}
+@media (max-width: 48rem), (pointer: coarse) {
+  .tbl td, .tbl th { block-size: var(--size-control-lg); }
+}
+@media (max-width: 48rem) {
+  .tbl [data-fgu="table"] [data-part="cell"] { white-space: normal; }
+  .tbl [data-fgu="table"] [data-part="cell"]:nth-child(2) { min-inline-size: 11rem; }
+}
+@media (max-width: 48rem) { .tbl [data-fgu="table"] [data-part="cell"]:first-child { white-space: nowrap; } }

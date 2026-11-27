@@ -1,0 +1,11 @@
+{
+  "name": "toggle",
+  "source": "shared",
+  "framework": "react",
+  "files": {
+    "toggle.css": "c4a6980df227a439",
+    "toggle.tsx": "963eacc135b28b98",
+    "toggle.behaviour.js": "020199028b37db8f",
+    "toggle.behaviour.d.ts": "92a2665dfe0f2bf7"
+  }
+}

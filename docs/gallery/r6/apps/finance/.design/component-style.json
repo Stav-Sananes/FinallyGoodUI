@@ -1,0 +1,7 @@
+{ "radius": "sharp", "material": "outlined", "density": "balanced", "motion": "productive",
+  "motif": "perforation dots and vermilion registration crosses, as on a pinned wall planner",
+  "surfaces": {
+    "record": { "edge": "perforated", "material": "layered", "radius": "sharp", "corner": "uniform" },
+    "panel": { "material": "outlined", "radius": "soft" },
+    "control": { "radius": "sharp", "material": "flat" }
+  } }

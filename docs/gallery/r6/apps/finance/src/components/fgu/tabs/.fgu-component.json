@@ -1,0 +1,11 @@
+{
+  "name": "tabs",
+  "source": "shared",
+  "framework": "react",
+  "files": {
+    "tabs.css": "881fc6828c2466c2",
+    "tabs.tsx": "461eae0fac6af0e5",
+    "tabs.behaviour.js": "9625be0a13aab233",
+    "tabs.behaviour.d.ts": "20751ffb284b7613"
+  }
+}

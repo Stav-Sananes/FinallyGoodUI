@@ -1,0 +1,112 @@
+{
+  "tool": "check-genericness",
+  "pass": true,
+  "count": 0,
+  "capDim10": null,
+  "triggers": [],
+  "fidelity": [],
+  "measured": {
+    "desktop": {
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "cardCoverage": 0,
+      "cardLooks": 0,
+      "rows": {
+        "groups": 0,
+        "max": 0
+      },
+      "column": {
+        "left": 80,
+        "right": 47,
+        "width": 1313
+      },
+      "type": {
+        "families": {
+          "Hanken Grotesk Variable": 54,
+          "IBM Plex Mono": 46,
+          "Fraunces Variable": 9
+        },
+        "textElements": 109,
+        "sizes": [
+          112,
+          26,
+          20,
+          17,
+          15,
+          14,
+          12
+        ],
+        "body": 12
+      },
+      "canvas": {
+        "l": 0.889,
+        "c": 0.04
+      },
+      "surfaces": {
+        "containers": 26,
+        "radii": [
+          0,
+          2,
+          6,
+          14
+        ]
+      },
+      "signature": {
+        "count": 1,
+        "share": 0.626
+      }
+    },
+    "mobile": {
+      "viewport": {
+        "width": 375,
+        "height": 667
+      },
+      "cardCoverage": 0,
+      "cardLooks": 0,
+      "rows": {
+        "groups": 0,
+        "max": 0
+      },
+      "column": {
+        "left": 24,
+        "right": 24,
+        "width": 327
+      },
+      "type": {
+        "families": {
+          "Hanken Grotesk Variable": 12,
+          "IBM Plex Mono": 15,
+          "Fraunces Variable": 8
+        },
+        "textElements": 35,
+        "sizes": [
+          64,
+          20,
+          17,
+          14,
+          12
+        ],
+        "body": 12
+      },
+      "canvas": {
+        "l": 0.889,
+        "c": 0.04
+      },
+      "surfaces": {
+        "containers": 15,
+        "radii": [
+          0,
+          2,
+          6,
+          14
+        ]
+      },
+      "signature": {
+        "count": 1,
+        "share": 1
+      }
+    }
+  }
+}

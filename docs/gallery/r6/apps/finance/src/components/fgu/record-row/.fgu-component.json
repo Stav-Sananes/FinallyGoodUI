@@ -1,0 +1,11 @@
+{
+  "name": "record-row",
+  "source": "shared",
+  "framework": "react",
+  "files": {
+    "record-row.css": "60c01e8177fa9193",
+    "record-row.tsx": "d74156a51350a50c",
+    "record-row.behaviour.js": "4ceed5148b9b8b66",
+    "record-row.behaviour.d.ts": "9245b4b756fa03b8"
+  }
+}

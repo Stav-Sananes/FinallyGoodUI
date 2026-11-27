@@ -1,0 +1,88 @@
+/* Record row reference: one record of the subject's world as a line of a list (a tag, a stub, a ledger line, a mail slot).
+   Tokens only; load tokens.css (emit-tokens.mjs --format css) first. The shape (edge, corner, radius, material) comes from the
+   style profile's record surface, not from here: this sheet is the plain ruled baseline. */
+[data-fgu="record-row"][data-part="root"] {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "lead title status action" "lead meta status action";
+  align-items: center;
+  column-gap: var(--space-3);
+  row-gap: 0;
+  box-sizing: border-box;
+  min-block-size: var(--size-control-lg);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  list-style: none;
+  background: var(--color-card);
+  border-block-end: var(--border-width-hairline) solid var(--color-border);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-foreground);
+  transition: background-color var(--duration-short) var(--ease-move);
+}
+[data-fgu="record-row"][data-part="root"][data-variant="compact"] {
+  min-block-size: var(--size-control-md);
+  padding-block: var(--space-2);
+}
+[data-fgu="record-row"][data-part="root"][aria-current="true"] {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+  border-inline-start: var(--border-width-strong) solid var(--color-primary);
+}
+[data-fgu="record-row"] [data-part="lead"] {
+  grid-area: lead;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: var(--size-control-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+[data-fgu="record-row"] [data-part="title"] { grid-area: title; min-inline-size: 0; font-weight: 600; overflow-wrap: anywhere; }
+[data-fgu="record-row"] [data-part="meta"] { grid-area: meta; min-inline-size: 0; padding-block-start: var(--space-1); font-size: var(--text-xs); color: var(--color-muted-foreground); }
+[data-fgu="record-row"][aria-current="true"] [data-part="meta"] { color: inherit; }
+[data-fgu="record-row"] [data-part="status"] { grid-area: status; font-size: var(--text-xs); font-weight: 600; font-variant-numeric: tabular-nums; }
+[data-fgu="record-row"] [data-part="action"] { grid-area: action; display: inline-flex; align-items: center; gap: var(--space-2); }
+/* Narrow screens: the status drops under the text so the title keeps its width. */
+@media (max-width: 30rem) {
+  [data-fgu="record-row"][data-part="root"] {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "lead title action" "lead meta action" "lead status status";
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="record-row"][data-part="root"] { transition: none; }
+}
+
+/* record-row: radius=sharp material=flat density=dense motion=productive motif="pigeonhole slots with brass key caps; perforated tear line on every slip" role=record edge=perforated corner=uniform */
+
+[data-fgu="record-row"][data-part="root"] {
+  border-radius: var(--radius-none);
+  box-shadow: none;
+}
+
+[data-fgu="record-row"] [data-part="lead"] {
+  border-inline-end-style: dashed;
+  border-inline-end-width: var(--border-width-strong);
+  border-inline-end-color: var(--color-border);
+  padding-inline-end: var(--space-3);
+}
+
+[data-fgu="record-row"][data-part="root"] {
+  min-height: var(--size-control-sm);
+  padding-inline: var(--space-2);
+  gap: var(--space-1);
+}
+
+@media (pointer: coarse) {
+  [data-fgu="record-row"][data-part="root"] {
+    min-height: var(--size-control-lg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="record-row"][data-part="root"] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

@@ -1,0 +1,97 @@
+/* Toast reference: a persistent live region holding plain toast elements. Tokens only; load tokens.css first.
+   Enter and exit follow recipes/motion/toast-stack.md (transform and opacity only). */
+[data-fgu="toast"][data-part="root"] {
+  position: fixed;
+  /* --toast-offset moves both edges; --toast-offset-block (bottom, e.g. above a tab bar) and --toast-offset-inline (right) move one */
+  inset: auto var(--toast-offset-inline, var(--toast-offset, var(--space-4))) var(--toast-offset-block, var(--toast-offset, var(--space-4))) auto;
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  pointer-events: none; /* the empty region never blocks the page; toasts opt back in */
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+}
+[data-fgu="toast"] [data-part="toast"] {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  inline-size: min(calc(100vw - var(--space-8)), 24rem);
+  padding: var(--space-3);
+  background: var(--color-card);
+  color: var(--color-card-foreground);
+  border: var(--border-width-hairline) solid var(--color-border);
+  opacity: 1;
+  transform: none;
+  transition:
+    transform var(--duration-medium) var(--ease-enter),
+    opacity var(--duration-medium) var(--ease-enter);
+}
+@starting-style {
+[data-fgu="toast"] [data-part="toast"] { opacity: 0; transform: translateY(100%); }
+}
+[data-fgu="toast"] [data-part="toast"][data-leaving] {
+  opacity: 0;
+  transform: translateX(calc(100% + var(--space-4)));
+  transition-duration: var(--duration-short);
+  transition-timing-function: var(--ease-exit);
+}
+[data-fgu="toast"] [data-part="message"] { flex: 1; margin: 0; }
+/* An error is never colour alone: a leading icon and a heavier edge as well. */
+[data-fgu="toast"] [data-part="toast"][data-variant="error"] { border-inline-start: var(--border-width-strong) solid var(--color-destructive); }
+[data-fgu="toast"] [data-part="toast"][data-variant="error"] [data-part="message"]::before { content: "\26A0"; content: "\26A0" / ""; margin-inline-end: var(--space-2); color: var(--color-destructive); }
+[data-fgu="toast"] [data-part="action"],
+[data-fgu="toast"] [data-part="dismiss"] {
+  flex: none;
+  box-sizing: border-box;
+  min-block-size: var(--size-control-md);
+  min-inline-size: var(--size-control-md);
+  padding-inline: var(--space-2);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+[data-fgu="toast"] [data-part="action"]:focus-visible,
+[data-fgu="toast"] [data-part="dismiss"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
+/* Reduced motion: opacity only, no slide. */
+@media (prefers-reduced-motion: reduce) {
+[data-fgu="toast"] [data-part="toast"],
+[data-fgu="toast"] [data-part="toast"][data-leaving] { transform: none; }
+@starting-style {
+[data-fgu="toast"] [data-part="toast"] { transform: none; }
+}
+}
+
+/* toast: radius=soft material=layered density=balanced motion=balanced motif="towel stripe: two parallel coral bands" role=panel edge=square corner=uniform */
+
+[data-fgu="toast"] [data-part="toast"] {
+  border-radius: var(--radius-md);
+  border-width: var(--border-width-hairline);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-md);
+}
+
+@media (pointer: coarse) {
+  [data-fgu="toast"] [data-part="action"] {
+    min-height: var(--size-control-lg);
+    min-width: var(--size-control-lg);
+  }
+  [data-fgu="toast"] [data-part="dismiss"] {
+    min-height: var(--size-control-lg);
+    min-width: var(--size-control-lg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="toast"] [data-part="toast"] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

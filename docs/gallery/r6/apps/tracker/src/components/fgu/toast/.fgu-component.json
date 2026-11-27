@@ -1,0 +1,13 @@
+{
+  "name": "toast",
+  "source": "shared",
+  "framework": "angular",
+  "files": {
+    "toast.css": "82f08d3d6c0ae317",
+    "toast.component.ts": "f44105dfe42cb1dd",
+    "toast.component.html": "c2cca500533e1dbb",
+    "toast-store.service.ts": "c64255f4133a169e",
+    "toast.behaviour.js": "c8fb4b74266516f6",
+    "toast.behaviour.d.ts": "9954a79ae6c34142"
+  }
+}

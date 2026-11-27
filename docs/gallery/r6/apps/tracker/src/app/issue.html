@@ -1,0 +1,70 @@
+<div class="issue">
+  <h1 class="sr-only">{{ issue() ? ref(issue()!) + ": " + issue()!.title : "Issue" }}</h1>
+  <a class="back" routerLink="/issues"><span aria-hidden="true">&larr;</span> All issues</a>
+
+  @switch (view()) {
+    @case ('loading') {
+      <div class="issue-skel" aria-busy="true" aria-label="Loading issue">
+        <span class="sk-bar sk-big"></span><span class="sk-bar sk-line"></span><span class="sk-bar sk-line short"></span>
+      </div>
+    }
+    @case ('error') {
+      <div class="issue-note" role="alert">
+        <h1 class="note-title">Can't reach Harbor</h1>
+        <p>This issue did not load.</p>
+        <fgu-button (click)="retry()">Try again</fgu-button>
+      </div>
+    }
+    @case ('missing') {
+      <div class="issue-note">
+        <h1 class="note-title">No such issue</h1>
+        <p>There is no issue numbered {{ num() }}. It may have been renumbered, or the link is old.</p>
+        <fgu-button variant="secondary" (click)="store.load(); retry()">Back to the list</fgu-button>
+      </div>
+    }
+    @default {
+      @let i = issue()!;
+      <div class="issue-slip" animate.enter="issue-in">
+        <app-slip [issue]="i" [hero]="true" />
+      </div>
+
+      <section class="sorter" aria-labelledby="sorter-h">
+        <h2 id="sorter-h" class="sorter-title">Owner</h2>
+        <ol class="minicase" aria-label="Owner">
+          @for (p of people; track p.id) {
+            <li>
+              <button type="button" class="mini" [attr.aria-pressed]="i.owner === p.id" (click)="assign(p.id)">
+                <span class="keycap small">{{ p.key }}</span>
+                <span class="mini-name">{{ p.first }}</span>
+                <span class="mini-area caps">{{ p.area }}</span>
+              </button>
+            </li>
+          }
+        </ol>
+        @if (i.owner) { <button type="button" class="act" (click)="unassign()">Take it out of the case</button> }
+
+        <h2 class="sorter-title">Priority</h2>
+        <div class="prio" role="group" aria-label="Priority">
+          @for (p of priorities; track p) {
+            <button type="button" class="act" [attr.aria-pressed]="i.priority === p" (click)="setPriority(p)">
+              <span class="mono">P{{ p }}</span> {{ priorityName[p] }}
+            </button>
+          }
+        </div>
+
+        <div class="status-pick">
+          <fgu-select label="Status" [options]="statusOptions" [value]="status()" (valueChange)="setStatus($event)" />
+        </div>
+      </section>
+
+      <section class="activity" aria-labelledby="activity-h">
+        <h2 id="activity-h" class="sorter-title">Activity</h2>
+        <ol class="log">
+          @for (a of i.activity.slice().reverse(); track $index) {
+            <li><span class="mono log-at">{{ clock(a.at) }}</span><span>{{ a.text }}</span></li>
+          }
+        </ol>
+      </section>
+    }
+  }
+</div>

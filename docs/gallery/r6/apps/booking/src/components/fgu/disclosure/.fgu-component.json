@@ -1,0 +1,10 @@
+{
+  "name": "disclosure",
+  "source": "shared",
+  "framework": "svelte",
+  "files": {
+    "disclosure.css": "fa336157e151023c",
+    "disclosure.svelte": "3844b5a3b041eec7",
+    "disclosure.behaviour.js": "860f8285621051bd"
+  }
+}

@@ -1,0 +1,2 @@
+{ "radius": "soft", "material": "layered", "density": "balanced", "motion": "balanced", "motif": "towel stripe: two parallel coral bands",
+  "surfaces": { "record": { "edge": "notch", "corner": "uniform", "material": "flat", "radius": "sharp" }, "panel": { "material": "layered", "radius": "soft" }, "control": { "radius": "round" } } }

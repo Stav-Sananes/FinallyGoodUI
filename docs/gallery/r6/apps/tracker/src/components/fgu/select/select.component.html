@@ -1,0 +1,61 @@
+<div data-fgu="select" data-part="root" [attr.data-variant]="variant" (selectchange)="onSelectchange($event)">
+  <label
+    data-part="label"
+    [attr.id]="uid + '-label'"
+    [attr.for]="uid + '-trigger'"
+    [attr.data-hidden]="hideLabel ? '' : undefined"
+  >{{ label }}</label>
+  @if (variant === 'native') {
+    <select
+      data-part="control"
+      [attr.id]="uid + '-trigger'"
+      [attr.name]="name"
+      [attr.value]="value"
+      [attr.disabled]="disabled ? '' : null"
+      [attr.aria-invalid]="invalid ? 'true' : null"
+    >
+      @for (o of options; track o.value) {
+        <option data-part="option" [attr.value]="o.value" [attr.disabled]="o.disabled ? '' : null">{{ o.label }}</option>
+      }
+    </select>
+  } @else {
+    <button
+      data-part="trigger"
+      type="button"
+      [attr.id]="uid + '-trigger'"
+      role="combobox"
+      [attr.aria-labelledby]="uid + '-label ' + uid + '-trigger'"
+      aria-haspopup="listbox"
+      aria-expanded="false"
+      [attr.aria-controls]="uid + '-list'"
+      [attr.popovertarget]="uid + '-list'"
+      [attr.disabled]="disabled ? '' : null"
+      [attr.aria-invalid]="invalid ? 'true' : null"
+    >
+      <span data-part="display" [attr.data-placeholder]="placeholder"></span>
+    </button>
+    <div
+      data-part="listbox"
+      [attr.id]="uid + '-list'"
+      role="listbox"
+      [attr.aria-labelledby]="uid + '-trigger'"
+      popover
+    >
+      @if (searchable) {
+        <input data-part="search" type="search" [attr.aria-label]="label" autocomplete="off" />
+      }
+      @for (o of options; track o.value) {
+        <div
+          data-part="option"
+          role="option"
+          tabindex="-1"
+          [attr.data-value]="o.value"
+          [attr.aria-selected]="o.value === value ? 'true' : 'false'"
+          [attr.aria-disabled]="o.disabled ? 'true' : null"
+        >{{ o.label }}</div>
+      }
+      <div data-part="empty" role="status" hidden>{{ emptyText }}</div>
+    </div>
+    <input data-part="value" type="hidden" [attr.name]="name" [attr.value]="value" />
+  }
+</div>

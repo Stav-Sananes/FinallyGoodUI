@@ -1,0 +1,12 @@
+{
+  "name": "record-card",
+  "source": "shared",
+  "framework": "angular",
+  "files": {
+    "record-card.css": "eb54b96227b07cb4",
+    "record-card.component.ts": "a138733c367cc340",
+    "record-card.component.html": "317b807ebc412fb9",
+    "record-card.behaviour.js": "b84057180c6c5588",
+    "record-card.behaviour.d.ts": "5be3632b08720bd4"
+  }
+}

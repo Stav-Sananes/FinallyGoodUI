@@ -1,0 +1,10 @@
+{
+  "name": "toggle",
+  "source": "shared",
+  "framework": "svelte",
+  "files": {
+    "toggle.css": "1985e89b23c478d3",
+    "toggle.svelte": "f2febbbfc86dd893",
+    "toggle.behaviour.js": "020199028b37db8f"
+  }
+}

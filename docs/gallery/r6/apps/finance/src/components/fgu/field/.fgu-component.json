@@ -1,0 +1,11 @@
+{
+  "name": "field",
+  "source": "shared",
+  "framework": "react",
+  "files": {
+    "field.css": "e2f1fa0e5f2c8ddd",
+    "field.tsx": "77608d63fd2c3653",
+    "field.behaviour.js": "d5fd8cb08acb4f86",
+    "field.behaviour.d.ts": "535ce92860bbea40"
+  }
+}

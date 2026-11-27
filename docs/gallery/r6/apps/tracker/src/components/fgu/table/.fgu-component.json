@@ -1,0 +1,12 @@
+{
+  "name": "table",
+  "source": "shared",
+  "framework": "angular",
+  "files": {
+    "table.css": "9264bd90b3c6c53f",
+    "table.component.ts": "da95602ddeed1971",
+    "table.component.html": "cc53a9e41dd7a53d",
+    "table.behaviour.js": "0cc376937d67a1ce",
+    "table.behaviour.d.ts": "eeb12da40972d89d"
+  }
+}

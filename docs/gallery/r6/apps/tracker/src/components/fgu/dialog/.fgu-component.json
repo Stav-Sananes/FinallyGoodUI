@@ -1,0 +1,12 @@
+{
+  "name": "dialog",
+  "source": "shared",
+  "framework": "angular",
+  "files": {
+    "dialog.css": "88d724fdbd76f701",
+    "dialog.component.ts": "0142e86d7119a0fb",
+    "dialog.component.html": "c9de4b7523227429",
+    "dialog.behaviour.js": "1561ba1028e9b061",
+    "dialog.behaviour.d.ts": "3ed4ee6e2e5876d6"
+  }
+}

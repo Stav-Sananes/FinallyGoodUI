@@ -1,0 +1,11 @@
+{
+  "name": "dialog",
+  "source": "shared",
+  "framework": "vue",
+  "files": {
+    "dialog.css": "c10bc4a808e65b31",
+    "dialog.vue": "4dfb764560644f6e",
+    "dialog.behaviour.js": "1561ba1028e9b061",
+    "dialog.behaviour.d.ts": "3ed4ee6e2e5876d6"
+  }
+}

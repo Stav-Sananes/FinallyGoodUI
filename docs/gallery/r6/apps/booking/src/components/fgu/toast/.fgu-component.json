@@ -1,0 +1,11 @@
+{
+  "name": "toast",
+  "source": "shared",
+  "framework": "svelte",
+  "files": {
+    "toast.css": "9d5eb7998f7e3500",
+    "toast.svelte": "0ca40f6e8e404eaa",
+    "toast-store.js": "2767456ac3e8c41f",
+    "toast.behaviour.js": "c8fb4b74266516f6"
+  }
+}

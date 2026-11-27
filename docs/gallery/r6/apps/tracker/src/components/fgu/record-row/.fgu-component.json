@@ -1,0 +1,12 @@
+{
+  "name": "record-row",
+  "source": "shared",
+  "framework": "angular",
+  "files": {
+    "record-row.css": "7838208817f19e36",
+    "record-row.component.ts": "6f876606e5e54d5e",
+    "record-row.component.html": "a54dc89c4e9be188",
+    "record-row.behaviour.js": "4ceed5148b9b8b66",
+    "record-row.behaviour.d.ts": "9245b4b756fa03b8"
+  }
+}

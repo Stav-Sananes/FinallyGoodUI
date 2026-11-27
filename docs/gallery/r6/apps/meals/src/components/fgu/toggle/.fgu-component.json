@@ -1,0 +1,11 @@
+{
+  "name": "toggle",
+  "source": "shared",
+  "framework": "vue",
+  "files": {
+    "toggle.css": "62161864d53de106",
+    "toggle.vue": "459f0afb917ccfb9",
+    "toggle.behaviour.js": "020199028b37db8f",
+    "toggle.behaviour.d.ts": "92a2665dfe0f2bf7"
+  }
+}

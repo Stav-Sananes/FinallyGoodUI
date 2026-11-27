@@ -1,0 +1,10 @@
+{
+  "name": "record-row",
+  "source": "shared",
+  "framework": "svelte",
+  "files": {
+    "record-row.css": "6367c0c65a88edb5",
+    "record-row.svelte": "555bc8162ca5db8d",
+    "record-row.behaviour.js": "4ceed5148b9b8b66"
+  }
+}
