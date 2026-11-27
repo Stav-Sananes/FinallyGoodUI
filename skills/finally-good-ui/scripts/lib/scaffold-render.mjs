@@ -5,9 +5,9 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { partsOf, EVENTS } from "./scaffold-markup.mjs";
+import { rolePartOf } from "./component-spec.mjs";
+import { camel, pascal, capitalize as cap } from "./names.mjs";
 
-const pascal = (s) => s.split(/[-_]/).map((w) => w[0].toUpperCase() + w.slice(1)).join("");
-const camel = (s) => s.replace(/-(\w)/g, (_, c) => c.toUpperCase());
 const ind = (lines, n = 1) => lines.map((l) => (l === "" ? l : `${"  ".repeat(n)}${l}`));
 const VOID = new Set(["input", "br", "img", "hr"]);
 const NONSTANDARD = new Set(["popover", "popovertarget"]); // not in the typings of older React / TS DOM libs: spread, so they type-check everywhere
@@ -20,7 +20,7 @@ const tagOfPart = (spec, part) => (part === "root" ? tagFor(spec) : spec.tags?.[
 export function viewOf(spec, markup) {
   const tree = markup.tree;
   const rendered = partsOf(tree);
-  const rolePart = spec.a11y.rolePart ?? "root";
+  const rolePart = rolePartOf(spec);
   if (!rendered.has(rolePart)) throw new Error(`scaffold: the role part "${rolePart}" of "${spec.name}" has no element in the markup`);
   const missing = spec.parts.filter((p) => !rendered.has(p));
   if (missing.length) throw new Error(`scaffold: markup for "${spec.name}" does not render spec part(s): ${missing.join(", ")}`);
@@ -66,7 +66,6 @@ const ELEMENT_TYPE = { button: "HTMLButtonElement", dialog: "HTMLDialogElement",
 const lit = (p) => (p.type === "array" ? "[]" : p.default === undefined ? "undefined" : p.type === "boolean" ? String(p.default === "true" || p.default === true) : p.type === "number" ? String(p.default) : JSON.stringify(String(p.default)));
 const tsType = (p) => p.ts ?? (p.type === "boolean" ? "boolean" : p.type === "string" ? "string" : p.type === "number" ? "number" : "unknown");
 const hasDefault = (p) => p.type === "array" || p.default !== undefined;
-const cap = (s) => s[0].toUpperCase() + s.slice(1);
 const handlerName = (e) => `on${cap(e.dom)}`;
 const usesEvent = (e, c) => Boolean(e.prevent) || /\bevent\b/.test(c.typescript ? e.payload.ts : e.payload.js);
 const payloadOf = (e, c) => (c.typescript ? e.payload.ts : e.payload.js);
@@ -99,6 +98,25 @@ const baseAttrs = (view, node) => [
   ...Object.entries(node.attrs),
 ];
 
+// One attribute, rendered by the framework's format `f`. An attribute value is a literal string, `true` (bare), or one of
+// {js} (bound expression), {bool} (boolean attribute), {aria} ("true" or absent), {ariaBool} ("true" / "false").
+function renderAttr(name, v, f) {
+  if (typeof v === "string") return f.text(name, v);
+  if (v === true) return name;
+  if (v.js !== undefined) return f.bound(name, v.js);
+  if (v.bool !== undefined) return f.bool(name, v.bool);
+  if (v.aria !== undefined) return f.aria(name, v.aria);
+  return f.ariaBool(name, v.ariaBool);
+}
+const braces = (name, e) => `${name}={${e}}`;
+const FORMAT = {
+  react: { text: (n, v) => (n === "tabIndex" ? braces(n, v) : `${n}="${v}"`), bound: braces, bool: braces, aria: (n, e) => braces(n, `${e} ? "true" : undefined`), ariaBool: (n, e) => braces(n, `${e} ? "true" : "false"`) },
+  vue: { text: (n, v) => `${n}="${v}"`, bound: (n, e) => `:${n}="${e}"`, bool: (n, e) => `:${n}="${e}"`, aria: (n, e) => `:${n}="${e} ? 'true' : undefined"`, ariaBool: (n, e) => `:${n}="${e} ? 'true' : 'false'"` },
+  svelte: { text: (n, v) => `${n}="${v}"`, bound: braces, bool: braces, aria: (n, e) => braces(n, `${e} ? "true" : undefined`), ariaBool: (n, e) => braces(n, `${e} ? "true" : "false"`) },
+  // `checked` is a property in Angular (an attribute only sets the default), every other boolean an attribute that is "" or absent
+  angular: { text: (n, v) => `${n}="${v}"`, bound: (n, e) => `[attr.${n}]="${e}"`, bool: (n, e) => (n === "checked" ? `[checked]="${e}"` : `[attr.${n}]="${e} ? '' : null"`), aria: (n, e) => `[attr.${n}]="${e} ? 'true' : null"`, ariaBool: (n, e) => `[attr.${n}]="${e} ? 'true' : 'false'"` },
+};
+
 // ===================================================================== React
 const REACT_NAME = { for: "htmlFor", tabindex: "tabIndex", novalidate: "noValidate", colspan: "colSpan", autocomplete: "autoComplete", checked: "defaultChecked" };
 
@@ -109,12 +127,7 @@ function reactAttrs(view, node) {
     // Toggle: `checked` makes the checkbox controlled (pair it with onChange); without it the input is uncontrolled (defaultChecked passes through rest).
     if (name === "checked" && node.model === "checked") { spread.push("...(checked === undefined ? {} : { checked })"); continue; }
     if (NONSTANDARD.has(name)) { spread.push(`${REACT_SPREAD_NAME[name] ?? name}: ${v === true ? '""' : typeof v === "string" ? JSON.stringify(v) : v.js}`); continue; }
-    if (typeof v === "string") out.push(name === "tabindex" ? `${n}={${v}}` : `${n}="${v}"`);
-    else if (v === true) out.push(n);
-    else if (v.js !== undefined) out.push(`${n}={${v.js}}`);
-    else if (v.bool !== undefined) out.push(`${n}={${v.bool}}`);
-    else if (v.aria !== undefined) out.push(`${n}={${v.aria} ? "true" : undefined}`);
-    else if (v.ariaBool !== undefined) out.push(`${n}={${v.ariaBool} ? "true" : "false"}`);
+    out.push(renderAttr(n, v, FORMAT.react));
   }
   if (spread.length) out.push(`{...{ ${spread.join(", ")} }}`);
   for (const [event, handler] of Object.entries(node.on ?? {})) if (event === "click") out.push(`onClick={() => ${handler}}`);
@@ -222,14 +235,7 @@ export function react(view, c) {
 // ===================================================================== Vue
 function vueAttrs(view, node) {
   const out = [];
-  for (const [name, v] of baseAttrs(view, node)) {
-    if (typeof v === "string") out.push(`${name}="${v}"`);
-    else if (v === true) out.push(name);
-    else if (v.js !== undefined) out.push(`:${name}="${v.js}"`);
-    else if (v.bool !== undefined) out.push(`:${name}="${v.bool}"`);
-    else if (v.aria !== undefined) out.push(`:${name}="${v.aria} ? 'true' : undefined"`);
-    else if (v.ariaBool !== undefined) out.push(`:${name}="${v.ariaBool} ? 'true' : 'false'"`);
-  }
+  for (const [name, v] of baseAttrs(view, node)) out.push(renderAttr(name, v, FORMAT.vue));
   return out;
 }
 
@@ -331,14 +337,7 @@ export function vue(view, c) {
 // ===================================================================== Svelte
 function svelteAttrs(view, node) {
   const out = [];
-  for (const [name, v] of baseAttrs(view, node)) {
-    if (typeof v === "string") out.push(`${name}="${v}"`);
-    else if (v === true) out.push(name);
-    else if (v.js !== undefined) out.push(`${name}={${v.js}}`);
-    else if (v.bool !== undefined) out.push(`${name}={${v.bool}}`);
-    else if (v.aria !== undefined) out.push(`${name}={${v.aria} ? "true" : undefined}`);
-    else if (v.ariaBool !== undefined) out.push(`${name}={${v.ariaBool} ? "true" : "false"}`);
-  }
+  for (const [name, v] of baseAttrs(view, node)) out.push(renderAttr(name, v, FORMAT.svelte));
   for (const [event, handler] of Object.entries(node.on ?? {})) if (event === "click") out.push(`onclick={() => ${handler}}`);
   if (node.model === "value") out.push("value={value}", "oninput={(e) => (value = e.currentTarget.value)}");
   if (node.model === "checked") out.push("onchange={(e) => (checked = e.currentTarget.checked)}");
@@ -461,13 +460,7 @@ function angularAttrs(view, node) {
   const out = [];
   for (let [name, v] of baseAttrs(view, node)) {
     if (v && typeof v === "object") v = Object.fromEntries(Object.entries(v).map(([k, e]) => [k, ngx(e)]));
-    const prop = name === "checked";
-    if (typeof v === "string") out.push(`${name}="${v}"`);
-    else if (v === true) out.push(name);
-    else if (v.js !== undefined) out.push(`[attr.${name}]="${v.js}"`);
-    else if (v.bool !== undefined) out.push(prop ? `[checked]="${v.bool}"` : `[attr.${name}]="${v.bool} ? '' : null"`);
-    else if (v.aria !== undefined) out.push(`[attr.${name}]="${v.aria} ? 'true' : null"`);
-    else if (v.ariaBool !== undefined) out.push(`[attr.${name}]="${v.ariaBool} ? 'true' : 'false'"`);
+    out.push(renderAttr(name, v, FORMAT.angular));
   }
   for (const [event, handler] of Object.entries(node.on ?? {})) out.push(`(${event})="${handler}"`);
   if (node.model === "value") out.push("[value]=\"value\"", '(input)="onValueInput($event)"');

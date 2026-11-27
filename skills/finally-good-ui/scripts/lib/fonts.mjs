@@ -1,11 +1,11 @@
 // Loader code for the typefaces a token set names ($extensions.fgu.load on font tokens), per stack.
 // load: { source: "google" | "fontsource" | "local", weights: "100 900" (variable) | [400, 600],
 //         files?: [{ path, weight, style? }] (local) }
+import { capitalize as capital } from "./names.mjs";
 import { groupTokens, fontLoad, isVariableFont, baseFace, namedVariable, weightRange } from "./tokens.mjs";
 
 export const LOADERS = ["next", "nuxt", "fontsource", "google"];
 
-const capital = (s) => s[0].toUpperCase() + s.slice(1);
 const slug = (family) => family.toLowerCase().replace(/\s+/g, "-");
 const weightList = (load) => (isVariableFont(load) ? null : (load.weights ?? [400]).map(Number));
 

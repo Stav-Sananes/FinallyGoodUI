@@ -4,6 +4,7 @@
 // px per text step. Colours still switch with the theme through each layer's own mechanism.
 import { flatten, groupTokens, parseDimension, parseDuration, parseEasing, textMetrics, fontLoad } from "./tokens.mjs";
 import { parseColor, toHex } from "./contrast.mjs";
+import { camel } from "./names.mjs";
 
 const round = (n, places = 2) => Math.round(n * 10 ** places) / 10 ** places;
 const COLOR_FN = /(?:oklch|oklab|rgba?|hsla?)\([^)]*\)|#[0-9a-f]{3,8}\b/gi;
@@ -258,7 +259,6 @@ export default config;
 
 // ---------- Unistyles v3 (StyleSheet.configure) ----------
 
-const camel = (name) => name.replace(/-(\w)/g, (_, c) => c.toUpperCase());
 
 export function emitUnistyles(tokens) {
   const rows = flatten(tokens);

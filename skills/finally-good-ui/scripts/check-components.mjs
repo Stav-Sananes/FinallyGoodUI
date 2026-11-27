@@ -4,7 +4,7 @@ import { join, dirname, basename, relative } from "node:path";
 import { readdirSync } from "node:fs";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
 import { loadSpec, rolePartOf } from "./lib/component-spec.mjs";
-import { walk, readText, readJson, isDir } from "./lib/fs.mjs";
+import { walk, readText, readJson, isDir, toPosix } from "./lib/fs.mjs";
 import { COMPONENTS_ROOT } from "./lib/scaffold.mjs";
 import { mapSelectors } from "./lib/css-scope.mjs";
 import { usedVars, definedVars } from "./lib/token-vars.mjs";
@@ -155,7 +155,7 @@ const isDemoPage = (files) => files.length > 0 && files.every((f) => /\.html$/.t
 
 function checkComponent(markerPath, root, notes, defined) {
   const dir = dirname(markerPath);
-  const rel = (name) => join(relativeDir(root, dir), name).split("\\").join("/");
+  const rel = (name) => toPosix(join(relativeDir(root, dir), name));
   const marker = readJson(markerPath);
   const name = marker?.name;
   let spec;
@@ -219,7 +219,7 @@ export function checkComponents(root) {
   const defined = markers.length ? definedVars(root) : null; // null: the project has no token set to compare with
   const findings = markers.flatMap((m) => {
     try { return checkComponent(join(root, m), root, notes, defined); }
-    catch (e) { return [{ file: relative(root, join(root, m)).split("\\").join("/"), rule: "css-unparseable", message: `could not check this component: ${e.message}` }]; }
+    catch (e) { return [{ file: toPosix(relative(root, join(root, m))), rule: "css-unparseable", message: `could not check this component: ${e.message}` }]; }
   });
   return { findings, notes };
 }
