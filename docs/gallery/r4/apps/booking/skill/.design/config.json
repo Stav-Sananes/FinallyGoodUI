@@ -1,9 +1,0 @@
-{
-  "mode": "autonomous",
-  "directions": "one",
-  "verify": "static",
-  "viewports": [[390, 844], [1440, 900]],
-  "interviewDepth": "auto",
-  "hook": "off",
-  "theme": "media"
-}
