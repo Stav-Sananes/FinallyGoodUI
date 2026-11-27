@@ -14,10 +14,10 @@
 
 import { spawn } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
-import { runCli, isMain } from "../skills/finally-good-ui/scripts/lib/cli.mjs";
+import { runCli, isMain, UsageError } from "../skills/finally-good-ui/scripts/lib/cli.mjs";
 import { emitCss } from "../skills/finally-good-ui/scripts/emit-tokens.mjs";
 import { loadTokens } from "../skills/finally-good-ui/scripts/lib/token-files.mjs";
 import { galleryComponents } from "../skills/finally-good-ui/scripts/lib/gallery.mjs";
@@ -279,12 +279,29 @@ function readOneLiner() {
   return line.replace(/\*\*/g, "");
 }
 
+/** Runs every build in parallel and lets all of them finish: an early exit on the first failure would orphan the other builds'
+ *  children. Throws one error naming every failed build. */
+export async function buildAll(apps, build) {
+  const results = await Promise.allSettled(apps.map(build));
+  const failed = results.filter((r) => r.status === "rejected").map((r) => r.reason.message);
+  if (failed.length) throw new Error(`${failed.length} app build(s) failed:\n${failed.join("\n")}`);
+}
+
+/** The output directory, refused when it is empty or would delete the repo (or the shell's working directory) with it. */
+export function outDir(flag, root = ROOT, cwd = process.cwd()) {
+  if (flag !== undefined && flag.trim() === "") throw new UsageError("--out is empty (an unset variable?): refusing to build into the working directory");
+  const out = resolve(flag ?? join(root, "_site"));
+  const holds = (dir) => dir === out || dir.startsWith(out.endsWith(sep) ? out : out + sep);
+  if (holds(resolve(root)) || holds(resolve(cwd))) throw new UsageError(`--out ${out} is, or contains, the repository or the working directory: it is emptied before the build`);
+  return out;
+}
+
 async function main({ flags }) {
-  const out = resolve(flags.out ?? join(ROOT, "_site"));
+  const out = outDir(flags.out);
   rmSync(out, { recursive: true, force: true });
   mkdirSync(out, { recursive: true });
 
-  if (!flags["skip-apps"]) await Promise.all(APPS.map((app) => buildApp(app, flags.install)));
+  if (!flags["skip-apps"]) await buildAll(APPS, (app) => buildApp(app, flags.install));
   for (const app of APPS) cpSync(builtDir(app), join(out, app.id), { recursive: true });
 
   for (const app of APPS) {
