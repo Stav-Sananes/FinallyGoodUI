@@ -265,3 +265,14 @@ MARKUP.table = {
     ]),
   ], { ignore: ["a11y_no_noninteractive_tabindex"] }),
 };
+
+// ---- record-row, record-card: one record, shaped by the style profile's record surface
+const RECORD_TREE = el("root", { "data-variant": js("variant"), "aria-current": aria("current") }, [
+  whenSlot("lead", [el("lead", {}, [slot("lead")])]),
+  el("title", {}, [slot("default")]),
+  whenSlot("meta", [el("meta", {}, [slot("meta")])]),
+  whenSlot("status", [el("status", {}, [slot("status")])]),
+  whenSlot("action", [el("action", {}, [slot("action")])]),
+]);
+MARKUP["record-row"] = { tree: RECORD_TREE };
+MARKUP["record-card"] = { tree: RECORD_TREE };

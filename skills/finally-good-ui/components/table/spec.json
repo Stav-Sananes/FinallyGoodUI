@@ -151,7 +151,8 @@
     "interactive": "sort",
     "touch": [
       "sort"
-    ]
+    ],
+    "role": "panel"
   },
   "api": [
     "syncSelection(scope: Element, ids?: readonly string[]): void"

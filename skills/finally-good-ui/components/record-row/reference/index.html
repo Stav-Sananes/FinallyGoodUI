@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Record row reference</title>
+<!-- tokens.css: node scripts/emit-tokens.mjs --in tokens/default.tokens.json --format css > tokens.css -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../record-row.css">
+</head>
+<body>
+<main id="demo">
+  <ul style="margin:0;padding:0">
+    <li data-fgu="record-row" data-part="root" data-variant="default" aria-current="true"><span data-part="lead">MON</span><span data-part="title">Roast squash and farro</span><span data-part="meta">40 min, serves 3</span><span data-part="status">Maya cooks</span><span data-part="action"><button type="button">Swap dinner</button></span></li>
+    <li data-fgu="record-row" data-part="root" data-variant="default"><span data-part="lead">TUE</span><span data-part="title">Lentil soup</span><span data-part="meta">25 min, serves 3</span><span data-part="status">Dev cooks</span><span data-part="action"><button type="button">Swap dinner</button></span></li>
+    <li data-fgu="record-row" data-part="root" data-variant="compact"><span data-part="lead">WED</span><span data-part="title">Leftovers</span><span data-part="meta">No cooking</span><span data-part="status">Open</span><span data-part="action"><button type="button">Plan dinner</button></span></li>
+  </ul>
+</main>
+<script type="module">
+  import { attach } from "../record-row.js";
+  attach(document.getElementById("demo"));
+</script>
+</body>
+</html>

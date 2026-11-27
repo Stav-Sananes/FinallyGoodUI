@@ -26,8 +26,8 @@ const SLOT_RENDER = {
   angular: (s) => (s === "default" ? /<ng-content \/>/ : /ngTemplateOutlet|ng-content select/),
 };
 
-test("the suite covers all twelve components and five outputs", () => {
-  assert.deepEqual(NAMES, ["button", "dialog", "disclosure", "field", "menu", "popover", "select", "table", "tabs", "toast", "toggle", "tooltip"]);
+test("the suite covers all fourteen components and five outputs", () => {
+  assert.deepEqual(NAMES, ["button", "dialog", "disclosure", "field", "menu", "popover", "record-card", "record-row", "select", "table", "tabs", "toast", "toggle", "tooltip"]);
   assert.equal(FRAMEWORKS.length, 5);
 });
 
@@ -41,8 +41,8 @@ for (const name of NAMES) for (const framework of FRAMEWORKS) {
     for (const [part, tag] of Object.entries(s.tags ?? {})) {
       assert.match(text, new RegExp(`<${tag}\\b[^>]*data-part="${part}"`), `part ${part} is a <${tag}>`);
     }
-    // textbox, checkbox, button and dialog come from the native element (checked through the tags above); the rest is an explicit role
-    if (!["button", "link", "textbox", "checkbox", "dialog"].includes(s.a11y.role)) assert.match(text, new RegExp(`role="${s.a11y.role}"`));
+    // textbox, checkbox, button, dialog, listitem (li) and article come from the native element (checked through the tags above); the rest is an explicit role
+    if (!["button", "link", "textbox", "checkbox", "dialog", "listitem", "article"].includes(s.a11y.role)) assert.match(text, new RegExp(`role="${s.a11y.role}"`));
   });
 
   test(`${name} in ${framework}: is not an empty skeleton (slots rendered, behaviour attached, props bound)`, () => {
@@ -328,4 +328,24 @@ test("popover: bound open through openPopover/closePopover, tooltip: delay and p
     assert.match(joined("tooltip", fw), /data-placement/, fw);
     assert.match(joined("tooltip", fw), /role="tooltip"/, fw);
   }
+});
+
+test("record-row and record-card take their shape from the profile's record surface, not from one generic card", () => {
+  const css = (name, surfaces) => plan(name, "react", {}).files.length && planScaffold({ spec: spec(name), stack: { framework: "react", typescript: true, primitives: [] }, profile: { ...PROFILE, surfaces }, root: join(tmp(), "none") })
+    .files.find((f) => f.path.endsWith(`${name}.css`)).content;
+  for (const name of ["record-row", "record-card"]) {
+    const ledger = css(name, { record: { edge: "ruled", radius: "sharp", material: "flat" } });
+    const tag = css(name, { record: { edge: "notch", radius: "round", material: "layered" } });
+    const stub = css(name, { record: { edge: "perforated" } });
+    assert.notEqual(ledger, tag, `${name}: two profiles, two shapes`);
+    assert.match(ledger, /border-block-end-width: var\(--border-width-hairline\)/);
+    assert.match(tag, /clip-path: polygon\(0 0, calc\(100% - var\(--space-3\)\) 0/);
+    assert.match(stub, /\[data-part="lead"\][^}]*border-inline-end-style: dashed/, `${name}: the stub tears off at the lead`);
+    assert.doesNotMatch(ledger, /clip-path/, "negative control");
+    assert.match(ledger, /role=record/);
+  }
+  // the record is not a menu row: no menu part, no "..." trigger in its markup, the action slot takes visible buttons
+  const markup = code(plan("record-row", "vue"));
+  assert.doesNotMatch(markup, /menu|aria-haspopup|\.\.\.|&hellip;/);
+  assert.match(markup, /<slot name="action"/);
 });

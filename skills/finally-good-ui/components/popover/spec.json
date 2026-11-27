@@ -89,7 +89,8 @@
     "interactive": "trigger",
     "also": [
       "trigger"
-    ]
+    ],
+    "role": "panel"
   },
   "api": [
     "openPopover(scope: Element): void",

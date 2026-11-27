@@ -107,3 +107,64 @@ test("motif cannot break out of its comment", () => {
   assert.doesNotMatch(css, /a\{color:red\}\s*\/\*/);
   assert.equal((css.match(/\*\//g) || []).length, (css.match(/\/\*/g) || []).length);
 });
+
+// ---- role-based surfaces: record, panel and control each take their own radius, material, edge and corner
+import { surfaceOf, surfacesIdentical, ROLES, EDGES, CORNERS } from "../lib/style-profile.mjs";
+import { validateSpec } from "../lib/component-spec.mjs";
+
+const withRole = (role, extra = {}) => ({ ...rich, parts: [...rich.parts, "lead"], profile: { surface: "root", role, ...extra } });
+const ledger = { ...quiet, surfaces: { record: { edge: "ruled", radius: "sharp", material: "flat" }, panel: { material: "layered" }, control: { radius: "soft" } } };
+
+test("validateProfile accepts surfaces and names the field that is wrong", () => {
+  assert.deepEqual(validateProfile(ledger), { ok: true, errors: [] });
+  assert.deepEqual(validateProfile(quiet), { ok: true, errors: [] }, "surfaces stay optional");
+  const bad = validateProfile({ ...quiet, surfaces: { record: { edge: "wavy", corner: "round" }, drawer: {}, panel: { size: "big" }, control: null } });
+  for (const e of ["surfaces.record.edge", "surfaces.record.corner", "surfaces.drawer", "surfaces.panel.size", "surfaces.control"]) assert.ok(bad.errors.some((m) => m.startsWith(e)), `${e}: ${bad.errors.join("|")}`);
+  assert.equal(validateProfile({ ...quiet, surfaces: [] }).ok, false);
+});
+
+test("surfaceOf falls back to the profile's radius and material, square edge, uniform corner", () => {
+  assert.deepEqual(surfaceOf(quiet, "record"), { radius: quiet.radius, material: quiet.material, edge: "square", corner: "uniform" });
+  assert.deepEqual(surfaceOf(ledger, "record"), { radius: "sharp", material: "flat", edge: "ruled", corner: "uniform" });
+  assert.deepEqual(surfaceOf(ledger, "panel"), { radius: quiet.radius, material: "layered", edge: "square", corner: "uniform" });
+  assert.deepEqual(ROLES, ["record", "panel", "control"]);
+});
+
+test("surfacesIdentical: true for a profile with no surfaces, false once one role differs", () => {
+  assert.equal(surfacesIdentical(quiet), true);
+  assert.equal(surfacesIdentical({ ...quiet, surfaces: { record: {}, panel: {}, control: {} } }), true, "empty roles are still one card");
+  assert.equal(surfacesIdentical({ ...quiet, surfaces: { record: { edge: "tab" } } }), false);
+  assert.equal(surfacesIdentical(ledger), false);
+});
+
+test("the same spec takes its role's surface: a record is ruled while a panel keeps its box", () => {
+  const record = profileCss(ledger, withRole("record")), panel = profileCss(ledger, withRole("panel"));
+  assert.match(record, /radius=sharp material=flat density=\w+ motion=\w+ motif="[^"]*" role=record edge=ruled/);
+  assert.match(record, /border-block-end-width:\s*var\(--border-width-hairline\)/);
+  assert.match(record, /border-radius:\s*var\(--radius-none\)/);
+  assert.match(panel, /role=panel/);
+  assert.doesNotMatch(panel, /border-block-end-width/, "negative control: the ruled edge is the record's only");
+  assert.notEqual(record, panel);
+  // a profile with no surfaces gives every role the same declarations (the role only shows in the header comment)
+  const body = (css) => css.replace(/^\/\*.*\*\/\n/, "");
+  assert.equal(body(profileCss(quiet, withRole("record"))), body(profileCss(quiet, withRole("panel"))));
+});
+
+test("every edge and corner emits tokens only, and only the shape that was asked", () => {
+  const css = (surface) => profileCss({ ...quiet, surfaces: { record: surface } }, withRole("record", { lead: "lead" }));
+  for (const edge of EDGES) for (const corner of CORNERS) assert.doesNotMatch(css({ edge, corner }), LITERAL, `${edge}/${corner}`);
+  assert.match(css({ edge: "tab" }), /border-inline-start-width:\s*var\(--border-width-strong\)/);
+  assert.match(css({ edge: "perforated" }), /\[data-part="lead"\][^}]*border-inline-end-style:\s*dashed/);
+  assert.match(css({ edge: "notch" }), /clip-path:\s*polygon\(0 0, calc\(100% - var\(--space-3\)\) 0/);
+  assert.match(css({ corner: "cut" }), /clip-path:\s*polygon\(var\(--space-3\) 0/);
+  assert.match(css({ corner: "asymmetric" }), /border-start-start-radius:\s*var\(--radius-md\)/);
+  const plain = css({});
+  for (const p of ["clip-path", "border-inline-start-style", "border-inline-end-style", "border-start-start-radius", "border-block-end-width"]) assert.doesNotMatch(plain, new RegExp(p), `negative control: ${p}`);
+});
+
+test("a spec's profile.role and profile.lead are validated", () => {
+  const base = { ...spec, parts: [...spec.parts, "lead"] };
+  assert.deepEqual(validateSpec({ ...base, profile: { surface: "root", role: "record", lead: "lead" } }).errors.filter((e) => e.startsWith("profile")), []);
+  assert.ok(validateSpec({ ...base, profile: { role: "card" } }).errors.some((e) => e.startsWith("profile.role")));
+  assert.ok(validateSpec({ ...base, profile: { lead: "nope" } }).errors.some((e) => e.startsWith("profile.lead")));
+});

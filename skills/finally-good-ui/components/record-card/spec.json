@@ -1,0 +1,101 @@
+{
+  "name": "record-card",
+  "shapes": [
+    "default",
+    "compact"
+  ],
+  "props": [
+    {
+      "name": "variant",
+      "type": "string",
+      "default": "default"
+    },
+    {
+      "name": "current",
+      "type": "boolean",
+      "default": "false"
+    }
+  ],
+  "events": [],
+  "slots": [
+    "lead",
+    "default",
+    "meta",
+    "status",
+    "action"
+  ],
+  "states": [
+    {
+      "name": "current",
+      "attribute": "aria-current"
+    }
+  ],
+  "a11y": {
+    "role": "article",
+    "aria": [
+      "aria-current",
+      "aria-labelledby",
+      "aria-describedby"
+    ],
+    "keys": {}
+  },
+  "tokens": [
+    "--color-foreground",
+    "--color-muted-foreground",
+    "--color-card",
+    "--color-border",
+    "--color-primary",
+    "--color-accent",
+    "--color-accent-foreground",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--radius-xl",
+    "--radius-full",
+    "--shadow-sm",
+    "--shadow-md",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--size-control-sm",
+    "--size-control-md",
+    "--size-control-lg",
+    "--space-1",
+    "--space-2",
+    "--space-3",
+    "--space-4",
+    "--font-sans",
+    "--text-xs",
+    "--text-sm",
+    "--duration-micro",
+    "--duration-short",
+    "--duration-standard",
+    "--ease-move",
+    "--ease-snappy",
+    "--ease-enter",
+    "--ease-enter-emphasized"
+  ],
+  "parts": [
+    "root",
+    "lead",
+    "title",
+    "meta",
+    "status",
+    "action"
+  ],
+  "tags": {
+    "root": "article",
+    "lead": "span",
+    "title": "span",
+    "meta": "span",
+    "status": "span",
+    "action": "span"
+  },
+  "profile": {
+    "surface": "root",
+    "role": "record",
+    "lead": "lead",
+    "density": "root",
+    "interactive": null
+  }
+}

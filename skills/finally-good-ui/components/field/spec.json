@@ -152,7 +152,8 @@
   "profile": {
     "surface": "control",
     "interactive": "control",
-    "density": "control"
+    "density": "control",
+    "role": "control"
   },
   "api": [
     "validate(form: Element): boolean"

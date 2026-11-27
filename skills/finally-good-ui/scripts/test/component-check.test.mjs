@@ -341,3 +341,31 @@ test(".design/tokens.json counts as the project's tokens", () => {
   cpSync(join(SR, "tokens/default.tokens.json"), join(root, ".design/tokens.json"));
   assert.ok(definedVars(root).has("--size-control-md"));
 });
+
+// One card for everything: a style profile whose record, panel and control surfaces resolve to the same look.
+const withProfile = (profile) => {
+  const d = copy(fixture("generated-ok"));
+  const dir = join(d, ".design");
+  cpSync(fx("components/projects/plain/.design"), dir, { recursive: true });
+  writeFileSync(join(dir, "component-style.json"), JSON.stringify(profile));
+  return d;
+};
+const BASE = { radius: "soft", material: "flat", density: "balanced", motif: "calm editorial", motion: "balanced" };
+
+test("surfaces-identical: a profile with no distinct record, panel and control surface is an error naming the file", () => {
+  const out = check(withProfile(BASE)).json;
+  assert.equal(out.ok, false);
+  const hit = out.findings.filter((f) => f.rule === "surfaces-identical");
+  assert.equal(hit.length, 1, JSON.stringify(out.findings));
+  assert.equal(hit[0].file, ".design/component-style.json");
+  assert.match(hit[0].message, /record, panel and control/);
+  assert.equal(check(withProfile({ ...BASE, surfaces: { record: {}, panel: {}, control: {} } })).json.ok, false, "empty roles are still one card");
+});
+
+test("surfaces-identical: one role that differs clears it; no profile or no components means nothing to check", () => {
+  assert.equal(check(withProfile({ ...BASE, surfaces: { record: { edge: "ruled" } } })).json.ok, true, "positive control: a distinct record surface passes");
+  assert.equal(check(withProfile({ ...BASE, surfaces: { panel: { material: "layered" } } })).json.ok, true);
+  assert.equal(check(fixture("generated-ok")).json.ok, true, "no .design/component-style.json: not checked");
+  const empty = tmp(); cpSync(fx("components/projects/plain/.design"), join(empty, ".design"), { recursive: true });
+  assert.equal(check(empty).json.ok, true, "no scaffolded components: nothing to flag");
+});

@@ -8,7 +8,7 @@ import { loadSpec } from "../lib/component-spec.mjs";
 import { detectStack } from "../detect-stack.mjs";
 
 // End to end: scaffold a component into a fixture project, then the conformance checker must accept it.
-const COMPONENTS = ["field", "toggle", "disclosure", "dialog", "menu", "tabs", "toast", "select", "table", "tooltip", "popover"];
+const COMPONENTS = ["field", "toggle", "disclosure", "dialog", "menu", "tabs", "toast", "select", "table", "tooltip", "popover", "record-row", "record-card"];
 const PROJECTS = ["plain", "react-radix", "vue-reka"];
 
 const scaffoldAndCheck = (component, project) => {
@@ -182,11 +182,11 @@ test("toast: role-missing fires when the region loses role=status (negative cont
   assert.ok(check.json.findings.some((f) => f.rule === "role-missing"), JSON.stringify(check.json.findings));
 });
 
-// All twelve components together: one project, every component scaffolded, one clean check, and the index lists them all.
-const ALL = ["button", "field", "toggle", "disclosure", "dialog", "menu", "tabs", "toast", "select", "table", "tooltip", "popover"];
+// All fourteen components together: one project, every component scaffolded, one clean check, and the index lists them all.
+const ALL = ["button", "field", "toggle", "disclosure", "dialog", "menu", "tabs", "toast", "select", "table", "tooltip", "popover", "record-row", "record-card"];
 const missingFromIndex = (index, names) => names.filter((n) => !new RegExp(`components/${n}/spec\\.md`).test(index));
 
-test("all twelve components scaffold into the plain fixture, check ok:true, and INDEX.md lists exactly those twelve", () => {
+test("all fourteen components scaffold into the plain fixture, check ok:true, and INDEX.md lists exactly those fourteen", () => {
   const root = tmp();
   cpSync(fx("components/projects/plain"), root, { recursive: true });
   for (const name of ALL) {
@@ -199,7 +199,7 @@ test("all twelve components scaffold into the plain fixture, check ok:true, and 
 
   const components = join(SR, "components");
   const dirs = readdirSync(components).filter((d) => d !== "adapters" && statSync(join(components, d)).isDirectory());
-  assert.deepEqual([...dirs].sort(), [...ALL].sort(), "the component set is exactly the twelve");
+  assert.deepEqual([...dirs].sort(), [...ALL].sort(), "the component set is exactly the fourteen");
   const index = readFileSync(join(components, "INDEX.md"), "utf8");
   assert.deepEqual(missingFromIndex(index, ALL), []);
 });

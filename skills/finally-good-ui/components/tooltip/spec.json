@@ -73,7 +73,8 @@
   "profile": {
     "surface": "content",
     "density": null,
-    "interactive": null
+    "interactive": null,
+    "role": "panel"
   },
   "api": [
     "showTooltip(scope: Element): void",

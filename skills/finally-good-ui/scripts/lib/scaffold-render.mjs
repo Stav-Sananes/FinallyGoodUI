@@ -61,7 +61,7 @@ function names(view, node, c) {
   if (node.part === "root" && c.prim) return { name: c.prim.open(tag).slice(1), close: c.prim.close(tag) };
   return { name: tag, close: `</${tag}>` };
 }
-const ELEMENT_TYPE = { button: "HTMLButtonElement", dialog: "HTMLDialogElement", div: "HTMLDivElement", label: "HTMLLabelElement", input: "HTMLInputElement" };
+const ELEMENT_TYPE = { button: "HTMLButtonElement", dialog: "HTMLDialogElement", div: "HTMLDivElement", label: "HTMLLabelElement", input: "HTMLInputElement", li: "HTMLLIElement" };
 
 const lit = (p) => (p.type === "array" ? "[]" : p.default === undefined ? "undefined" : p.type === "boolean" ? String(p.default === "true" || p.default === true) : p.type === "number" ? String(p.default) : JSON.stringify(String(p.default)));
 const tsType = (p) => p.ts ?? (p.type === "boolean" ? "boolean" : p.type === "string" ? "string" : p.type === "number" ? "number" : "unknown");

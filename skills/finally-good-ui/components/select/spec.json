@@ -166,7 +166,8 @@
     ],
     "touch": [
       "option"
-    ]
+    ],
+    "role": "control"
   },
   "api": [
     "selectValue(scope: Element, value: string | undefined): void"

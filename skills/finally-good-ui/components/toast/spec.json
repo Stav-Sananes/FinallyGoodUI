@@ -95,6 +95,7 @@
     "touch": [
       "action",
       "dismiss"
-    ]
+    ],
+    "role": "panel"
   }
 }

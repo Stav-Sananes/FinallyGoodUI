@@ -1,1 +1,1 @@
-{ "radius": "soft", "material": "flat", "density": "balanced", "motif": "calm editorial", "motion": "balanced" }
+{"radius": "soft", "material": "flat", "density": "balanced", "motif": "calm editorial", "motion": "balanced", "surfaces": {"record": {"edge": "ruled", "radius": "sharp"}, "panel": {"material": "layered"}}}

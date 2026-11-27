@@ -8,6 +8,7 @@ import { walk, readText, readJson, isDir, toPosix } from "./lib/fs.mjs";
 import { COMPONENTS_ROOT } from "./lib/scaffold.mjs";
 import { mapSelectors } from "./lib/css-scope.mjs";
 import { usedVars, definedVars } from "./lib/token-vars.mjs";
+import { validateProfile, surfacesIdentical } from "./lib/style-profile.mjs";
 
 const HELP = `
 Usage: check-components.mjs --root <dir> [--strict]
@@ -20,6 +21,8 @@ Rules: role-missing, aria-missing, part-missing, state-unstyled, literal, key-ha
 token-undefined (the component's css uses a var(--x) that the project's own tokens or stylesheets never define; only checked
 when the project defines some custom properties at all),
 css-unparseable (the component could not be read, usually a stylesheet with unbalanced braces),
+surfaces-identical (.design/component-style.json gives the record, panel and control surfaces the same radius, material,
+edge and corner: one card for everything; give at least one role its own shape),
 css-selector-unmatched (a selector in the component CSS that the generated markup can never match: an unknown
 part, a variant the spec does not list, or a descendant [data-variant] when the variant sits on the root),
 empty-skeleton (the parts are there but the component renders no content slot, or a shared-behaviour
@@ -99,8 +102,9 @@ const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** The role is carried by the element: an explicit role attribute or the native/primitive element of that name. */
 const roleRegexes = new Map();
+const NATIVE_TAG = { listitem: "li" }; // a role whose native element has another name
 const hasRole = (role, text) => {
-  if (!roleRegexes.has(role)) { const r = escape(role); roleRegexes.set(role, new RegExp(`role=["']${r}["']|<${r}\\b|as=["']${r}["']|\\.${r}\\b|\\b${r}\\.Root\\b`, "i")); }
+  if (!roleRegexes.has(role)) { const r = escape(role), native = NATIVE_TAG[role] ? `|<${NATIVE_TAG[role]}\\b` : ""; roleRegexes.set(role, new RegExp(`role=["']${r}["']|<${r}\\b|as=["']${r}["']|\\.${r}\\b|\\b${r}\\.Root\\b${native}`, "i")); }
   return roleRegexes.get(role).test(text);
 };
 
@@ -232,6 +236,10 @@ export function checkComponents(root) {
     try { return checkComponent(join(root, m), root, notes, defined, specs); }
     catch (e) { return [{ file: toPosix(relative(root, join(root, m))), rule: "css-unparseable", message: `could not check this component: ${e.message}` }]; }
   });
+  if (markers.length) {
+    const profile = readJson(join(root, ".design/component-style.json"));
+    if (profile && validateProfile(profile).ok && surfacesIdentical(profile)) findings.push({ file: ".design/component-style.json", rule: "surfaces-identical", message: "the record, panel and control surfaces all resolve to the same radius, material, edge and corner: every component is the same card. Add surfaces to the profile (components/style-profile.md) so a record, a panel and a control each get their own shape." });
+  }
   return { findings, notes };
 }
 

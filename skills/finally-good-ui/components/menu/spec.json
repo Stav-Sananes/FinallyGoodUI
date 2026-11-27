@@ -94,7 +94,8 @@
     "density": "item",
     "also": [
       "trigger"
-    ]
+    ],
+    "role": "panel"
   },
   "api": [
     "openMenu(scope: Element, start?: number): void",

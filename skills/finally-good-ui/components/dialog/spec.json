@@ -116,7 +116,8 @@
     "density": null,
     "touch": [
       "close"
-    ]
+    ],
+    "role": "panel"
   },
   "api": [
     "openDialog(dialog: HTMLElement, opener?: Element | null): void",

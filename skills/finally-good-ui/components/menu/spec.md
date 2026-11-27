@@ -4,7 +4,7 @@
 
 **Cards:** a11y.keyboard-complete · a11y.semantic-first · a11y.focus-visible · a11y.target-size · usability.recognition-over-recall · usability.consistency-standards · motion.spatial-continuity · motion.reduced-motion
 
-**When NOT to use:** navigation links (a nav list of `<a>`, never `role="menu"`); choosing one value for a form field (native `<select>`); a filter-as-you-type list (combobox); two or three actions that fit on screen (visible buttons); a popover holding form controls (a plain popover, not a menu).
+**When NOT to use:** navigation links (a nav list of `<a>`, never `role="menu"`); choosing one value for a form field (native `<select>`); a filter-as-you-type list (combobox); two or three actions that fit on screen (visible buttons); a popover holding form controls (a plain popover, not a menu); a row of a list or a card with one or two actions (show them as visible buttons in the record's `action` part, `components/record-row`): a "..." menu on every row is the stock-list tell (`row-menu-button`), earned only by three or more secondary actions.
 
 **Tokens:** `--color-card` · `--color-card-foreground` · `--color-accent` and `--color-accent-foreground` (highlighted item) · `--color-muted-foreground` (disabled) · `--color-ring` · `--size-control-md` (item height) · `--space-1..4` · `--text-sm` · `--z-overlay` · `--duration-micro|short` · `--ease-snappy|exit`. The full list is `tokens` in `spec.json`; a style profile only emits a variable listed there. Radius, shadow and border treatment are the profile's call.
 

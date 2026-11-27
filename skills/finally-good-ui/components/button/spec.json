@@ -105,5 +105,8 @@
     "label",
     "spinner"
   ],
-  "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/button/"
+  "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/button/",
+  "profile": {
+    "role": "control"
+  }
 }

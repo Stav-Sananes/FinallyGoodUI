@@ -48,6 +48,8 @@ export function validateSpec(spec) {
       if (k === "radius") { if (typeof v !== "boolean") errors.push("profile.radius: must be a boolean"); }
       else if (k === "touch") { if (!Array.isArray(v) || v.some((x) => !(Array.isArray(spec.parts) && spec.parts.includes(x)))) errors.push("profile.touch: must be an array of parts (raised to 44px under pointer: coarse)"); }
       else if (k === "also") { if (!Array.isArray(v) || v.some((x) => !(Array.isArray(spec.parts) && spec.parts.includes(x)))) errors.push("profile.also: must be an array of parts (they also take the radius)"); }
+      else if (k === "role") { if (!["record", "panel", "control"].includes(v)) errors.push("profile.role: must be record, panel or control (which style-profile surface the component takes)"); }
+      else if (k === "lead") { if (!(isText(v) && Array.isArray(spec.parts) && spec.parts.includes(v))) errors.push("profile.lead: must be one of parts (the part a perforated edge tears off)"); }
       else if (["surface", "density", "interactive"].includes(k)) {
         if (v !== null && !(isText(v) && Array.isArray(spec.parts) && spec.parts.includes(v))) errors.push(`profile.${k}: must be null or one of parts`);
       } else errors.push(`profile.${k}: unknown key`);

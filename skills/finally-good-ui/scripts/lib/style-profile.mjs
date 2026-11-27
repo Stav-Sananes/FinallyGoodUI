@@ -16,6 +16,24 @@ const VALUES = {
   density: ["airy", "balanced", "dense"],
   motion: ["productive", "balanced", "expressive"],
 };
+// Surfaces by role: a record (row, card, ticket), a panel (dialog, menu list, popover, toast) and a control (button, field, select).
+// Each takes its own radius, material, edge and corner; what a role leaves out falls back to the profile's radius and material.
+export const ROLES = ["record", "panel", "control"];
+export const EDGES = ["square", "notch", "tab", "perforated", "ruled"];
+export const CORNERS = ["uniform", "cut", "asymmetric"];
+const SURFACE_VALUES = { radius: VALUES.radius, material: VALUES.material, edge: EDGES, corner: CORNERS };
+
+/** The surface of one role with every field resolved: {radius, material, edge, corner}. */
+export function surfaceOf(profile, role) {
+  const s = profile.surfaces?.[role] ?? {};
+  return { radius: s.radius ?? profile.radius, material: s.material ?? profile.material, edge: s.edge ?? "square", corner: s.corner ?? "uniform" };
+}
+
+/** True when the three roles look the same (radius, material, edge, corner): the one-card-for-everything profile. */
+export function surfacesIdentical(profile) {
+  const keys = ROLES.map((r) => JSON.stringify(surfaceOf(profile, r)));
+  return keys.every((k) => k === keys[0]);
+}
 
 export function validateProfile(p) {
   if (p === null || typeof p !== "object" || Array.isArray(p)) return { ok: false, errors: ["profile: must be an object"] };
@@ -24,6 +42,17 @@ export function validateProfile(p) {
     if (!allowed.includes(p[key])) errors.push(`${key}: must be one of ${allowed.join(", ")}`);
   }
   if (typeof p.motif !== "string" || p.motif.trim() === "") errors.push("motif: must be a non-empty string");
+  if (p.surfaces !== undefined) {
+    if (p.surfaces === null || typeof p.surfaces !== "object" || Array.isArray(p.surfaces)) errors.push(`surfaces: must be an object with ${ROLES.join(", ")}`);
+    else for (const [role, surface] of Object.entries(p.surfaces)) {
+      if (!ROLES.includes(role)) { errors.push(`surfaces.${role}: unknown role (use ${ROLES.join(", ")})`); continue; }
+      if (surface === null || typeof surface !== "object" || Array.isArray(surface)) { errors.push(`surfaces.${role}: must be an object`); continue; }
+      for (const [k, v] of Object.entries(surface)) {
+        if (!(k in SURFACE_VALUES)) errors.push(`surfaces.${role}.${k}: unknown field (use ${Object.keys(SURFACE_VALUES).join(", ")})`);
+        else if (!SURFACE_VALUES[k].includes(v)) errors.push(`surfaces.${role}.${k}: must be one of ${SURFACE_VALUES[k].join(", ")}`);
+      }
+    }
+  }
   return { ok: errors.length === 0, errors };
 }
 
@@ -40,14 +69,31 @@ const BORDER_COLOR = ["--color-border", "--color-input"];
 const RING_COLOR = ["--color-ring"];
 
 const ATTR = /^[A-Za-z_:][\w:.-]*$/;
-const DEFAULT_PARTS = { surface: "root", density: "root", interactive: "root", radius: true };
+const DEFAULT_PARTS = { surface: "root", density: "root", interactive: "root", radius: true, role: "panel" };
 const FORM_BORDER_COLOR = ["--color-input", "--color-border"];
+
+// Edge and corner shapes, tokens only. The edge is what a record is cut from: nothing (square), a bitten corner (notch),
+// a coloured leading edge (tab), a tear line between the lead and the rest (perforated), a bare rule instead of a box (ruled).
+// notch and cut both clip the box, so when both are asked the corner wins.
+function shapeCss(selector, leadSelector, edge, corner, ref, rule) {
+  const hair = ref(["--border-width-hairline"]), strong = ref(["--border-width-strong", "--border-width-hairline"]), line = ref(["--color-border"]);
+  const small = ref(["--space-3", "--space-2"]), big = ref(["--radius-lg", "--radius-md"]), none = ref(["--radius-none"]);
+  const out = [];
+  if (edge === "ruled" && hair) out.push(rule(selector, [["border-style", "solid"], ["border-color", line], ["border-width", "0"], ["border-block-end-width", hair], ["border-radius", none]]));
+  if (edge === "tab" && strong) out.push(rule(selector, [["border-inline-start-style", "solid"], ["border-inline-start-width", strong], ["border-inline-start-color", ref(["--color-primary", "--color-accent"])]]));
+  if (edge === "perforated" && leadSelector && strong) out.push(rule(leadSelector, [["border-inline-end-style", "dashed"], ["border-inline-end-width", strong], ["border-inline-end-color", line], ["padding-inline-end", small]]));
+  const notch = edge === "notch" && small ? `polygon(0 0, calc(100% - ${small}) 0, 100% ${small}, 100% 100%, 0 100%)` : null;
+  const cut = corner === "cut" && small ? `polygon(${small} 0, 100% 0, 100% calc(100% - ${small}), calc(100% - ${small}) 100%, 0 100%, 0 ${small})` : null;
+  if (cut || notch) out.push(rule(selector, [["clip-path", cut ?? notch]]));
+  if (corner === "asymmetric" && big && none) out.push(rule(selector, [["border-start-start-radius", big], ["border-end-end-radius", big], ["border-start-end-radius", none], ["border-end-start-radius", none]]));
+  return out.filter(Boolean).join("\n\n");
+}
 
 /** Which parts the profile layer touches for this spec. */
 export function profileParts(spec) {
   const p = spec.profile ?? {};
   const pick = (key) => (key in p ? p[key] : DEFAULT_PARTS[key]);
-  return { surface: pick("surface"), density: pick("density"), interactive: pick("interactive"), radius: p.radius ?? true, also: p.also ?? [], touch: p.touch ?? [] };
+  return { surface: pick("surface"), density: pick("density"), interactive: pick("interactive"), radius: p.radius ?? true, role: p.role ?? DEFAULT_PARTS.role, lead: p.lead ?? null, also: p.also ?? [], touch: p.touch ?? [] };
 }
 
 export function profileCss(profile, spec) {
@@ -57,10 +103,11 @@ export function profileCss(profile, spec) {
   const rule = (sel, pairs) => { const body = decls(pairs); return body ? `${sel} {\n${body}\n}` : ""; };
   const at = (part) => partSelector(spec.name, part);
 
-  const { radius, material, density, motion } = profile;
+  const { density, motion } = profile;
   const parts = profileParts(spec);
+  const { radius, material, edge, corner } = surfaceOf(profile, parts.role);
   const motif = String(profile.motif).replace(/\*\//g, "* /").replace(/\/\*/g, "/ *").replace(/\s+/g, " ").trim();
-  const blocks = [`/* ${spec.name}: radius=${radius} material=${material} density=${density} motion=${motion} motif="${motif}" */`];
+  const blocks = [`/* ${spec.name}: radius=${radius} material=${material} density=${density} motion=${motion} motif="${motif}" role=${parts.role} edge=${edge} corner=${corner} */`];
 
   if (parts.surface) {
     const control = parts.surface === "control";
@@ -74,6 +121,7 @@ export function profileCss(profile, spec) {
       ["box-shadow", material === "layered" ? ref(SHADOW.layered) : material === "flat" && !control ? "none" : null],
     ];
     blocks.push(rule(at(parts.surface), surface));
+    blocks.push(shapeCss(at(parts.surface), parts.lead && at(parts.lead), edge, corner, ref, rule));
     // Parts that share the surface treatment (a menu's trigger button): same radius, border and shadow from the same tokens.
     for (const part of parts.also) blocks.push(rule(at(part), surface));
   } else {

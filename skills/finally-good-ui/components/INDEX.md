@@ -12,6 +12,8 @@
 - [table](components/table/spec.md) — real `<table>` in a scroll region: sticky header, sortable columns (`aria-sort`, reported not performed), row selection with a select-all, loading and empty status rows.
 - [tooltip](components/tooltip/spec.md) — `role="tooltip"` native popover for a labelled control: hover after a delay, keyboard focus at once, Escape/blur/leave dismiss, hoverable, never opens on touch, plain text only.
 - [popover](components/popover/spec.md) — non-modal anchored panel (native `popover`): light dismiss, Escape, focus in and back, CSS anchor positioning with a script fallback, bound `open`.
+- [record-row](components/record-row/spec.md) — one record as a list line (`<li>`): lead, title, meta, status, visible action; shape (notch, tab, perforated, ruled edge, cut or asymmetric corner) from the profile's record surface; never a lone "..." menu.
+- [record-card](components/record-card/spec.md) — one record as a stand-alone piece (`<article>`): same parts, stacked; shaped by the same record surface (ticket, tag, stub, letter).
 
 Style profile (`.design/component-style.json`: schema and how to derive it from the direction): `components/style-profile.md`.
 
