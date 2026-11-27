@@ -7,6 +7,7 @@ import { readText, walk, isFile, toPosix, lineIndex, IGNORE_DIRS } from "./lib/f
 import { cssBlocks, declarations, styleView, markupView } from "./lib/css.mjs";
 import { findColors, findSpacing, stripComments, jsStringLiterals, JS_EXTS, MARKUP_EXTS } from "./lib/scan.mjs";
 import { RULE_CARDS, DEFAULT_SPACE_SCALE } from "./lib/rules.mjs";
+import { cssCards, utilityCards, rowMenuSites, sameCardGroup, severityFor } from "./lib/generic-static.mjs";
 import { groupTokens, parseDimension } from "./lib/tokens.mjs";
 import { loadTokens } from "./lib/token-files.mjs";
 import { parseColor, toOklch } from "./lib/contrast.mjs";
@@ -676,6 +677,14 @@ function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, ea
     if (hits.length >= 4) add("eyebrow-overuse", Math.min(...hits), "low", `${hits.length} tracked-caps labels in one file; a label repeated everywhere stops labelling. Keep them where they disambiguate (≤ 1 per 3 sections).`);
   }
 
+  // ---- same-card-everywhere (counted project-wide; reported in checkStatic) and row-menu-button
+  if (css) for (const c of cssCards(css, (v) => resolveVars(v, ctx.vars()))) ctx.cards.push({ file: rel, line: line(c.idx), key: c.key });
+  if (markup) for (const c of utilityCards(markup)) ctx.cards.push({ file: rel, line: line(c.idx), key: c.key });
+  if (markup && !/(^|\/)components\/fgu\//.test(rel)) {
+    const site = rowMenuSites(markup);
+    if (site) add("row-menu-button", site.idx, severityFor(site.rows), `${site.rows} list rows end in a "more" menu button. Show the row's one or two actions, or make the unit a record shaped by the concept (components/record-row); a menu is for three or more secondary actions.`);
+  }
+
   // ---- viewport-100vh
   const vhMsg = "100vh is taller than the visible area on mobile browsers (URL bar), so content and bottom actions get cut. Use 100dvh/100svh (keep 100vh only as a fallback before it).";
   each(/(?<![\w.-])100vh\b/g, css || clean, (m) => {
@@ -688,7 +697,7 @@ function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, ea
 
 export function checkStatic(rootArg = ".", { files, tokens } = {}) {
   const root = resolve(rootArg);
-  const ctx = { scale: spaceScale(tokens ? resolve(root, tokens) : null), motionAt: null, guarded: false, glass: new Map(), vars: null };
+  const ctx = { scale: spaceScale(tokens ? resolve(root, tokens) : null), motionAt: null, guarded: false, glass: new Map(), cards: [], vars: null };
   const defaults = listDefaultFiles(root);
   const targets = files?.length
     ? files.map((f) => toPosix(isAbsolute(f) ? relative(root, f) : f)).filter((f) => isFile(join(root, f)))
@@ -745,6 +754,13 @@ export function checkStatic(rootArg = ".", { files, tokens } = {}) {
     findings.push({ rule: "glass-overuse", severity: "low", file: first.file, line: first.line, selector: null,
       message: `Frosted glass on ${ctx.glass.size} different surfaces; when everything is frosted, nothing sits in front. Keep blur for one floating layer (sticky nav, sheet over content).`,
       card: RULE_CARDS["glass-overuse"] });
+  }
+  const sameCard = sameCardGroup(ctx.cards.filter((c) => !/(^|\/)components\/fgu\//.test(c.file)));
+  if (sameCard) {
+    const at = ctx.cards.find((c) => c.key === sameCard.key);
+    findings.push({ rule: "same-card-everywhere", severity: severityFor(sameCard.n), file: at.file, line: at.line, selector: null,
+      message: `${sameCard.n} surfaces share one bordered, rounded look (${sameCard.key}). Give the record, the panel and the control their own edge and corner (style profile surfaces), and leave some regions with no box at all.`,
+      card: RULE_CARDS["same-card-everywhere"] });
   }
   findings.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.rule.localeCompare(b.rule));
   const summary = { high: 0, medium: 0, low: 0 };

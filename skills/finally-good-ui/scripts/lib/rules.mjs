@@ -43,6 +43,9 @@ export const RULE_CARDS = {
   "decorative-pulse": "motion.purpose-only",
   "eyebrow-overuse": "layout.tension-consistency-emphasis",
   "viewport-100vh": "layout.intrinsic-responsive",
+  // Genericness twins of the browser probe (gate G10).
+  "same-card-everywhere": "craft.composition-rhythm",
+  "row-menu-button": "craft.composition-rhythm",
 };
 
 export const DEFAULT_SPACE_SCALE = [0, 1, 2, 4, 6, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64, 80, 96, 128];

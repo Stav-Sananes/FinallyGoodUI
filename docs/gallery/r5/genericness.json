@@ -1,0 +1,517 @@
+{
+  "tool": "check-genericness",
+  "note": "Run against the built r5 skill apps (docs/gallery/r5/apps/*/skill/dist), light scheme, 1440x900 and 375x667. r5 predates data-fgu-signature, so signatureAbsent fires for every app; countWithoutSignatureAbsent shows the other seven triggers alone. Thresholds were tuned on these four apps: cardCoverage 0.35 to 0.30 (booking 0.32, meals 0.34), canvasNeutral chroma 0.04 to 0.05 (booking 0.040, meals 0.035), card look keyed on radius and border width (the meals highlighted row differs in border colour and shadow). The tracker canvas (L 0.899, C 0.045) misses canvasNeutral only because lightness is under 0.9.",
+  "expected": {
+    "meals": ">=4",
+    "booking": ">=4",
+    "tracker": "<=2"
+  },
+  "apps": {
+    "finance": {
+      "count": 2,
+      "countWithoutSignatureAbsent": 1,
+      "pass": true,
+      "capDim10": null,
+      "triggers": [
+        {
+          "id": "canvasNeutral",
+          "value": 0.009,
+          "threshold": "page background OKLCH chroma < 0.05 and lightness > 0.9"
+        },
+        {
+          "id": "signatureAbsent",
+          "value": 0,
+          "threshold": "no [data-fgu-signature] in the first viewport, or below 0.25"
+        }
+      ],
+      "measured": {
+        "desktop": {
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "cardCoverage": 0,
+          "cardLooks": 0,
+          "rows": {
+            "groups": 0,
+            "max": 0
+          },
+          "column": {
+            "left": 185,
+            "right": 185,
+            "width": 1070
+          },
+          "type": {
+            "families": {
+              "Fraunces Variable": 6,
+              "Instrument Sans Variable": 29
+            },
+            "textElements": 35,
+            "sizes": [
+              76,
+              20,
+              18,
+              16,
+              14,
+              13,
+              12
+            ],
+            "body": 14
+          },
+          "canvas": {
+            "l": 0.951,
+            "c": 0.009
+          },
+          "surfaces": {
+            "containers": 5,
+            "radii": [
+              8,
+              12,
+              9999
+            ]
+          },
+          "signature": {
+            "count": 0,
+            "share": 0
+          }
+        },
+        "mobile": {
+          "viewport": {
+            "width": 375,
+            "height": 667
+          },
+          "cardCoverage": 0,
+          "cardLooks": 0,
+          "rows": {
+            "groups": 0,
+            "max": 0
+          },
+          "column": {
+            "left": 33,
+            "right": 33,
+            "width": 309
+          },
+          "type": {
+            "families": {
+              "Fraunces Variable": 5,
+              "Instrument Sans Variable": 10
+            },
+            "textElements": 15,
+            "sizes": [
+              40,
+              20,
+              18,
+              16,
+              14,
+              13
+            ],
+            "body": 18
+          },
+          "canvas": {
+            "l": 0.951,
+            "c": 0.009
+          },
+          "surfaces": {
+            "containers": 5,
+            "radii": [
+              0,
+              8,
+              12,
+              9999
+            ]
+          },
+          "signature": {
+            "count": 0,
+            "share": 0
+          }
+        }
+      }
+    },
+    "booking": {
+      "count": 4,
+      "countWithoutSignatureAbsent": 3,
+      "pass": false,
+      "capDim10": 3,
+      "triggers": [
+        {
+          "id": "cardCoverage",
+          "value": 0.323,
+          "threshold": "> 0.30 of the first viewport in bordered rounded cards sharing one radius and border width"
+        },
+        {
+          "id": "singleColumn",
+          "value": 960,
+          "threshold": "content <= 1000px, centred within 4%, >= 25% of the width empty"
+        },
+        {
+          "id": "canvasNeutral",
+          "value": 0.04,
+          "threshold": "page background OKLCH chroma < 0.05 and lightness > 0.9"
+        },
+        {
+          "id": "signatureAbsent",
+          "value": 0,
+          "threshold": "no [data-fgu-signature] in the first viewport, or below 0.25"
+        }
+      ],
+      "measured": {
+        "desktop": {
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "cardCoverage": 0.323,
+          "cardLooks": 1,
+          "rows": {
+            "groups": 0,
+            "max": 0
+          },
+          "column": {
+            "left": 240,
+            "right": 240,
+            "width": 960
+          },
+          "type": {
+            "families": {
+              "Bricolage Grotesque Variable": 5,
+              "Figtree Variable": 54
+            },
+            "textElements": 59,
+            "sizes": [
+              48,
+              20,
+              18,
+              16,
+              14,
+              12
+            ],
+            "body": 14
+          },
+          "canvas": {
+            "l": 0.93,
+            "c": 0.04
+          },
+          "surfaces": {
+            "containers": 17,
+            "radii": [
+              0,
+              10,
+              14,
+              9999
+            ]
+          },
+          "signature": {
+            "count": 0,
+            "share": 0
+          }
+        },
+        "mobile": {
+          "viewport": {
+            "width": 375,
+            "height": 667
+          },
+          "cardCoverage": 0.425,
+          "cardLooks": 1,
+          "rows": {
+            "groups": 0,
+            "max": 0
+          },
+          "column": {
+            "left": 16,
+            "right": 16,
+            "width": 343
+          },
+          "type": {
+            "families": {
+              "Bricolage Grotesque Variable": 5,
+              "Figtree Variable": 24
+            },
+            "textElements": 29,
+            "sizes": [
+              30,
+              20,
+              18,
+              16,
+              14,
+              12
+            ],
+            "body": 14
+          },
+          "canvas": {
+            "l": 0.93,
+            "c": 0.04
+          },
+          "surfaces": {
+            "containers": 10,
+            "radii": [
+              0,
+              10,
+              14
+            ]
+          },
+          "signature": {
+            "count": 0,
+            "share": 0
+          }
+        }
+      }
+    },
+    "tracker": {
+      "count": 2,
+      "countWithoutSignatureAbsent": 1,
+      "pass": true,
+      "capDim10": null,
+      "triggers": [
+        {
+          "id": "scaleFlat",
+          "value": 1.2,
+          "threshold": "largest / second-largest text size < 2.2"
+        },
+        {
+          "id": "signatureAbsent",
+          "value": 0,
+          "threshold": "no [data-fgu-signature] in the first viewport, or below 0.25"
+        }
+      ],
+      "measured": {
+        "desktop": {
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "cardCoverage": 0,
+          "cardLooks": 0,
+          "rows": {
+            "groups": 0,
+            "max": 0
+          },
+          "column": {
+            "left": 120,
+            "right": 655,
+            "width": 665
+          },
+          "type": {
+            "families": {
+              "Roboto Slab Variable": 3,
+              "Public Sans Variable": 43,
+              "JetBrains Mono Variable": 21
+            },
+            "textElements": 67,
+            "sizes": [
+              24,
+              20,
+              14,
+              12
+            ],
+            "body": 14
+          },
+          "canvas": {
+            "l": 0.899,
+            "c": 0.045
+          },
+          "surfaces": {
+            "containers": 25,
+            "radii": [
+              0,
+              2,
+              3,
+              9999
+            ]
+          },
+          "signature": {
+            "count": 0,
+            "share": 0
+          }
+        },
+        "mobile": {
+          "viewport": {
+            "width": 375,
+            "height": 667
+          },
+          "cardCoverage": 0,
+          "cardLooks": 0,
+          "rows": {
+            "groups": 0,
+            "max": 0
+          },
+          "column": {
+            "left": 16,
+            "right": 16,
+            "width": 343
+          },
+          "type": {
+            "families": {
+              "Roboto Slab Variable": 1,
+              "Public Sans Variable": 20,
+              "JetBrains Mono Variable": 12
+            },
+            "textElements": 33,
+            "sizes": [
+              24,
+              14,
+              12
+            ],
+            "body": 14
+          },
+          "canvas": {
+            "l": 0.899,
+            "c": 0.045
+          },
+          "surfaces": {
+            "containers": 9,
+            "radii": [
+              0
+            ]
+          },
+          "signature": {
+            "count": 0,
+            "share": 0
+          }
+        }
+      }
+    },
+    "meals": {
+      "count": 6,
+      "countWithoutSignatureAbsent": 5,
+      "pass": false,
+      "capDim10": 3,
+      "triggers": [
+        {
+          "id": "cardCoverage",
+          "value": 0.337,
+          "threshold": "> 0.30 of the first viewport in bordered rounded cards sharing one radius and border width"
+        },
+        {
+          "id": "rowRepeat",
+          "value": 5,
+          "threshold": ">= 5 identical sibling rows, each ending in a more/options button"
+        },
+        {
+          "id": "singleColumn",
+          "value": 950,
+          "threshold": "content <= 1000px, centred within 4%, >= 25% of the width empty"
+        },
+        {
+          "id": "canvasNeutral",
+          "value": 0.035,
+          "threshold": "page background OKLCH chroma < 0.05 and lightness > 0.9"
+        },
+        {
+          "id": "scaleFlat",
+          "value": 1.33,
+          "threshold": "largest / second-largest text size < 2.2"
+        },
+        {
+          "id": "signatureAbsent",
+          "value": 0,
+          "threshold": "no [data-fgu-signature] in the first viewport, or below 0.25"
+        }
+      ],
+      "measured": {
+        "desktop": {
+          "viewport": {
+            "width": 1440,
+            "height": 900
+          },
+          "cardCoverage": 0.337,
+          "cardLooks": 1,
+          "rows": {
+            "groups": 1,
+            "max": 5
+          },
+          "column": {
+            "left": 249,
+            "right": 241,
+            "width": 950
+          },
+          "type": {
+            "families": {
+              "Fraunces Variable": 4,
+              "Figtree Variable": 51
+            },
+            "textElements": 55,
+            "sizes": [
+              48,
+              36,
+              20,
+              18,
+              16,
+              14,
+              12
+            ],
+            "body": 14
+          },
+          "canvas": {
+            "l": 0.956,
+            "c": 0.035
+          },
+          "surfaces": {
+            "containers": 25,
+            "radii": [
+              0,
+              3,
+              6,
+              10,
+              14
+            ]
+          },
+          "signature": {
+            "count": 0,
+            "share": 0
+          }
+        },
+        "mobile": {
+          "viewport": {
+            "width": 375,
+            "height": 667
+          },
+          "cardCoverage": 0,
+          "cardLooks": 0,
+          "rows": {
+            "groups": 1,
+            "max": 5
+          },
+          "column": {
+            "left": 33,
+            "right": 33,
+            "width": 309
+          },
+          "type": {
+            "families": {
+              "Fraunces Variable": 4,
+              "Figtree Variable": 22
+            },
+            "textElements": 26,
+            "sizes": [
+              36,
+              20,
+              18,
+              16,
+              14,
+              12
+            ],
+            "body": 12
+          },
+          "canvas": {
+            "l": 0.956,
+            "c": 0.035
+          },
+          "surfaces": {
+            "containers": 16,
+            "radii": [
+              0,
+              3,
+              6,
+              10,
+              14
+            ]
+          },
+          "signature": {
+            "count": 0,
+            "share": 0
+          }
+        }
+      }
+    }
+  }
+}

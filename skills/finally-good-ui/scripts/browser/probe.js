@@ -6,7 +6,7 @@
  *   type:{sizes,weights,families,bodySize,paragraphMaxCh,paragraphMinLineHeight}, tokenCoverage}}.
  * Injected early (init script) it also records animations that finish before the probe runs.
  * opts: touch (44px targets), focus (walk focus states), tokens {colors:[css], spacing:[px]},
- *   reducedMotion (flag spatial motion), maxPerRule (default 15), skip:[rule names].
+ *   reducedMotion (flag spatial motion), promise {desktop, mobile} (signature share promised, 0-1), maxPerRule (default 15), skip:[rule names].
  */
 (function () {
   if (window.__fguProbe) return;
@@ -374,12 +374,96 @@
       Object.keys(offS).sort(function (a, b) { return offS[b].length - offS[a].length; }).forEach(function (v) { add('off-token-spacing', 'low', offS[v][0], v + ' is off the spacing scale (' + offS[v].length + ' elements)', 'layout.spacing-scale'); });
     });
 
+    // Genericness inputs: raw first-viewport measurements. lib/genericness.mjs turns them into triggers (gate G10).
+    var generic = null;
+    run('generic', function () {
+      function vis(el) { return visible(el) && !visuallyHidden(el); }
+      function clip(r) { var w = Math.min(r.right, vw) - Math.max(r.left, 0), h = Math.min(r.bottom, vh) - Math.max(r.top, 0); return w > 0 && h > 0 ? w * h : 0; }
+      var inView = all.filter(function (el) { var r = el.getBoundingClientRect(); return clip(r) > 0 && vis(el); });
+      // Cards: bordered, rounded (>= 8px) boxes whose look (corner radius and border width; colour and shadow vary per state) is shared by >= 4 elements; outermost only.
+      var cards = inView.filter(function (el) {
+        var cs = getComputedStyle(el), r = el.getBoundingClientRect();
+        var border = parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none' || parseFloat(cs.borderLeftWidth) > 0 && cs.borderLeftStyle !== 'none';
+        el.__fguLook = [cs.borderTopLeftRadius, cs.borderTopWidth].join('|');
+        return border && parseFloat(cs.borderTopLeftRadius) >= 8 && r.width > 40 && r.height > 24;
+      });
+      var looks = {}; cards.forEach(function (el) { looks[el.__fguLook] = (looks[el.__fguLook] || 0) + 1; });
+      var shared = cards.filter(function (el) { return looks[el.__fguLook] >= 4; });
+      var outer = shared.filter(function (el) { return !shared.some(function (o) { return o !== el && o.contains(el); }); });
+      var cardArea = outer.reduce(function (a, el) { return a + clip(el.getBoundingClientRect()); }, 0);
+      // Rows: >= 5 siblings of one shape, each ending in a "more" button.
+      var MORE = /^(more|options|actions|menu|more options|more actions|row actions|\.\.\.|…|⋯|⋮|⠇)$/i;
+      function moreBtn(el) {
+        return Array.prototype.some.call(el.querySelectorAll('button,[role=button],[aria-haspopup]'), function (b) {
+          var n = accName(b).replace(/\s+/g, ' ').trim();
+          return MORE.test(n) || /^(more|options|actions)\b/i.test(n) && n.split(' ').length <= 3 || /(more|options|actions)\s*$/i.test(b.getAttribute('aria-label') || '');
+        });
+      }
+      function shape(el) { return el.tagName + '.' + Array.prototype.slice.call(el.classList).sort().join('.') + '>' + Array.prototype.map.call(el.children, function (c) { return c.tagName; }).join(','); }
+      var rowGroups = 0, maxRows = 0;
+      all.forEach(function (p) {
+        var kids = Array.prototype.filter.call(p.children, vis), by = {};
+        kids.forEach(function (k) { if (moreBtn(k)) (by[shape(k)] = by[shape(k)] || []).push(k); });
+        Object.keys(by).forEach(function (k) { if (by[k].length >= 5) { rowGroups++; maxRows = Math.max(maxRows, by[k].length); } });
+      });
+      // Column: horizontal extent of in-flow content (leaf text, media, controls) in the first viewport, bars that stick or are fixed excluded.
+      var left = Infinity, right = -Infinity;
+      inView.forEach(function (el) {
+        var leaf = ownText(el) || /^(IMG|SVG|CANVAS|VIDEO|INPUT|SELECT|TEXTAREA|BUTTON)$/i.test(el.tagName);
+        if (!leaf || el.closest('header,nav,[role=banner],[role=navigation]')) return;
+        for (var a = el; a && a !== document.body; a = a.parentElement) { var pos = getComputedStyle(a).position; if (pos === 'fixed' || pos === 'sticky') return; }
+        var r = el.getBoundingClientRect(); left = Math.min(left, Math.max(r.left, 0)); right = Math.max(right, Math.min(r.right, vw));
+      });
+      // Type: first family of every text element in view, size by element.
+      var fams = {}, sizes = {}, chars = 0, total = 0, bodyCount = {};
+      inView.forEach(function (el) {
+        var t = ownText(el); if (!t) return;
+        var cs = getComputedStyle(el), f = cs.fontFamily.split(',')[0].replace(/["']/g, '').trim(), fs = Math.round(parseFloat(cs.fontSize));
+        fams[f] = (fams[f] || 0) + 1; total++; sizes[fs] = 1; bodyCount[fs] = (bodyCount[fs] || 0) + t.length; chars += t.length;
+      });
+      var body = Object.keys(bodyCount).sort(function (a, b) { return bodyCount[b] - bodyCount[a]; })[0];
+      // Canvas: first opaque background from body up to html, as OKLCH lightness and chroma.
+      var bg = null;
+      [document.body, root].some(function (el) { var c = rgba(getComputedStyle(el).backgroundColor); if (c && c[3] > 0.5) { bg = c; return true; } });
+      if (!bg) bg = [255, 255, 255, 1];
+      function lin(x) { x /= 255; return x <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }
+      var R = lin(bg[0]), G = lin(bg[1]), B = lin(bg[2]);
+      var l_ = Math.cbrt(0.4122214708 * R + 0.5363325363 * G + 0.0514459929 * B), m_ = Math.cbrt(0.2119034982 * R + 0.6806995451 * G + 0.1073969566 * B), s_ = Math.cbrt(0.0883024619 * R + 0.2817188376 * G + 0.6299787005 * B);
+      var okL = 0.2104542553 * l_ + 0.793617785 * m_ - 0.0040720468 * s_, okA = 1.9779984951 * l_ - 2.428592205 * m_ + 0.4505937099 * s_, okB = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.808675766 * s_;
+      // Containers (a border or a background that differs from the canvas) and their distinct corner radii.
+      var radii = {}, containers = 0;
+      inView.forEach(function (el) {
+        var cs = getComputedStyle(el), r = el.getBoundingClientRect(); if (r.width < 40 || r.height < 24) return;
+        var c = rgba(cs.backgroundColor), own = c && c[3] > 0.5 && (Math.abs(c[0] - bg[0]) + Math.abs(c[1] - bg[1]) + Math.abs(c[2] - bg[2])) > 6;
+        if (!(own || parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none')) return;
+        containers++; radii[Math.round(parseFloat(cs.borderTopLeftRadius)) + ''] = 1;
+      });
+      // Signature: the element the concept promised, tagged data-fgu-signature; its share of the first viewport.
+      var sigEl = Array.prototype.filter.call(document.querySelectorAll('[data-fgu-signature]'), vis), sigArea = 0;
+      sigEl.forEach(function (el) { sigArea += clip(el.getBoundingClientRect()); });
+      generic = {
+        viewport: { width: vw, height: vh },
+        cardCoverage: +Math.min(cardArea / (vw * vh), 1).toFixed(3), cardLooks: Object.keys(looks).filter(function (k) { return looks[k] >= 4; }).length,
+        rows: { groups: rowGroups, max: maxRows },
+        column: left === Infinity ? null : { left: Math.round(left), right: Math.round(vw - right), width: Math.round(right - left) },
+        type: { families: fams, textElements: total, sizes: Object.keys(sizes).map(Number).sort(function (a, b) { return b - a; }), body: body ? +body : null },
+        canvas: { l: +okL.toFixed(3), c: +Math.sqrt(okA * okA + okB * okB).toFixed(3) },
+        surfaces: { containers: containers, radii: Object.keys(radii).map(Number).sort(function (a, b) { return a - b; }) },
+        signature: { count: sigEl.length, share: +Math.min(sigArea / (vw * vh), 1).toFixed(3) }
+      };
+      var pr = opts.promise;
+      if (pr && sigEl.length && generic.signature.share < (vw >= 1000 ? pr.desktop : pr.mobile)) {
+        add('signature-below-promise', 'high', sigEl[0], 'Signature covers ' + Math.round(generic.signature.share * 100) + '% of the first viewport; the spec promised ' + Math.round((vw >= 1000 ? pr.desktop : pr.mobile) * 100) + '%', 'craft.identity-motif');
+      }
+      all.forEach(function (el) { delete el.__fguLook; });
+    });
+
     var summary = { high: 0, medium: 0, low: 0 };
     findings.forEach(function (f) { summary[f.severity]++; });
     var truncated = {}; Object.keys(counts).forEach(function (k) { if (k !== 'contrast-unknown' && counts[k] > max) truncated[k] = counts[k]; });
     return {
       tool: 'probe', url: location.href, findings: findings, summary: summary, animations: animations,
-      metrics: { overflowX: overflowX, cls: +cls.toFixed(4), viewport: { width: vw, height: vh }, contrastUnknown: counts['contrast-unknown'] || 0, type: type, tokenCoverage: tokenCoverage, truncated: truncated, focus: focusStats },
+      metrics: { overflowX: overflowX, cls: +cls.toFixed(4), viewport: { width: vw, height: vh }, contrastUnknown: counts['contrast-unknown'] || 0, type: type, tokenCoverage: tokenCoverage, generic: generic, truncated: truncated, focus: focusStats },
       errors: errors
     };
   };
