@@ -62,6 +62,7 @@ Matrix: every `config.viewports` entry × the theme's schemes (default light and
 - **Theme:** if the app does not follow `prefers-color-scheme` (dark by default, or themed by a `data-theme` attribute, a class or a localStorage key), set `config.theme` first, or the "light" pass may really be dark. Examples: `{"schemes":["dark","light"],"default":"dark","storage":"app-theme"}`, `{"attribute":"data-theme"}`, `{"class":"dark"}`. Other fields: `lightClass`, `target` (`html`|`body`), `query` (URL param), `values` (`{"light":…,"dark":…}`), `media:false`, `schemes:["dark"]` (dark-only app).
 - **Re-runs between rounds:** `--changed` (or `--changed r0`) re-runs only variants whose flow changed, that are new, or that had errors or high/medium findings; the rest are carried from that report and marked `carried`. `--only <flow|flow.state|screen>` narrows further. **The final gate run (G-checks) is always a full run without these flags.**
 - Results can carry `notes` (a forced state left its replayed path). Read them before judging that state's screenshot.
+- Every result's `metrics.generic` holds the first-viewport measurements for gate G10 (below). Then run `node SR/scripts/check-genericness.mjs --report .design/reports/<run>.json --screen <landing step>`; it reads the 1440 and 375 results of the landing screen and prints triggers, the dimension 10 cap and any signature miss. Without a flow report, `--url <landing URL>` measures it directly (`--promise-1440`/`--promise-375` from the spec's Signature at scale).
 
 ## 5. Layer 3 — independent review
 
@@ -69,9 +70,11 @@ Spawn the `ui-reviewer` subagent (`agents/ui-reviewer.md`; may be listed as `fin
 - screenshots: per screen, `375-light` and `1440-dark` of the base flow + every forced-state shot at 375. At most ~12 images per call; split by flow if more (see **Merging** below).
 - `.design/reports/<run>.json` (it reads findings, `animations`, `metrics`), the static-check JSON.
 - `brief.md`, `blueprint.md`, `decisions.md`, `rubric/rubric.md`, `rubric/ai-default-fingerprints.md`, and the canon files for cards it cites.
-- the **caps** for dimensions 6, 7, 9 that you computed from measured data (rubric).
+- the **caps** for dimensions 6, 7, 9 that you computed from measured data (rubric), and for dimension 10 (3 when G10 fails).
 - the chosen direction spec (`.design/directions/<x>.spec.md`) and its prototype file, if directions ran, so it can judge **direction fidelity**: does the build still read as that direction, or did it regress to the mean? (dimension 10)
 - `canon/craft.md` (dimension 10 craft checks).
+- **A stock baseline of the same content:** write `.design/reports/baseline.html` yourself, one file under 80 lines: the same data and labels as the landing screen, a top bar and a centred column, white bordered cards, system font, default radii, no concept. Screenshot it at 1440 and 375 (`shots/<run>/baseline-<w>.png`). The reviewer answers "could this app be swapped with the baseline without anyone noticing?"; yes caps dimension 10 at 3, and a pairwise compare of build vs baseline (both orders) that does not clearly prefer the build is the same.
+- the genericness JSON (G10) and the signature share measured at both widths.
 Do not tell it what you changed or what you think is wrong. It scores dimensions 4–10 only.
 
 **Merging** reviewer outputs into one score per dimension:
@@ -81,7 +84,7 @@ Do not tell it what you changed or what you think is wrong. It scores dimensions
 
 ## 6. Score, fix, compare (max 2 rounds)
 
-1. **Scorecard.** Score 1–3 from measured data per the rubric; take 4–10 from the reviewer (apply caps). Pass = gate passes and all ≥ 4.
+1. **Scorecard.** Score 1–3 from measured data per the rubric; take 4–10 from the reviewer (apply caps, including the G10 cap of 3 on dimension 10). Pass = gate passes, all ≥ 4 **and G10 passes**: no run with nine 5s and a generic first viewport can pass.
 2. **History.** Append the round to `.design/reports/history.json`:
    ```json
    {"rounds":[{"round":0,"run":"r0","date":"2026-09-26","gate":false,
@@ -128,7 +131,25 @@ Scores say how good it is; the gate says whether it can be handed over. Write on
 | G7 | Each screen has one focal point and at least one deliberate accent moment | screenshot paths |
 | G8 | The identity motif appears in ≥ 3 places | decisions.md + shots |
 | G9 | Direction fidelity ≥ 4 (if directions ran) | reviewer JSON |
-| G10 | Light, dark and 375 px all render without overflow or broken surfaces; one pass with scrollbars always visible (no layout shift when they appear) and one at 1440 px and 50% zoom (ultra-wide: lines stay within a readable measure) | flow-walk run |
+| G10 | Genericness (below): fewer than 3 triggers, and the signature meets its promised share at 1440 and 375 | `check-genericness.mjs` JSON |
+| G11 | Light, dark and 375 px all render without overflow or broken surfaces; one pass with scrollbars always visible (no layout shift when they appear) and one at 1440 px and 50% zoom (ultra-wide: lines stay within a readable measure) | flow-walk run |
+
+## 7d. Genericness gate (G10)
+
+A template shows in the first viewport, so it is measured there (`scripts/lib/genericness.mjs`, inputs from `probe.js` `metrics.generic`; 1440x900 light, signature also at 375x667). Triggers, with thresholds calibrated on the four r5 apps (`docs/gallery/r5/genericness.json`):
+
+| Trigger | Fires when |
+|---|---|
+| `cardCoverage` | bordered rounded (≥ 8px) boxes sharing one radius and border width cover > 30% of the viewport |
+| `rowRepeat` | ≥ 5 sibling rows of one shape, each ending in a "more" / "options" / "..." button |
+| `singleColumn` | content ≤ 1000px wide, centred within 4%, ≥ 25% of the width empty |
+| `defaultType` | ≥ 70% of text in stock UI families (Inter, Figtree, Public Sans, DM Sans, Instrument Sans, Plus Jakarta, Geist, system), other families on ≤ 2 nodes |
+| `canvasNeutral` | page background OKLCH chroma < 0.05 and lightness > 0.9 (a tint at that chroma counts) |
+| `scaleFlat` | largest / second-largest text size < 2.2 |
+| `signatureAbsent` | no `[data-fgu-signature]` in the first viewport, or under the spec's promised share (default 25% at 1440) |
+| `radiusUniform` | ≤ 2 distinct container radii on ≥ 6 containers while the profile has 3 surface roles |
+
+**3 or more triggers: G10 fails and dimension 10 is capped at 3.** A signature under its promise at either width (default 25% at 1440, 40% at 375) is also a `signature-below-promise` finding, severity **high**, card `craft.identity-motif`, counted in direction fidelity (G9). Fix by enlarging the signature or building the Skeleton, never by editing the spec down (an honest reduction goes through the user or, autonomous, `decisions.md`). The static twins `same-card-everywhere` and `row-menu-button` (check-static, low until 5, then medium) point at the same causes in code.
 
 ## 8. Report
 

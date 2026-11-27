@@ -3,7 +3,7 @@
 Goal: three written, then built, directions for the **key screen**, each fully animated with one real transition. The user picks one or mixes. Output: `.design/directions/{a,b,c}.html`, `.design/directions/compare.html`, a decision entry in `.design/decisions.md`.
 
 ## 0. Gate
-1. Read `directions` (SKILL.md, run settings). `off` → skip this module, log `directions: skipped (config)` in `decisions.md`, go to `system`. `one` → write only the grounded standard (A), build it, skip the divergence rule.
+1. Read `directions` (SKILL.md, run settings). `off` → skip this module, log `directions: skipped (config)` in `decisions.md`, go to `system`. `one` → write all three specs (the two you do not build as one paragraph each: thesis, Concept mapping, Skeleton), build one, skip the rolling rule between built directions. Who picks: with a person present it is A, the grounded standard; in an autonomous run it is the pick under SKILL.md "Autonomous runs", which must pass the structure test in §2 (a Skeleton that is not "top bar + one centred column", layout stage, object or rail+work). A pick that fails it is rewritten before building.
 2. Require an approved `.design/blueprint.md`. If missing, run `blueprint` first.
 3. Show the cost warning only when `directions` is `three` and the user did not choose it in the plugin setting or `.design/config.json` (the default counts as not chosen); then wait. Never in an autonomous run (follow SKILL.md "Autonomous runs"):
 
@@ -21,20 +21,25 @@ Goal: three written, then built, directions for the **key screen**, each fully a
 Pick **real content** now: 5–12 concrete items from the brief's domain (names, numbers, dates, statuses) that every direction will use. Same content across A/B/C so the user compares design, not copy.
 
 ## 2. Assign axis positions
-Six axes, each with three positions:
+Six axes, each with three positions (layout has four):
 
 | Axis | 1 | 2 | 3 |
 |---|---|---|---|
 | density | airy | balanced | dense |
 | contrast | soft (small lightness steps) | standard | stark (large steps, heavy ink) |
 | type voice | neutral grotesk | humanist / serif text | expressive display + utility |
-| layout (composition of the key screen's content area) | **column**: one reading column ≤ 760px, top to bottom, the answer first | **rail + work**: a narrow persistent summary rail beside a wide working area (list, table, canvas) | **stage**: one focal figure or visual owns ≥ 40% of the first viewport, everything else arranged around or below it (not two equal columns) |
+| layout (composition of the key screen) | **column**: one reading column ≤ 760px, top to bottom, the answer first | **rail + work**: a narrow persistent summary rail beside a wide working area (list, table, canvas) | **stage**: one focal figure or visual owns ≥ 40% of the first viewport, everything else arranged around or below it (not two equal columns) |
+
+Layout position 4, **object**: the screen's main structure is the subject's own artefact (a gauge, a ticket, a board, a case of pigeonholes), a working control or live data view, not a list in a column. The Signature at scale (§3) is that artefact.
+
 | material (craft.material-restraint) | flat-hairline (rules and space, no shadows) | soft-elevated (layered tinted shadows, concentric radii) | bezel / textured / tonal (shell + core, grain, tonal light) |
 | motion personality | productive (150–250ms, 8–12px travel, no bounce) | balanced (200–400ms, 12–20px travel) | expressive (300–600ms, 16–32px travel, spatial springs may bounce) |
 
 **Composition test.** Describe each content area in one line as "<first thing the eye hits> → <then> → <then>" and with its column structure. Two directions whose lines match (for example both "summary on the left, list on the right") share a composition even if their axis numbers differ: re-roll one.
 
-**Layout is composition, not the shell.** The blueprint's navigation model (sidebar, tabs…) is fixed for every direction; the layout axis decides how the content area is composed inside it. Never override the blueprint shell, and never let three directions share one composition: that is the "same skeleton in three costumes" failure (directions that differ only in palette and font read as one template).
+**The direction may amend the shell.** The blueprint's navigation model is the default skeleton, not a contract: when a direction's Skeleton line (§3) names the Concept mapping row that demands a different shell (a board instead of a top bar, a case instead of a column), that direction replaces it; log it in `decisions.md` and update `blueprint.md` when that direction is chosen. Never let three directions share one composition: that is the "same skeleton in three costumes" failure (directions that differ only in palette and font read as one template).
+
+**Structure test (every direction, before building).** Reject and rewrite a spec whose Skeleton is "top bar + one centred column" or whose Concept mapping unit row is "avatar + title + menu" unless a quoted brief line demands it. Layout is rolled from four positions (`1+Math.floor(Math.random()*4)`); structure-not-skin below counts all four.
 
 **The three must span the range** (quiet → bold → the subject's own), so the choice is between real alternatives, not three versions of the safe answer:
 - **A — quiet.** Set each axis to the position the brief most directly implies (cite the brief line). Restrained and conventional, well executed.
@@ -70,6 +75,8 @@ Palette (OKLCH, 4–6 roles):
   check: fg/bg ≥ 4.5:1, primary-foreground/primary ≥ 4.5:1 (a11y.contrast-minimums)
 Type: <display family> + <text family> (+ mono if data) from Google Fonts, fallbacks listed.
   why: <voice reason from the brief; cite typography.* card>
+Concept mapping (3 rows): <world object> -> <screen structure> | <world action> -> <interaction> | <world unit> -> <row/record shape: edge and corner for the style profile's record surface>
+Skeleton: <"first thing the eye hits -> then -> then", regions and widths in %; the shell this direction wants, which may replace the blueprint's (log it)>
 Layout concept: <grid, regions, where the primary action lives, what the eye hits first> (layout.hierarchy-by-weight)
   composition: <how this differs from the other two directions' compositions, in one line>
   focal point: <the one element that is largest/darkest; usually the answer to the user's top question>
@@ -85,8 +92,9 @@ Motion personality: <productive|balanced|expressive>
   easing: enter cubic-bezier(..) · exit cubic-bezier(..) · move cubic-bezier(..)
   spring (if any): spatial {duration <s>, bounce <0–0.3>} · effects {bounce 0}
   the one real transition: <trigger control → what moves where> (motion.one-signature-moment, motion.spatial-continuity)
-Signature detail: <one element that could only belong to THIS subject — e.g. a tide-chart progress bar for a sailing app; usually the motif at its largest>
-Fingerprint check: <pass | matches: <id> → justified because <brief line> | revised: <what changed>>
+Signature at scale: <a working control or live data view that could only belong to THIS subject (a tide staff that reads the runway, a case of pigeonholes that assigns), with its job; on the first screen of the landing route; covers >= 25% of the first viewport at 1440x900 and >= 40% of 375x667; tagged data-fgu-signature (one per screen)>
+Refuses (3 default dashboard moves, each a probe trigger in modules/verify.md G10): <e.g. no equal-card grid (cardCoverage) · no centred column (singleColumn) · no per-row menu (rowRepeat)>
+Fingerprint check: <pass | matches: <id> → justified because <brief line> | revised: <what changed>>  (measured by gate G10 once the first screen is built; the check here is only a prediction)
 ```
 
 Rules for the specs:
@@ -102,6 +110,7 @@ Read `rubric/ai-default-fingerprints.md`. For every fingerprint the spec matches
 - Justify it from a quoted brief line, **or** revise the spec and note what changed.
 - Two or more unjustified matches in one spec → rewrite that spec from the thesis down.
 Record the result in the spec's `Fingerprint check` line.
+- The Signature at scale must be a control or data display with a job, not the motif enlarged; a direction whose signature is decoration is rewritten.
 - Also check the **sterile default** (fingerprints file, last section): a spec with no accent moment, no motif, default-looking type and flat surfaces is rewritten, even if it matches nothing else.
 - Then compare the three specs side by side: if two share the same composition sentence, or all three share one material, re-roll per §2 (two directions may share a material).
 
@@ -114,7 +123,7 @@ Each prompt must contain, inline (the subagent does not share your context):
 3. The shared real-content list from §1.
 4. Output path: `<project>/.design/directions/<a|b|c>.html` (absolute).
 5. The path to `rubric/ai-default-fingerprints.md` (absolute) for its self-check.
-6. The paths to `canon/craft.md` and `scripts/check-static.mjs` (absolute) for its craft pass and static check.
+6. The paths to `canon/craft.md` and `scripts/check-static.mjs` (absolute) for its craft pass and static check; and this line: "Tag the Signature at scale element `data-fgu-signature` and report its share of the first viewport at 1440x900 and 375x667."
 7. Its own scratch dir, absolute and outside the project (e.g. `<session scratchpad>/fgu-direction-<a|b|c>/`): builders share one machine and must not share a browser or write junk into the project (`agents/direction-builder.md`, "Scratch and browser hygiene").
 8. This line: "Build ONE self-contained HTML file per agents/direction-builder.md. Report: path, fonts and icon library used, the transition implemented, where the motif repeats, regions built (N of N), check-static result, fingerprint self-check result, anything you could not do."
 
@@ -146,6 +155,7 @@ Append to `.design/decisions.md`:
 ## D-<n> Direction: <chosen name or "Mix: …">
 - Chosen: <A|B|C|mix details>. Rejected: <others, one-line reason each from the user>.
 - Axes: density=… contrast=… type=… layout=… material=… motion=…
+- Skeleton: <the shell chosen; "amends blueprint: <old> -> <new>, because <Concept mapping row>" or "blueprint shell kept">
 - Palette/type/motion carried to system: <summary>
 - Cards: <tension resolutions and cards from the chosen spec>
 - Files: .design/directions/<x>.spec.md, <x>.html

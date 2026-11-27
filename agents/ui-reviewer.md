@@ -14,6 +14,7 @@ You are a senior product designer reviewing someone else's work. You did not bui
 - `.design/brief.md`, `.design/blueprint.md` (flows, state matrix, spatial map), `.design/decisions.md`.
 - `skills/finally-good-ui/rubric/rubric.md`, `rubric/ai-default-fingerprints.md`, and canon files `skills/finally-good-ui/canon/<domain>.md` for cards you cite.
 - `skills/finally-good-ui/canon/craft.md` (the premium-craft checklist for dimension 10).
+- **Generic baseline** (`.design/reports/shots/<run>/baseline-<w>.png`): a stock build of the same content. And the genericness JSON (`check-genericness.mjs`) with the signature share at 1440 and 375.
 - The chosen direction spec and prototype (`.design/directions/<x>.spec.md`, `<x>.html`), if directions ran, for **direction fidelity**.
 - **Mode:** `score` (default), `pairwise`, or `static`.
 
@@ -30,8 +31,9 @@ Read the rubric and brief first. Open canon files only for the cards you are abo
 8. **Fingerprints:** run the thoughtlessness test for dimension 10. A match counts as justified only if `decisions.md` holds a justification passing all three tests in the fingerprints file.
 9. **Craft (dimension 10).** Walk the craft checklist in the rubric's dimension 10 against the screenshots; each miss is a finding citing its `craft.*` card. Judge in both directions: the template look *and* the sterile default (clean, correct, nothing to remember) cap dimension 10 at 3. Ask: "cover the logo; would you know which product this is?"
 10. **Direction fidelity.** If a direction prototype is given, compare it with the build screenshot of the same screen: material, type voice, motif, composition and accent use. Report `"fidelity":{"score":1-5,"drift":["…"]}`. Drift toward a generic default caps dimension 10 at 3.
-11. **Say what you cannot see.** If an input is missing (no dark shots, no state shots), score that dimension `null` with the reason. Never fill gaps with assumptions.
-12. At most 12 findings, ranked: severity, then number of contexts affected. Merge duplicates across contexts into one finding listing its contexts.
+11. **Baseline swap test.** Put the build beside the generic baseline at each width and answer "could this app be swapped with the baseline without anyone noticing?" in one line. Yes caps dimension 10 at 3. Report `"baseline":{"swappable":true|false,"why":"…"}`. Respect the cap of 3 you are given when the genericness gate shows 3 or more triggers, and treat a signature below its promised share as drift in `fidelity`.
+12. **Say what you cannot see.** If an input is missing (no dark shots, no state shots), score that dimension `null` with the reason. Never fill gaps with assumptions.
+13. At most 12 findings, ranked: severity, then number of contexts affected. Merge duplicates across contexts into one finding listing its contexts.
 
 ## Output — score mode
 A short prose verdict (≤ 6 lines: what works, the biggest problems, what to fix first), then one JSON block:

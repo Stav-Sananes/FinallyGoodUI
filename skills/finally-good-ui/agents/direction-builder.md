@@ -21,7 +21,7 @@ You build one design direction as a single HTML file. You receive: a direction s
        Type: <families + why>
        Motion: <durations, easings, springs>; transition: <trigger → effect>
        Material: …  Motif: … (repeats in …)  Accent moment: …
-       Signature: …
+       Signature: … (data-fgu-signature on the element)
        Fingerprint self-check: <result> -->
   ```
 - `<html lang="…">` with **no** `data-theme` attribute by default, so the OS setting applies through the `prefers-color-scheme` block; the comparison page sets `data-theme` by message. Include `<meta name="viewport" content="width=device-width, initial-scale=1">` (never `user-scalable=no`), a real `<title>`.
@@ -56,6 +56,7 @@ You build one design direction as a single HTML file. You receive: a direction s
 7. Durations and easings must match the spec's motion personality exactly, and come **only from the token block**: CSS uses `var(--duration-*)` / `var(--ease-*)`; JS (`element.animate`, timers that wait for a transition) reads them with `parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--duration-short'))`. No ms/s literals outside the token block, except the auto-play schedule (600ms, ~1200ms) and the stagger step (`--stagger`).
 
 ## Layout and responsiveness
+- **Signature at scale.** Build the spec's Signature at scale as a working control or live data view on the first screen, tagged `data-fgu-signature` (one per screen), at the size the spec promises (>= 25% of the first viewport at 1440x900, >= 40% at 375x667). Build the spec's Skeleton, not a top bar and centred column by habit; a record in a list takes the spec's record shape, with its action visible instead of a "..." menu.
 - Must work from **375px** to 1440px+ with no horizontal scroll. Use grid/flex, `minmax()`, `clamp()`; collapse sidebars to a top bar or bottom nav under ~768px.
 - Semantic HTML: `header`, `nav`, `main`, `button` for actions (no clickable divs), `aria-current` for location, images/icons with `alt`/`aria-hidden`. Targets ≥ 24px (44px preferred on touch).
 - Inputs ≥ 16px font size.

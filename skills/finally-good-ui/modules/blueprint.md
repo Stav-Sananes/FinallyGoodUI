@@ -15,6 +15,8 @@ Inputs: `.design/brief.md` (a draft is fine: it is approved together with the bl
 
 ## 2. Choose the navigation model
 
+This model is the default skeleton: the chosen direction may replace the shell when its Concept mapping demands it (`modules/directions.md` §2); log it in `decisions.md` and update this file then.
+
 Count primary destinations (exclude settings, profile, help). Then apply, in order — the first matching row wins, and log a decision record. Frequency: `daily` = several times a day or week, including a fixed weekly routine (a Monday review); `rare` = a few times a month or less (`context.frequency`).
 
 | Primary destinations | Device (`context.device`) | Frequency / depth | Model | Cards |
@@ -61,7 +63,7 @@ This matrix is the checklist the build step implements and the verify step force
 
 ## 6. Cross-screen rules and motion spatial map
 
-**Consistency rules** (5–10 lines): where the primary action sits, list-row vs card choice per object, how destructive actions look, title/breadcrumb pattern, form layout (labels above), toast vs inline feedback. [usability.consistency-standards, flows-forms.labels-above]
+**Consistency rules** (5–10 lines): where the primary action sits, the record shape per object (taken from the direction's Concept mapping unit row once chosen; until then a plain row), how destructive actions look, title/breadcrumb pattern, form layout (labels above), toast vs inline feedback. [usability.consistency-standards, flows-forms.labels-above]
 
 **Motion spatial map** — one mental model of space for the whole app: [motion.spatial-continuity, motion.frequency-budget]
 - Hierarchy is depth: drill-in (list → detail) moves forward (enters from the trailing edge or scales up from the source); back reverses exactly.

@@ -11,7 +11,7 @@ Score every dimension separately, 1–5, against the anchors below. Never collap
 ## Gate and pass
 
 - **Gate (dimension 1):** zero high or medium findings whose card is `a11y.*` or `motion.reduced-motion`, in every context (both viewports, both themes, reduced motion) and every forced state. Advisory items (`focus-weak` = WCAG 2.4.13, AAA; APCA values) never fail the gate.
-- **Pass:** gate passes **and** every dimension scores ≥ 4.
+- **Pass:** gate passes, every dimension scores ≥ 4 **and delivery gate G10 (genericness) passes** (`modules/verify.md` §7d). Dimension 10 and G10 are pass conditions: a build with nine 5s and a generic first viewport does not pass.
 - A dimension that cannot be assessed (e.g. motion with no browser) is `n/a` with a reason. `n/a` is not a pass. Report it as unverified.
 
 ## Dimensions
@@ -95,9 +95,9 @@ Input: `animations[]` per context plus static findings. Measured caps: `anim-non
 - 2 — motion delays the user or breaks under reduced motion.
 - 1 — janky, disorienting or blocking.
 
-### 10 · Craft and brand fit — J
+### 10 · Craft and brand fit — D+J
 Cards: personality.* (the one(s) the brief chose) · craft.* (`canon/craft.md`) · motion.one-signature-moment · writing.user-language · writing.action-labels · writing.plain-claims · layout.tension-consistency-emphasis
-Also run the thoughtlessness test in `ai-default-fingerprints.md` (both directions: template *and* sterile default), and, if directions ran, **direction fidelity**: put the build screenshot next to the chosen prototype; the build must keep the prototype's material, type voice, motif and composition. Regression to the mean caps this dimension at 3.
+Also run the thoughtlessness test in `ai-default-fingerprints.md` (both directions: template *and* sterile default), and, if directions ran, **direction fidelity**: put the build screenshot next to the chosen prototype; the build must keep the prototype's material, type voice, motif and composition. Regression to the mean caps this dimension at 3. **Measured cap:** 3 or more genericness triggers (G10) cap it at 3. **Baseline test:** the reviewer also sees a stock build of the same content; if the app could be swapped with it unnoticed, dimension 10 is at most 3. A signature below its promised share (`signature-below-promise`, high) counts as drift from the direction.
 Craft checklist the reviewer walks (each miss is a finding): tracking by size · headline ≤ 2 lines, balanced · numbers set (tabular, muted units) · one material by role · layered tinted shadows / lighter dark surfaces · hairlines before boxes, no box-in-box · concentric radii · one icon family, real imagery · motif in ≥ 3 places · one focal point and one accent moment per screen · optical alignment of card actions.
 - 5 — reads as a shipped premium product made for this brief: the craft checklist is clean, the motif repeats, one detail rewards a closer look, copy is in the user's words, no unjustified fingerprints, and the build matches its direction.
 - 4 — fits and is finished; one craft miss or one low-weight unjustified fingerprint.

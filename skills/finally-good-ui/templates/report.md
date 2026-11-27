@@ -44,7 +44,8 @@ axe: <yes | not installed>
 | G7 | Focal point + accent moment per screen | | |
 | G8 | Motif in ≥ 3 places | | |
 | G9 | Direction fidelity | | |
-| G10 | Light, dark, 375 px render | | |
+| G10 | Genericness: < 3 triggers, signature meets its promise at 1440 and 375 | | |
+| G11 | Light, dark, 375 px render | | |
 
 ## Fix rounds
 
