@@ -1,6 +1,6 @@
 // Framework-neutral component spec (components/<name>/spec.json): validation and loading.
 // Hand-written checks; every error string starts with the dotted path of the offending field.
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -100,3 +100,6 @@ export function loadSpec(componentDir) {
 
 /** The part that carries the component's role (`a11y.rolePart`, default "root"). */
 export const rolePartOf = (spec) => spec.a11y.rolePart ?? "root";
+
+/** The component folders under `base` (components/): every directory but adapters/ (docs, not a component), sorted. */
+export const componentDirs = (base) => readdirSync(base).filter((d) => d !== "adapters" && statSync(join(base, d)).isDirectory()).sort();

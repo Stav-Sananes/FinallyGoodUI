@@ -3,19 +3,16 @@
 // root part), so the sections only wrap the markup. Behaviour is inlined, one block per
 // component, so the page opens from disk with no server and no relative files.
 import { join } from "node:path";
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { COMPONENTS_ROOT } from "./scaffold.mjs";
-import { loadSpec } from "./component-spec.mjs";
+import { loadSpec, componentDirs } from "./component-spec.mjs";
 import { profileCss } from "./style-profile.mjs";
 import { isFile } from "./fs.mjs";
-import { scopeCss } from "./css-scope.mjs";
-
-export { scopeCss };
 
 const read = (file) => readFileSync(file, "utf8");
 
 /** Names of the components that have a spec, in a stable order. */
-export const galleryComponents = () => readdirSync(COMPONENTS_ROOT).filter((d) => isFile(join(COMPONENTS_ROOT, d, "spec.json"))).sort();
+export const galleryComponents = () => componentDirs(COMPONENTS_ROOT).filter((d) => isFile(join(COMPONENTS_ROOT, d, "spec.json")));
 
 /** One component: its section markup, scoped css and inline behaviour block. */
 function section(name, profile) {

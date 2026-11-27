@@ -8,7 +8,7 @@ import { runCli, isMain } from "./lib/cli.mjs";
 import { readText, isFile, isDir } from "./lib/fs.mjs";
 import { parseMdBlocks } from "./lib/md.mjs";
 import { RULE_CARDS } from "./lib/rules.mjs";
-import { validateSpec } from "./lib/component-spec.mjs";
+import { validateSpec, componentDirs } from "./lib/component-spec.mjs";
 
 const HELP = `
 Usage: lint-skill.mjs [--root <skill dir>] [--write] [--strict]
@@ -112,7 +112,7 @@ function validateQuestion(q, cardIds, errors, lastAreaIdx) {
 function lintComponents(root, errors) {
   const base = join(root, "components");
   if (!isDir(base)) return 0;
-  const dirs = readdirSync(base).filter((d) => d !== "adapters" && isDir(join(base, d)));
+  const dirs = componentDirs(base);
   for (const d of dirs) {
     const rel = `components/${d}`, e = (message, file = rel) => errors.push({ file, line: null, message });
     const specText = readText(join(base, d, "spec.json"));

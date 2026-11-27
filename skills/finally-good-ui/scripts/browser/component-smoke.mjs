@@ -5,10 +5,10 @@
 // Imports `playwright` from the USER's project (--root), like check-flows.mjs; this plugin has no dependency on it.
 // It needs the full `playwright` (or `@playwright/test`) package: `playwright-core` alone does not resolve.
 // Exit: 0 all checks pass, 1 a check failed, 2 playwright/browser missing or bad input.
-import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { runCli, isMain, UsageError } from "../lib/cli.mjs";
+import { loadPlaywright } from "../lib/playwright.mjs";
 import { exists } from "../lib/fs.mjs";
 
 const HELP = `
@@ -28,18 +28,6 @@ Exit: 0 pass, 1 a check failed, 2 playwright or the browser is missing (or the p
 
 const TOOL = "component-smoke";
 const SETTLE_MS = 300; // long enough for a wrongly re-opening popover or a stray handler to show itself
-
-async function loadPlaywright(root) {
-  const req = createRequire(join(resolve(root), "package.json"));
-  for (const name of ["playwright", "@playwright/test"]) {
-    try {
-      const m = await import(pathToFileURL(req.resolve(name)).href);
-      const pw = m.chromium ? m : m.default;
-      if (pw?.chromium) return pw;
-    } catch { /* try the next one */ }
-  }
-  return null;
-}
 
 const section = (page, name) => page.locator(`[data-fgu-section="${name}"]`);
 const expect = (cond, detail) => { if (!cond) throw new Error(detail); };

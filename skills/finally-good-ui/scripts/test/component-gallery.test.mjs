@@ -78,7 +78,7 @@ test("--gallery --dry-run writes nothing", () => {
 });
 
 test("scopeCss prefixes each selector of a list, recurses into media and leaves keyframes alone", async () => {
-  const { scopeCss } = await import("../lib/gallery.mjs");
+  const { scopeCss } = await import("../lib/css-scope.mjs");
   const out = scopeCss('a, :is(b, c) > d { x: 1; }\n@media (hover: hover) { e:hover { y: 2; } }\n@keyframes k { to { z: 3; } }', "[s]");
   assert.match(out, /\[s\] a,\n\[s\] :is\(b, c\) > d \{/);
   assert.match(out, /@media \(hover: hover\) \{\n\[s\] e:hover \{ y: 2; \}/);

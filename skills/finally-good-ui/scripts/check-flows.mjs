@@ -3,7 +3,7 @@
 // force UI states via request interception / direct navigation / init hooks, run probe.js (+ axe if installed),
 // screenshot every step. One browser, bounded parallel contexts, readiness waits instead of fixed sleeps.
 // Imports `playwright` from the USER's project (no dependency of this plugin).
-import { createRequire } from 'node:module';
+import { importFromProject, loadPlaywright } from './lib/playwright.mjs';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -374,18 +374,6 @@ export function findPrevReport(root, ref) {
   if (!existsSync(dir)) return null;
   const files = readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => join(dir, f)).sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs);
   for (const p of files) { const j = isReport(p); if (j) return { path: p, report: j }; }
-  return null;
-}
-
-async function importFromProject(root, name) {
-  const req = createRequire(join(resolve(root), 'package.json'));
-  return import(pathToFileURL(req.resolve(name)).href);
-}
-
-async function loadPlaywright(root) {
-  for (const n of ['playwright', '@playwright/test']) {
-    try { const m = await importFromProject(root, n); const pw = m.chromium ? m : m.default; if (pw && pw.chromium) return pw; } catch { /* try next */ }
-  }
   return null;
 }
 
