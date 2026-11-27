@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Structure lint for the skill: SKILL.md length, canon card schema (§5.2), question schema (§5.3),
+// Structure lint for the skill: SKILL.md length, canon card schema, question schema,
 // id references. With --write: regenerate canon/INDEX.md and backfill each card's asked-by.
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,14 +8,16 @@ import { runCli, isMain } from "./lib/cli.mjs";
 import { readText, isFile, isDir } from "./lib/fs.mjs";
 import { parseMdBlocks } from "./lib/md.mjs";
 import { RULE_CARDS } from "./lib/rules.mjs";
+import { validateSpec } from "./lib/component-spec.mjs";
 
 const HELP = `
 Usage: lint-skill.mjs [--root <skill dir>] [--write] [--strict]
 
 Validates the finally-good-ui skill folder:
   - SKILL.md exists and is under 500 lines
-  - every canon card (canon/<domain>.md, "### <id>" + yaml) has the §5.2 fields
-  - every interview question (interview/question-bank.md) follows §5.3
+  - every canon card (canon/<domain>.md, "### <id>" + yaml) has the required card fields
+  - every interview question (interview/question-bank.md) follows the question schema
+  - every components/<name>/ (not adapters/) has a valid spec.json, spec.md and reference/index.html
   - every referenced id resolves: card tensions/asked-by, question cards, static-rule cards
 Prints {"tool":"lint-skill","ok","errors":[{file,line,message}],"warnings","stats","written"}.
 
@@ -26,7 +28,7 @@ Options:
   --help
 `;
 
-export const DOMAINS = ["usability", "ia-nav", "flows-forms", "states", "layout", "typography", "color", "motion", "data", "a11y", "writing", "personality", "craft"];
+export const DOMAINS = ["usability", "ia-nav", "flows-forms", "states", "layout", "typography", "color", "motion", "data", "a11y", "writing", "i18n", "personality", "craft"];
 const AREAS = ["purpose", "context", "jobs", "content", "personality", "constraints", "risks"];
 const DEPTHS = new Set(["full", "brand", "feature"]);
 const CARD_FIELDS = ["id", "domain", "principle", "why", "sources", "applies-when", "not-when", "decides", "tensions", "asked-by", "checks"];
@@ -106,6 +108,29 @@ function validateQuestion(q, cardIds, errors, lastAreaIdx) {
   return Math.max(idx, lastAreaIdx);
 }
 
+/** components/<name>/: a spec.json that validates, a spec.md and a reference page. adapters/ holds docs, not a component. */
+function lintComponents(root, errors) {
+  const base = join(root, "components");
+  if (!isDir(base)) return 0;
+  const dirs = readdirSync(base).filter((d) => d !== "adapters" && isDir(join(base, d)));
+  for (const d of dirs) {
+    const rel = `components/${d}`, e = (message, file = rel) => errors.push({ file, line: null, message });
+    const specText = readText(join(base, d, "spec.json"));
+    if (specText == null) e("component directory has no spec.json");
+    else {
+      let spec = null;
+      try { spec = JSON.parse(specText); } catch (x) { e(`spec.json is not valid JSON (${x.message})`, `${rel}/spec.json`); }
+      if (spec !== null) {
+        for (const m of validateSpec(spec).errors) e(`spec.json: ${m}`, `${rel}/spec.json`);
+        if (spec?.name !== d) e(`spec.json name '${spec?.name}' does not match the directory`, `${rel}/spec.json`);
+      }
+    }
+    if (!isFile(join(base, d, "spec.md"))) e("missing spec.md");
+    if (!isFile(join(base, d, "reference", "index.html"))) e("missing reference/index.html");
+  }
+  return dirs.length;
+}
+
 const oneLine = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
 const cell = (s) => oneLine(s).replace(/\|/g, "\\|");
 
@@ -156,6 +181,7 @@ export function lintSkill(rootArg, { write = false } = {}) {
     if (skillLines >= 500) errors.push({ file: "SKILL.md", line: skillLines, message: `SKILL.md has ${skillLines} lines (must be < 500)` });
   }
 
+  const components = lintComponents(root, errors);
   const cards = loadCards(root, errors, warnings);
   const cardIds = new Set();
   for (const c of cards) {
@@ -208,7 +234,7 @@ export function lintSkill(rootArg, { write = false } = {}) {
 
   return {
     tool: "lint-skill", root: rootArg, ok: errors.length === 0, errors, warnings,
-    stats: { skillLines, cards: cards.length, questions: questions.length, tensions: cards.filter((c) => c.heading.includes(".tension-")).length },
+    stats: { skillLines, components, cards: cards.length, questions: questions.length, tensions: cards.filter((c) => c.heading.includes(".tension-")).length },
     written,
   };
 }

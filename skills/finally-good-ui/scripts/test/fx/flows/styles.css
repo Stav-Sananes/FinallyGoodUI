@@ -1,0 +1,5 @@
+/* Dark by default; light only via html[data-theme=light] (ignores prefers-color-scheme on purpose). */
+html { background: #111111; color: #eeeeee; font: 16px/1.5 system-ui, sans-serif; }
+html[data-theme="light"] { background: #ffffff; color: #111111; }
+body { margin: 0; padding: 24px; }
+a { color: inherit; display: inline-block; min-height: 44px; padding: 10px 0; }

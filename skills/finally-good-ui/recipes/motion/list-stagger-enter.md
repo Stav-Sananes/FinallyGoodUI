@@ -11,13 +11,13 @@
 ## CSS baseline
 ```html
 <ul class="stagger" style="--stagger: 40ms">
-  <li style="--i: 0">…</li><li style="--i: 1">…</li> <!-- set --i server-side or in the template loop -->
+  <li>…</li><li>…</li>   <!-- no per-item index: sibling-index() counts for you -->
 </ul>
 ```
 ```css
 .stagger > * {
   animation: stagger-in var(--duration-medium) var(--ease-enter) both;
-  animation-delay: calc(min(var(--i, 0), 7) * var(--stagger, 40ms)); /* items past 8 arrive together */
+  animation-delay: calc(min(sibling-index() - 1, 7) * var(--stagger, 40ms)); /* items past 8 arrive together */
 }
 @keyframes stagger-in {
   from { opacity: 0; transform: translateY(8px); }
@@ -38,15 +38,16 @@ Promise.all(list.getAnimations({ subtree: true }).map(a => a.finished))
 ```
 - Keyframes here (not transitions) because there is no prior state to transition from; `both` holds the start frame during the delay.
 - 8px travel, not 20+: the goal is order, not spectacle. Parent/container appears first (no delay), children follow.
-- Newer browsers: `sibling-index()` can replace `--i`; not Baseline yet — keep `--i`.
+- `sibling-index()` is Baseline since 2026-08. Older browsers drop the delay and show every item together, which is fine. A list with other elements between the items (headings) needs a per-item `--i` instead: `calc(min(var(--i), 7) * var(--stagger))`.
 
 ## React + Motion
 Worth it when items mount dynamically and you want variants to orchestrate parent → children.
 ```tsx
+import { sec, ease } from "./motion-tokens"; // recipes/INDEX.md
 const list = { hidden: {}, show: { transition: { staggerChildren: 0.04, delayChildren: 0 } } };
 const item = {
   hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: [0, 0, 0, 1] } },
+  show: () => ({ opacity: 1, y: 0, transition: { duration: sec('medium'), ease: ease('enter') } }), // resolved when it animates
 };
 export function StaggerList({ items }: { items: Item[] }) {
   const reduce = useReducedMotion();
@@ -67,8 +68,8 @@ export function StaggerList({ items }: { items: Item[] }) {
 ```
 
 ## Vue / Svelte
-- Vue: `<TransitionGroup appear tag="ul" name="stagger">` with `:style="{ '--i': index }"` , `.stagger-enter-from { opacity: 0; transform: translateY(8px) }` and `.stagger-enter-active { transition: opacity 300ms, transform 300ms var(--ease-enter); transition-delay: calc(min(var(--i), 7) * 40ms) }`; `appear` runs it on initial render, but later additions would also enter — bind `:css="!loaded"` and set `loaded = true` after the cascade.
-- Svelte: `in:fly={{ y: 8, duration: firstLoad ? 300 : 0, delay: firstLoad ? Math.min(i, 7) * 40 : 0, easing: cubicOut }}` inside `{#each}`; set `firstLoad = false` after the cascade so later additions don't replay it.
+- Vue: `<TransitionGroup appear tag="ul" name="stagger">` with `:style="{ '--i': index }"` , `.stagger-enter-from { opacity: 0; transform: translateY(8px) }` and `.stagger-enter-active { transition: opacity var(--duration-medium), transform var(--duration-medium) var(--ease-enter); transition-delay: calc(min(var(--i), 7) * var(--stagger, 40ms)) }`; `appear` runs it on initial render, but later additions would also enter — bind `:css="!loaded"` and set `loaded = true` after the cascade.
+- Svelte: `in:fly={{ y: 8, duration: firstLoad ? ms('medium') : 0, delay: firstLoad ? Math.min(i, 7) * 40 : 0, easing: easeFn('enter') }}` inside `{#each}`; set `firstLoad = false` after the cascade so later additions don't replay it.
 
 ## A11y
 - Content must be in the DOM and readable immediately; the animation is purely visual (no delayed insertion).

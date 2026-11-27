@@ -88,8 +88,8 @@ Uses the forced-state screenshots (`<flow>.<state>-…png`) against the blueprin
 
 ### 9 · Motion quality — D+J
 Cards: motion.purpose-only · motion.frequency-budget · motion.duration-by-distance · motion.easing-roles · motion.compositor-only · motion.spatial-continuity · motion.reduced-motion · motion.one-signature-moment · motion.tension-delight-speed
-Input: `animations[]` per context plus static findings. Measured caps: `anim-non-compositor` high → max 2 · durations > 500ms on routine UI → max 3 · `anim-infinite-near-text` → max 3 · `ease-in-entrance` / `scale-from-zero` → max 3.
-- 5 — every animation explains a change; durations and easings come from tokens and roles; spatial model is consistent (drill in forward, back reverses); one signature moment; frequent actions are nearly instant.
+Input: `animations[]` per context plus static findings. Measured caps: `anim-non-compositor` high → max 2 · durations > 600ms, or > 400ms on routine UI outside an expressive moment → max 3 · `anim-infinite-near-text` → max 3 · `ease-in-entrance` / `scale-from-zero` → max 3.
+- 5 — every animation explains a change; durations and easings come from tokens and roles; spatial model is consistent (drill in forward, back reverses); a few expressive moments (at most three) a person can see; frequent actions are nearly instant.
 - 4 — sound; one animation is decorative or slightly long.
 - 3 — motion on everything, or inconsistent directions.
 - 2 — motion delays the user or breaks under reduced motion.

@@ -1,0 +1,103 @@
+{
+  "name": "disclosure",
+  "shapes": [
+    "multiple",
+    "single"
+  ],
+  "props": [
+    {
+      "name": "variant",
+      "type": "string",
+      "default": "multiple"
+    },
+    {
+      "name": "open",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "default": "false"
+    }
+  ],
+  "events": [],
+  "slots": [
+    "default",
+    "trigger"
+  ],
+  "states": [
+    {
+      "name": "open",
+      "attribute": "aria-expanded"
+    },
+    {
+      "name": "disabled",
+      "attribute": "disabled"
+    }
+  ],
+  "a11y": {
+    "role": "region",
+    "rolePart": "panel",
+    "aria": [
+      "aria-expanded",
+      "aria-controls",
+      "aria-labelledby"
+    ],
+    "keys": {
+      "Enter": "toggle",
+      "Space": "toggle"
+    }
+  },
+  "tokens": [
+    "--color-foreground",
+    "--color-muted-foreground",
+    "--color-border",
+    "--color-ring",
+    "--color-accent",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--ring-width",
+    "--ring-offset",
+    "--size-control-md",
+    "--size-control-lg",
+    "--icon-md",
+    "--space-1",
+    "--space-2",
+    "--space-3",
+    "--space-4",
+    "--duration-short",
+    "--duration-standard",
+    "--ease-move",
+    "--ease-exit",
+    "--ease-snappy",
+    "--font-sans",
+    "--text-sm"
+  ],
+  "parts": [
+    "root",
+    "item",
+    "heading",
+    "trigger",
+    "indicator",
+    "panel",
+    "content"
+  ],
+  "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/accordion/",
+  "profile": {
+    "surface": null,
+    "interactive": "trigger",
+    "density": "trigger"
+  },
+  "tags": {
+    "item": "div",
+    "heading": "h3",
+    "trigger": "button",
+    "panel": "div",
+    "content": "div"
+  }
+}

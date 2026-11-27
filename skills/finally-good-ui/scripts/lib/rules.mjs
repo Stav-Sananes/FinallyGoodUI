@@ -14,6 +14,14 @@ export const RULE_CARDS = {
   "div-onclick": "a11y.semantic-first",
   "user-scalable-no": "a11y.target-size",
   "small-input-font": "a11y.target-size",
+  "role-no-keyboard": "a11y.keyboard-complete",
+  // Web Interface Guidelines rules
+  "ellipsis-dots": "writing.typographic-punctuation",
+  "paste-blocked": "flows-forms.input-ergonomics",
+  "autofocus": "flows-forms.input-ergonomics",
+  "spellcheck-on-codes": "flows-forms.input-ergonomics",
+  "img-no-dimensions": "layout.stable-media",
+  "locale-format": "i18n.locale-formats",
   // Slop detectors: the mechanical half of rubric/ai-default-fingerprints.md.
   "dead-control": "craft.nothing-dead",
   "placeholder-code": "craft.nothing-dead",
@@ -24,6 +32,7 @@ export const RULE_CARDS = {
   "generic-cta": "writing.action-labels",
   "gradient-text": "layout.hierarchy-by-weight",
   "purple-blue-gradient": "color.accent-restraint",
+  "ink-on-paper": "craft.tension-restraint-liveliness",
   "glass-overuse": "craft.material-restraint",
   "colored-glow": "craft.material-restraint",
   "bg-pattern": "craft.material-restraint",

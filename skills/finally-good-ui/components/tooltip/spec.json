@@ -1,0 +1,83 @@
+{
+  "name": "tooltip",
+  "shapes": [
+    "top",
+    "bottom"
+  ],
+  "props": [
+    {
+      "name": "variant",
+      "type": "string",
+      "default": "top"
+    },
+    {
+      "name": "delay",
+      "type": "number",
+      "default": 500
+    }
+  ],
+  "events": [],
+  "slots": [
+    "default",
+    "content"
+  ],
+  "states": [
+    {
+      "name": "open",
+      "attribute": "data-open"
+    }
+  ],
+  "a11y": {
+    "role": "tooltip",
+    "rolePart": "content",
+    "aria": [
+      "aria-describedby"
+    ],
+    "keys": {
+      "Escape": "close"
+    }
+  },
+  "tokens": [
+    "--color-foreground",
+    "--color-background",
+    "--color-border",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--shadow-sm",
+    "--shadow-md",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--size-control-sm",
+    "--space-1",
+    "--space-2",
+    "--space-3",
+    "--duration-micro",
+    "--duration-short",
+    "--ease-enter",
+    "--ease-exit",
+    "--font-sans",
+    "--text-sm"
+  ],
+  "parts": [
+    "root",
+    "trigger",
+    "content"
+  ],
+  "tags": {
+    "root": "span",
+    "trigger": "span",
+    "content": "span"
+  },
+  "profile": {
+    "surface": "content",
+    "density": null,
+    "interactive": null
+  },
+  "api": [
+    "showTooltip(scope: Element): void",
+    "hideTooltip(scope: Element): void"
+  ],
+  "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/"
+}

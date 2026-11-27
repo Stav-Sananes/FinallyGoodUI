@@ -1,0 +1,28 @@
+{
+  "mode": "autonomous",
+  "directions": "on",
+  "verify": "full",
+  "viewports": [
+    [
+      375,
+      812
+    ],
+    [
+      1440,
+      900
+    ]
+  ],
+  "interviewDepth": "auto",
+  "hook": "on",
+  "theme": {
+    "schemes": [
+      "light",
+      "dark"
+    ],
+    "default": "light",
+    "media": true,
+    "attribute": "data-theme",
+    "storage": "hm-theme"
+  },
+  "ready": "#main"
+}

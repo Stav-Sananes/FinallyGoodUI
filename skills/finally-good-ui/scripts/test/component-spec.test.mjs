@@ -1,0 +1,82 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { fx, tmp } from "./_h.mjs";
+import { validateSpec, loadSpec } from "../lib/component-spec.mjs";
+
+const read = (name) => JSON.parse(readFileSync(fx(`components/${name}`), "utf8"));
+
+test("accepts the valid fixture", () => {
+  const r = validateSpec(read("spec-valid.json"));
+  assert.deepEqual(r, { ok: true, errors: [] });
+});
+
+test("rejects missing a11y.role", () => {
+  const r = validateSpec(read("spec-bad-role.json"));
+  assert.equal(r.ok, false);
+  assert.ok(r.errors.some((e) => e.includes("a11y.role")), r.errors.join("\n"));
+});
+
+test("rejects a state whose attribute is empty", () => {
+  const r = validateSpec(read("spec-bad-state.json"));
+  assert.equal(r.ok, false);
+  assert.ok(r.errors.some((e) => e.includes("states[0].attribute")), r.errors.join("\n"));
+});
+
+test('rejects a token not starting with "--"', () => {
+  const r = validateSpec(read("spec-bad-token.json"));
+  assert.equal(r.ok, false);
+  assert.ok(r.errors.some((e) => e.includes("tokens[0]")), r.errors.join("\n"));
+});
+
+test("rejects duplicate part names", () => {
+  const r = validateSpec(read("spec-bad-parts.json"));
+  assert.equal(r.ok, false);
+  assert.ok(r.errors.some((e) => e.includes("parts") && e.includes("root")), r.errors.join("\n"));
+});
+
+test("rejects a non-object spec", () => {
+  assert.equal(validateSpec(null).ok, false);
+});
+
+test("loadSpec reads spec.json from the component dir", () => {
+  const dir = tmp();
+  writeFileSync(join(dir, "spec.json"), readFileSync(fx("components/spec-valid.json")));
+  assert.equal(loadSpec(dir).name, "button");
+});
+
+test("loadSpec throws naming the file when invalid, unreadable or not JSON", () => {
+  const bad = tmp();
+  writeFileSync(join(bad, "spec.json"), readFileSync(fx("components/spec-bad-role.json")));
+  assert.throws(() => loadSpec(bad), (e) => e.message.includes(join(bad, "spec.json")) && e.message.includes("a11y.role"));
+  const junk = tmp();
+  writeFileSync(join(junk, "spec.json"), "{nope");
+  assert.throws(() => loadSpec(junk), (e) => e.message.includes(join(junk, "spec.json")));
+  const empty = tmp();
+  mkdirSync(join(empty, "x"));
+  assert.throws(() => loadSpec(empty), (e) => e.message.includes(join(empty, "spec.json")));
+});
+
+test("a11y.rolePart must be one of parts", () => {
+  const spec = read("spec-valid.json");
+  assert.equal(validateSpec({ ...spec, a11y: { ...spec.a11y, rolePart: spec.parts[0] } }).ok, true);
+  const bad = validateSpec({ ...spec, a11y: { ...spec.a11y, rolePart: "nope" } });
+  assert.equal(bad.ok, false);
+  assert.ok(bad.errors.some((e) => e.startsWith("a11y.rolePart")), bad.errors.join("\n"));
+});
+
+test("tags maps parts to plain lowercase tag names", () => {
+  const spec = read("spec-valid.json");
+  const part = spec.parts[0];
+  assert.equal(validateSpec({ ...spec, tags: { [part]: "label" } }).ok, true);
+  const unknown = validateSpec({ ...spec, tags: { nope: "label" } });
+  assert.ok(unknown.errors.some((e) => e.startsWith("tags.nope")), unknown.errors.join("\n"));
+  const badTag = validateSpec({ ...spec, tags: { [part]: "<Label>" } });
+  assert.ok(badTag.errors.some((e) => e.startsWith(`tags.${part}`)), badTag.errors.join("\n"));
+  assert.equal(validateSpec({ ...spec, tags: "label" }).ok, false);
+});
+
+test("events may be empty", () => {
+  assert.equal(validateSpec({ ...read("spec-valid.json"), events: [] }).ok, true);
+});

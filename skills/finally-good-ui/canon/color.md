@@ -61,7 +61,7 @@ checks:
 ```yaml
 id: color.dark-mode-not-inverted
 domain: color
-principle: "Design dark mode as its own scale: near-black but not pure black base (OKLCH L about 0.13-0.22), surfaces that get lighter as they rise, accents lowered in chroma and raised in lightness, and every pair re-verified."
+principle: "Design dark mode as its own scale: near-black but not pure black base (OKLCH L about 0.13-0.22), surfaces that get lighter as they rise, accents lowered in chroma and raised in lightness, and every pair re-verified. Declare color-scheme so native controls, scrollbars and form autofill follow, give native selects an explicit background and text colour, and match the theme-color meta to the background of each theme."
 why: "Inverting a light palette flips elevation cues, makes saturated accents vibrate on dark grounds, and silently breaks contrast pairs tuned for white."
 sources: ["Material Design, Dark theme guidance", "Apple HIG, Dark Mode", "Radix Colors docs, dark scales"]
 applies-when: "Any app that ships a dark theme or follows prefers-color-scheme."
@@ -70,7 +70,7 @@ decides: [tokens.color, tokens.shadow]
 tensions: [color.contrast-by-construction]
 asked-by: []
 checks:
-  measured: "Script: every token has a $extensions.fgu.dark value; dark background L is above 0.1; elevated surface L exceeds base surface L; all text pairs pass 4.5:1 in dark. Probe runs at dark for both viewports."
+  measured: "Script: every colour token has a dark value (tokens.dark.json via the resolver, or $extensions.fgu.dark in the older shape); dark background L is above 0.1; elevated surface L exceeds base surface L; all text pairs pass 4.5:1 in dark. Probe runs at dark for both viewports."
   judged: "In dark mode, can you tell which layer sits above which without shadows, and does any accent glare or vibrate?"
 ```
 

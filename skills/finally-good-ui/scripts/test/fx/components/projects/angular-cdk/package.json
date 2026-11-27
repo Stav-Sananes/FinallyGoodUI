@@ -1,0 +1,1 @@
+{ "name": "fx-angular-cdk", "private": true, "dependencies": { "@angular/core": "^19.0.0", "@angular/cdk": "^19.0.0" }, "devDependencies": { "typescript": "^5.5.0" } }

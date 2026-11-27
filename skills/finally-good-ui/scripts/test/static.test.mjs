@@ -11,6 +11,7 @@ const RULES = {
   "ease-in-entrance": "motion.easing-roles", "scale-from-zero": "motion.easing-roles",
   "outline-none-no-focus": "a11y.focus-visible", "img-no-alt": "a11y.semantic-first",
   "div-onclick": "a11y.semantic-first", "user-scalable-no": "a11y.target-size", "small-input-font": "a11y.target-size",
+  "role-no-keyboard": "a11y.keyboard-complete", "img-no-dimensions": "layout.stable-media",
 };
 
 const check = (dir, extra = []) => {
@@ -25,7 +26,7 @@ const at = (o, file, line) => o.findings.filter((f) => f.file === file && f.line
 
 const all = ["next", "vite", "vue", "html", "mui"].map((n) => check(fx(n)));
 
-test("output shape per §5.6", () => {
+test("output shape", () => {
   for (const o of all) {
     for (const f of o.findings) {
       assert.ok(RULES[f.rule], f.rule);
@@ -41,7 +42,7 @@ test("output shape per §5.6", () => {
   }
 });
 
-test("every one of the 13 rules fires somewhere in the fixtures", () => {
+test("every one of the 15 rules fires somewhere in the fixtures", () => {
   const fired = new Set(all.flatMap((o) => o.findings.map((f) => f.rule)));
   assert.deepEqual([...fired].sort(), Object.keys(RULES).sort());
 });
@@ -52,7 +53,7 @@ test("next fixture: exact findings per line", () => {
   assert.deepEqual(at(o, P, 7), ["long-duration", "no-transition-all", "outline-none-no-focus"]);
   assert.equal(o.findings.find((f) => f.file === P && f.line === 7 && f.rule === "long-duration").severity, "high");
   assert.deepEqual(at(o, P, 8), []);
-  assert.deepEqual(at(o, P, 9), ["img-no-alt"]);
+  assert.deepEqual(at(o, P, 9), ["img-no-alt", "img-no-dimensions"]);
   assert.deepEqual(at(o, P, 10), []);
   assert.deepEqual(at(o, P, 11), ["div-onclick"]);
   assert.deepEqual(at(o, P, 12), []);
@@ -98,6 +99,7 @@ test("html fixture: root files scanned", () => {
   assert.ok(has(o, "user-scalable-no", "index.html", 5));
   assert.ok(has(o, "img-no-alt", "index.html", 9));
   assert.ok(has(o, "div-onclick", "index.html", 10));
+  assert.ok(has(o, "role-no-keyboard", "index.html", 12));
   assert.ok(has(o, "long-duration", "styles.css", 2));
   assert.ok(has(o, "animate-layout-prop", "styles.css", 4));
   assert.ok(has(o, "scale-from-zero", "styles.css", 4));
@@ -140,4 +142,166 @@ test("clean project yields no findings", () => {
   const o = check(d);
   assert.deepEqual(o.findings, []);
   assert.deepEqual(o.summary, { high: 0, medium: 0, low: 0 });
+});
+
+// ---------- plain HTML + JS apps (bug A, found by the end-to-end examples) ----------
+const plainApp = () => {
+  const d = tmp();
+  for (const p of ["css", "js", "node_modules/lib", "dist", "test"]) mkdirSync(join(d, p), { recursive: true });
+  writeFileSync(join(d, "index.html"), '<!doctype html><link rel="stylesheet" href="css/app.css"><main id="app"></main><script src="js/app.js"></script>\n');
+  writeFileSync(join(d, "css", "tokens.css"), ":root { --duration-micro: 100ms; --duration-slow: 700ms; --duration-alias: var(--duration-slow); }\n");
+  writeFileSync(join(d, "css", "app.css"),
+    ".a { transition: transform var(--duration-micro) ease-out; }\n" +          // 1: 100ms, fine
+    ".b { transition: transform var(--duration-slow) ease-out; }\n" +           // 2: 700ms, high
+    ".c { animation: pop var(--duration-alias) ease-out both; }\n" +            // 3: alias -> 700ms, high
+    ".d { transition: opacity var(--nope, 450ms) ease-out; }\n" +               // 4: fallback 450ms, medium (over the 400ms routine budget)
+    "@media (prefers-reduced-motion: reduce) { .b { transition: none; } }\n");
+  writeFileSync(join(d, "js", "app.js"), [
+    "const robust = 2; if (a > robust && b < c) go();",                         // 1: code, not copy
+    'btn.textContent = "Unlock seamless booking";',                             // 2: buzzword
+    "list.innerHTML = `<p class=\"x\">Ready — ${count} pets</p>`;",            // 3: em-dash-copy
+    'const proof = "Trusted by 10,000+ customers";',                            // 4: unsourced-claim
+    "toast(`Saved 🎉`);",                                                        // 5: emoji-ui
+    'el.innerHTML = `<img src="${pet.photo}"><div onclick="open()">${pet.name}</div>`;', // 6: img-no-alt, div-onclick
+    'cta.innerHTML = `<button class="b">Get started</button>`;',               // 7: generic-cta
+  ].join("\n") + "\n");
+  writeFileSync(join(d, "js", "vendor.min.js"), 'x.innerHTML="<img src=a>";\n');
+  writeFileSync(join(d, "vite.config.js"), 'export default { server: { port: 5173 }, color: "#ff0000" };\n');
+  writeFileSync(join(d, "node_modules", "lib", "index.js"), 'x.innerHTML = "<img src=a>";\n');
+  writeFileSync(join(d, "dist", "app.js"), 'x.innerHTML = "<img src=a>";\n');
+  writeFileSync(join(d, "test", "app.test.js"), 'x.innerHTML = "<img src=a>";\n');
+  return d;
+};
+
+test("default scan covers .js files and css/ js/ dirs; excludes node_modules, dist, tests, minified, configs", () => {
+  const o = check(plainApp());
+  const files = new Set(o.findings.map((f) => f.file));
+  assert.ok(files.has("css/app.css"), "css/ scanned");
+  assert.ok(files.has("js/app.js"), "js/ scanned");
+  for (const f of files) assert.doesNotMatch(f, /node_modules|^dist\/|^test\/|\.min\.js$|vite\.config/, f);
+  assert.ok(has(o, "img-no-alt", "js/app.js", 6));
+  assert.ok(has(o, "div-onclick", "js/app.js", 6));
+  assert.ok(!has(o, "no-reduced-motion"), "guard in css/app.css is seen");
+});
+
+test("copy rules read JS string literals, not code", () => {
+  const o = check(plainApp());
+  const J = "js/app.js";
+  assert.ok(has(o, "buzzword", J, 2));
+  assert.ok(has(o, "em-dash-copy", J, 3));
+  assert.ok(has(o, "unsourced-claim", J, 4));
+  assert.ok(has(o, "emoji-ui", J, 5));
+  assert.ok(has(o, "generic-cta", J, 7));
+  assert.ok(!has(o, "buzzword", J, 1), "identifiers between > and < are code, not copy");
+});
+
+test("long-duration resolves var(--x) from custom properties in scanned CSS", () => {
+  const d = plainApp();
+  const o = check(d);
+  const C = "css/app.css";
+  assert.ok(!has(o, "long-duration", C, 1), "100ms token is fine");
+  assert.equal(o.findings.find((f) => f.rule === "long-duration" && f.file === C && f.line === 2)?.severity, "high");
+  assert.equal(o.findings.find((f) => f.rule === "long-duration" && f.file === C && f.line === 3)?.severity, "high");
+  assert.equal(o.findings.find((f) => f.rule === "long-duration" && f.file === C && f.line === 4)?.severity, "medium");
+  // single-file run still resolves tokens defined in another file
+  const one = check(d, ["--files", "css/app.css"]);
+  assert.ok(has(one, "long-duration", C, 2));
+});
+
+// ---------- composite-widget roles need a keyboard model ----------
+test("role-no-keyboard: a widget role on a custom element needs key handling", () => {
+  const d = tmp();
+  mkdirSync(join(d, "src"), { recursive: true });
+  writeFileSync(join(d, "src", "Menus.tsx"), [
+    '<div popover role="menu">Rename</div>',                     // 1: flagged
+    '<ul role="listbox" onKeyDown={onKey}>…</ul>',              // 2: has a key handler
+    '<button role="switch" aria-checked="true">Wi-Fi</button>', // 3: native button is keyboard-operable
+    '<div role="tablist" aria-label="Views">…</div>',           // 4: flagged
+    '<nav role="navigation">…</nav>',                           // 5: not a composite widget role
+  ].join("\n") + "\n");
+  writeFileSync(join(d, "src", "Slider.vue"), '<template><div role="slider" @keydown="move" tabindex="0"></div></template>\n');
+  writeFileSync(join(d, "src", "Picker.svelte"), '<div role="radiogroup" on:keydown={move}></div>\n');
+  writeFileSync(join(d, "widget.html"),
+    '<div id="m" role="menu"><button>One</button></div>\n' +
+    '<script>m.addEventListener("keydown", onKey);</script>\n');
+  const o = check(d);
+  const hits = o.findings.filter((f) => f.rule === "role-no-keyboard").map((f) => `${f.file}:${f.line}`).sort();
+  assert.deepEqual(hits, ["src/Menus.tsx:1", "src/Menus.tsx:4"]);
+  const f = o.findings.find((x) => x.rule === "role-no-keyboard");
+  assert.equal(f.severity, "high");
+  assert.match(f.message, /menu/);
+});
+
+// ---------- false positives found by the 2026-11-14 gallery runs ----------
+test("gallery false positives: legitimate patterns are not flagged; their unsafe twins still are", () => {
+  const d = tmp();
+  mkdirSync(join(d, "src"), { recursive: true });
+  writeFileSync(join(d, "src", "Radios.tsx"), [
+    '<div role="radiogroup" aria-label="Groomer">',                    // 1: wraps native radios: fine
+    '  <label><input type="radio" name="g" /> Maya</label>',
+    '</div>',
+    '<div role="radiogroup" aria-label="Size"><span role="radio">S</span></div>', // 4: custom radios: flagged
+  ].join("\n") + "\n");
+  writeFileSync(join(d, "app.html"), [
+    '<nav><a href="#week">Week</a><a href="#list">List</a></nav>',      // 1: hash routes: fine
+    '<script>addEventListener("hashchange", route); function route(){ show(location.hash) }</script>',
+  ].join("\n") + "\n");
+  writeFileSync(join(d, "page.html"), '<a href="#pricing">Pricing</a>\n'); // 1: no router, no target: flagged
+  writeFileSync(join(d, "motion.css"), [
+    ":root { --duration-hero: 600ms; }",
+    ".booked-signature { transition: transform var(--duration-hero) ease-out; }", // 2: an expressive moment: fine
+    ".toast { transition: opacity var(--duration-hero) ease-out; }",              // 3: routine: medium
+    ".hero-signature { transition: transform 700ms ease-out; }",                  // 4: over the ceiling: high anyway
+    "@media (prefers-reduced-motion: reduce) { * { transition: none; } }",
+  ].join("\n") + "\n");
+  writeFileSync(join(d, "forms.css"), [
+    ".field:focus-within { box-shadow: 0 0 0 2px var(--color-ring); }",
+    ".field input { outline: none; }",                                  // 2: ring on the wrapper: fine
+  ].join("\n") + "\n");
+  writeFileSync(join(d, "loose.css"), ".card button { outline: none; }\n"); // 1: no replacement: flagged
+  writeFileSync(join(d, "a11y.css"), [
+    ".sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); }",
+    ".nudge { margin-top: 3px; }",                                      // 2: off scale: flagged
+  ].join("\n") + "\n");
+  const o = check(d);
+  const hits = (rule) => o.findings.filter((f) => f.rule === rule).map((f) => `${f.file}:${f.line}`).sort();
+  assert.deepEqual(hits("role-no-keyboard"), ["src/Radios.tsx:4"]);
+  assert.deepEqual(hits("dead-control"), ["page.html:1"]);
+  assert.deepEqual(hits("long-duration"), ["motion.css:3", "motion.css:4"]);
+  assert.deepEqual(hits("outline-none-no-focus"), ["loose.css:1"]);
+  assert.deepEqual(hits("off-scale-spacing"), ["a11y.css:2"]);
+});
+
+// ---------- the skill's own house style (2026-11-16 gallery round 2: all four skill builds landed on it) ----------
+test("ink-on-paper: a near-neutral pale page with near-black primary actions is flagged; a tinted or coloured one is not", () => {
+  const theme = (bg, primary) => {
+    const d = tmp();
+    writeFileSync(join(d, "index.html"), `<!doctype html><style>:root { --color-background: ${bg}; --color-primary: ${primary}; }\n@media (prefers-color-scheme: dark) { :root { --color-background: oklch(0.16 0.004 80); } }</style><main></main>\n`);
+    return check(d).findings.filter((f) => f.rule === "ink-on-paper");
+  };
+  const ink = theme("oklch(0.988 0.003 80)", "oklch(0.22 0.01 60)");
+  assert.equal(ink.length, 1);
+  assert.equal(ink[0].severity, "low");
+  assert.equal(ink[0].card, "craft.tension-restraint-liveliness");
+  assert.deepEqual(theme("oklch(0.95 0.04 75)", "oklch(0.22 0.01 60)"), [], "a tinted canvas breaks it");
+  assert.deepEqual(theme("#fbfbfa", "oklch(0.55 0.17 30)"), [], "a coloured primary breaks it");
+  assert.deepEqual(theme("oklch(0.16 0.004 80)", "oklch(0.95 0 0)"), [], "a dark page is not paper");
+});
+
+test("role-no-keyboard: keys wired by an attached .behaviour.js count (scaffolded component dir, or a file importing it)", () => {
+  const d = tmp();
+  const menu = join(d, "src/components/fgu/menu");
+  const other = join(d, "src/other");
+  const importing = join(d, "src/importing");
+  for (const dir of [menu, other, importing]) mkdirSync(dir, { recursive: true });
+  const vue = '<template><div role="menu" popover><button role="menuitem">One</button></div></template>\n';
+  writeFileSync(join(menu, "menu.vue"), vue);
+  writeFileSync(join(other, "menu.vue"), vue);
+  writeFileSync(join(importing, "Menu.tsx"), 'import { attach } from "../components/fgu/menu/menu.behaviour.js";\nexport const M = () => <div role="menu">x</div>;\n');
+  const hits = () => check(d).findings.filter((f) => f.rule === "role-no-keyboard").map((f) => f.file).sort();
+  // before the scaffold's behaviour exists, the markup alone is flagged (positive control)
+  assert.deepEqual(hits(), ["src/components/fgu/menu/menu.vue", "src/other/menu.vue"]);
+  writeFileSync(join(menu, ".fgu-component.json"), '{ "name": "menu", "source": "shared", "framework": "vue" }');
+  writeFileSync(join(menu, "menu.behaviour.js"), "export function attach() {}\n");
+  assert.deepEqual(hits(), ["src/other/menu.vue"], "the scaffolded component and the importing file are cleared; the unrelated copy is not");
 });

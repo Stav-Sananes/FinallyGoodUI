@@ -1,0 +1,38 @@
+rail: Triage → ?view=triage&issue=ING-231
+rail: My issues → My issues
+rail: All open → All open
+rail: P0–P1 open → P0–P1 open
+rail: Waiting on review → Waiting on review
+rail: Unassigned → Unassigned
+rail: Search or run… → palette open=true
+rail: Keyboard shortcuts → dialog open=true
+rail: Theme → Theme: light, data-theme=light
+rail: Preview state → menu open=true
+toolbar: Priority filter → menu with 5 options
+toolbar: Assignee filter → menu with 7 options
+toolbar: Label filter → menu with 17 options
+toolbar: New issue → dialog open=true
+rail: All open (back to the full list) → All open
+list: row ING-214 → Consumer group stalls after a broker failover
+list: Closed group toggle → closed rows shown: 4
+panel: Status field → Change status
+panel: Priority field → Set priority
+panel: Assignee field → Assign to
+panel: Labels field → Labels
+panel: Copy link → Link to ING-214 copied.
+panel: Comment → Canary on pool B is clean, rolling to all workers at 11:00.
+panel: Close → panel hidden=true
+phone: view select → My issues
+phone: search button → palette open=true
+phone: new issue button → dialog open=true
+phone: row opens sheet → sheet hidden=false
+phone: Back to issues → sheet hidden=true
+error: Try again → rows: 6
+issue error: Try again → Move the dedupe window to Redis Streams
+offline: Reconnect → banner hidden=true
+no results: Clear filters → rows: 22
+empty: New issue → dialog open=true
+fail: change rolls back, toast Try again → Couldn't save the change to ING-231 (set to P1). The server timed out, so it's back as it was. | after Try again: P1Priority P1, this week
+cleared: Go to My issues → My issues
+toast Undo button reverts all listed changes → ING-231 set to P1, assigned to Jun Okada | after Undo: ––No priority yet Unassigned
+page errors: none

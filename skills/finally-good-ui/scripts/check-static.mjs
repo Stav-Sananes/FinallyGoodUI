@@ -1,12 +1,15 @@
 #!/usr/bin/env node
-// Layer-1 static checks (spec §5.6). Regex/heuristic based: fast, dependency-free, best effort.
-import { join, resolve, relative, isAbsolute, extname, basename } from "node:path";
+// Layer-1 static checks. Regex/heuristic based: fast, dependency-free, best effort.
+import { join, resolve, relative, isAbsolute, extname, basename, dirname } from "node:path";
 import { runCli, isMain, UsageError } from "./lib/cli.mjs";
-import { readText, readJson, walk, isDir, isFile, toPosix, lineIndex } from "./lib/fs.mjs";
+import { readdirSync } from "node:fs";
+import { readText, walk, isFile, toPosix, lineIndex, IGNORE_DIRS } from "./lib/fs.mjs";
 import { cssBlocks, declarations, styleView, markupView } from "./lib/css.mjs";
-import { findColors, findSpacing, stripComments, JS_EXTS, MARKUP_EXTS } from "./lib/scan.mjs";
+import { findColors, findSpacing, stripComments, jsStringLiterals, JS_EXTS, MARKUP_EXTS } from "./lib/scan.mjs";
 import { RULE_CARDS, DEFAULT_SPACE_SCALE } from "./lib/rules.mjs";
 import { groupTokens, parseDimension } from "./lib/tokens.mjs";
+import { loadTokens } from "./lib/token-files.mjs";
+import { parseColor, toOklch } from "./lib/contrast.mjs";
 
 const HELP = `
 Usage: check-static.mjs [--root <dir>] [--files a,b] [--tokens <tokens.json>]
@@ -17,16 +20,22 @@ Rules: ${Object.keys(RULE_CARDS).join(", ")}.
 
 Options:
   --root <dir>      project root (default: cwd)
-  --files <list>    comma-separated files (relative to root or absolute). Default: scan src/, app/,
-                    components/, pages/ and top-level files (css, scss, tsx, jsx, vue, svelte, html, astro)
+  --files <list>    comma-separated files (relative to root or absolute). Default: every UI source file
+                    under the root (css, scss, js, mjs, tsx, jsx, vue, svelte, html, astro), skipping
+                    node_modules/dist/build/.design etc., test dirs, *.test/*.spec, *.min.js and *.config.*
   --tokens <file>   tokens.json whose space scale replaces the default px scale for off-scale-spacing
   --help
 `;
 
-const SCAN_DIRS = ["src", "app", "components", "pages"];
-const SCAN_EXTS = new Set([".css", ".scss", ".tsx", ".jsx", ".vue", ".svelte", ".html", ".astro"]);
+const SCAN_EXTS = new Set([".css", ".scss", ".js", ".mjs", ".ts", ".tsx", ".jsx", ".vue", ".svelte", ".html", ".astro"]);
+// Top-level directories that never hold the shipped UI (on top of fs.mjs IGNORE_DIRS).
+const SKIP_TOP = new Set(["test", "tests", "__tests__", "e2e", "cypress", "playwright", "fixtures", "__mocks__",
+  "venv", "env", "target", "Pods", "android", "ios"]);
+const SKIP_NESTED = /(^|\/)(__tests__|__mocks__|tests?|e2e|fixtures|vendor)\//;
 const LAYOUT_PROPS = /^(width|height|top|left|right|bottom|inset|margin(-[a-z-]+)?|padding(-[a-z-]+)?|(max|min)-(width|height))$/;
 const LAYOUT_JS_KEYS = /\b(width|height|top|left|right|bottom|margin\w*|padding\w*|maxHeight|maxWidth|minHeight|minWidth)\s*:/g;
+const SIGNATURE = /signature|expressive/i;
+const VISUALLY_HIDDEN = /\bclip\s*:\s*rect\(|clip-path\s*:\s*inset\(\s*50%/;
 const INFINITE = /infinite|Infinity|animate-(spin|pulse|ping|bounce)/;
 const EXEMPT_COLOR_FILE = (f) => {
   const b = basename(f).toLowerCase();
@@ -35,20 +44,79 @@ const EXEMPT_COLOR_FILE = (f) => {
 };
 
 function isDefaultScanned(f) {
-  return SCAN_EXTS.has(extname(f).toLowerCase()) && !/\.(test|spec)\.[jt]sx?$/.test(f) && !f.endsWith(".d.ts");
+  return SCAN_EXTS.has(extname(f).toLowerCase()) && !/\.(test|spec)\.[cm]?[jt]sx?$/.test(f) && !f.endsWith(".d.ts") &&
+    !/[.-]min\.m?js$/.test(f) && !/(^|\/)[^/]*\.config\.[cm]?[jt]s$/.test(f) && !SKIP_NESTED.test(f);
 }
 
+/** Every UI source file under root. Plain HTML apps keep UI in css/, js/, scripts/ etc., so walk it all. */
 export function listDefaultFiles(root) {
-  const files = [];
-  for (const d of SCAN_DIRS) if (isDir(join(root, d))) files.push(...walk(root, join(root, d), { exts: SCAN_EXTS }));
-  files.push(...walk(root, root, { exts: SCAN_EXTS, maxDepth: 0 }));
+  const files = walk(root, root, { exts: SCAN_EXTS, maxDepth: 0 });
+  let entries = [];
+  try { entries = readdirSync(root, { withFileTypes: true }); } catch { /* unreadable root */ }
+  for (const e of entries) {
+    if (!e.isDirectory() || IGNORE_DIRS.has(e.name) || SKIP_TOP.has(e.name) || e.name.startsWith(".")) continue;
+    files.push(...walk(root, join(root, e.name), { exts: SCAN_EXTS, maxDepth: 10, maxFiles: 5000 }));
+  }
   return [...new Set(files)].filter(isDefaultScanned).sort();
+}
+
+/** Custom properties defined in CSS (files and <style> blocks): Map name -> [values]. */
+// ---- ink-on-paper (project-wide): the first (light) definitions of the page and primary colour roles.
+const BACKGROUND_ROLE = /(?<![\w-])--(?:color-)?(?:background|bg|canvas|paper)\s*:\s*([^;{}]+)/;
+const PRIMARY_ROLE = /(?<![\w-])--(?:color-)?primary\s*:\s*([^;{}]+)/;
+function inkOnPaper(targets, read) {
+  const found = {};
+  for (const rel of targets) {
+    const ext = extname(rel).toLowerCase();
+    if (!/^\.(css|scss|sass|less)$/.test(ext) && !MARKUP_EXTS.has(ext)) continue;
+    const text = read(rel);
+    if (text == null) continue;
+    const css = /^\.(css|scss|sass|less)$/.test(ext) ? stripComments(rel, text) : styleView(stripComments(rel, text));
+    for (const [key, re] of [["background", BACKGROUND_ROLE], ["primary", PRIMARY_ROLE]]) {
+      const m = !found[key] && css.match(re);
+      if (m) found[key] = { value: m[1].trim(), file: rel, line: lineIndex(css)(m.index) };
+    }
+    if (found.background && found.primary) break;
+  }
+  if (!found.background || !found.primary) return null;
+  const bg = toOklch(parseColor(found.background.value)), pr = toOklch(parseColor(found.primary.value));
+  if (!bg || !pr) return null;
+  const paper = bg.l >= 0.93 && bg.c <= 0.025, ink = pr.l <= 0.32 && pr.c <= 0.05;
+  return paper && ink ? { file: found.primary.file, line: found.primary.line, background: found.background.value, primary: found.primary.value } : null;
+}
+
+function customProps(rel, text, vars) {
+  const ext = extname(rel).toLowerCase();
+  const clean = stripComments(rel, text);
+  const css = /^\.(css|scss|sass|less)$/.test(ext) ? clean : MARKUP_EXTS.has(ext) ? styleView(clean) : null;
+  if (!css) return;
+  for (const m of css.matchAll(/(?<![\w-])(--[\w-]+)\s*:\s*([^;{}]+)/g)) {
+    const list = vars.get(m[1]) || [];
+    list.push(m[2].trim());
+    vars.set(m[1], list);
+  }
+}
+
+const maxMs = (v) => Math.max(-1, ...[...String(v).matchAll(/(?<![\w.-])(\d*\.?\d+)(ms|s)\b/g)].map((m) => (m[2] === "s" ? m[1] * 1000 : Number(m[1]))));
+
+/**
+ * Replace var(--x[, fallback]) with its definition. With several definitions (themes, media
+ * queries) the longest duration wins: the check is about the worst case a user can see.
+ */
+export function resolveVars(value, vars, depth = 0) {
+  if (!vars || depth > 8 || !value.includes("var(")) return value;
+  return value.replace(/var\(\s*(--[\w-]+)\s*(?:,\s*((?:[^()]|\([^()]*\))*))?\)/g, (all, name, fb) => {
+    const cands = vars.get(name) || (fb != null ? [fb.trim()] : []);
+    if (!cands.length) return all;
+    const resolved = cands.map((c) => resolveVars(c, vars, depth + 1));
+    return resolved.reduce((a, b) => (maxMs(b) > maxMs(a) ? b : a));
+  });
 }
 
 function spaceScale(tokensFile) {
   if (!tokensFile) return new Set(DEFAULT_SPACE_SCALE);
-  const t = readJson(tokensFile);
-  if (!t) throw new UsageError(`cannot read tokens file ${tokensFile}`);
+  let t;
+  try { t = loadTokens(tokensFile); } catch (e) { throw new UsageError(`cannot read tokens file ${tokensFile}: ${e.message}`); }
   const s = new Set([0]);
   for (const [, tok] of groupTokens(t.space)) {
     const d = parseDimension(tok.$value);
@@ -175,16 +243,19 @@ export function checkFile(rel, text, ctx) {
   }
 
   // ---- long-duration
-  const judge = (idx, ms, what) => {
-    if (ms > 500) add("long-duration", idx, "high", `${what} ${Math.round(ms)}ms exceeds the 500ms ceiling (spec §4); routine UI stays ≤300ms.`);
-    else if (ms > 300) add("long-duration", idx, "medium", `${what} ${Math.round(ms)}ms is over 300ms; reserve long/hero durations for rare moments.`);
+  // The app's expressive moments (motion.one-signature-moment, up to three) may run longer; put
+  // "signature" or "expressive" in their selector or class to mark them. The 600ms ceiling still holds.
+  const judge = (idx, ms, what, signature = false) => {
+    if (ms > 600) add("long-duration", idx, "high", `${what} ${Math.round(ms)}ms exceeds the 600ms ceiling (motion.frequency-budget); routine UI stays ≤400ms.`);
+    else if (ms > 400 && !signature) add("long-duration", idx, "medium", `${what} ${Math.round(ms)}ms is over 400ms; reserve hero durations for the app's expressive moments (up to three). Mark each by putting "signature" or "expressive" in its selector.`);
   };
   each(/(?<![\w-])(transition(?:-duration)?|animation(?:-duration)?|transitionDuration|animationDuration)\s*:\s*(['"`]?)([^;{}\n]+)/gi, clean, (m) => {
     const value = m[2] ? m[3].split(m[2])[0] : m[3];
     if (INFINITE.test(value) || INFINITE.test(enclosingBody(clean, m.index))) return;
-    if (/backdrop|overlay/i.test(enclosingSelector(clean, m.index) + lineAt(clean, m.index))) return;
-    const ms = durationsMs(m[1].replace(/Duration$/, "-duration").toLowerCase(), value);
-    if (ms.length) judge(m.index, Math.max(...ms), "Duration");
+    const where = enclosingSelector(clean, m.index) + lineAt(clean, m.index);
+    if (/backdrop|overlay/i.test(where)) return;
+    const ms = durationsMs(m[1].replace(/Duration$/, "-duration").toLowerCase(), value.includes("var(") ? resolveVars(value, ctx.vars?.()) : value);
+    if (ms.length) judge(m.index, Math.max(...ms), "Duration", SIGNATURE.test(where));
   });
   if (markup) {
     each(/\bduration\s*:\s*(\d*\.?\d+)(?![\w.%])(?!\s*(?:ms|s)\b)/g, markup, (m) => {
@@ -194,9 +265,10 @@ export function checkFile(rel, text, ctx) {
       judge(m.index, n < 10 ? n * 1000 : n, "Duration");
     });
     each(/(?<![\w-])duration-(?:(\d+)|\[(\d*\.?\d+)(ms|s)\])(?![\w-])/g, markup, (m) => {
-      if (INFINITE.test(lineAt(markup, m.index))) return;
+      const l = lineAt(markup, m.index);
+      if (INFINITE.test(l)) return;
       const ms = m[1] ? Number(m[1]) : m[3] === "s" ? Number(m[2]) * 1000 : Number(m[2]);
-      judge(m.index, ms, "Duration");
+      judge(m.index, ms, "Duration", SIGNATURE.test(l));
     });
   }
 
@@ -235,6 +307,7 @@ export function checkFile(rel, text, ctx) {
     const byLine = new Map();
     for (const s of findSpacing(clean, isJs)) {
       if (ctx.scale.has(Math.round(s.px * 100) / 100)) continue;
+      if (VISUALLY_HIDDEN.test(enclosingBody(clean, s.index))) continue; // the standard 1px screen-reader clip
       const ln = line(s.index);
       if (!byLine.has(ln)) byLine.set(ln, { idx: s.index, vals: [] });
       byLine.get(ln).vals.push(`${Math.round(s.px * 100) / 100}px`);
@@ -249,11 +322,15 @@ export function checkFile(rel, text, ctx) {
     const blocks = cssBlocks(css);
     const bases = (sel) => sel.split(",").map((s) => s.replace(/::?[\w-]+(\([^)]*\))?/g, "").trim()).filter(Boolean);
     const fvBases = new Set(blocks.filter((b) => /focus-visible/.test(b.prelude)).flatMap((b) => bases(b.prelude)));
+    // A wrapper that draws the ring with :focus-within covers the controls inside it.
+    const ringParents = blocks.filter((b) => /:focus-within/.test(b.prelude) && /\b(outline|box-shadow|border(-color)?)\s*:/.test(b.own))
+      .flatMap((b) => bases(b.prelude));
+    const insideRingParent = (prelude) => bases(prelude).every((sel) => ringParents.some((p) => sel.startsWith(p + " ") || sel.startsWith(p + ">")));
     for (const b of blocks) {
       if (/focus-visible/.test(b.prelude) || /focus-visible/.test(b.own)) continue;
       for (const d of declarations(b.own)) {
         if (!/^outline(-style)?$/.test(d.prop) || !/^(none|0)(\s|!|$)/.test(d.value)) continue;
-        if (bases(b.prelude).some((x) => fvBases.has(x))) continue;
+        if (bases(b.prelude).some((x) => fvBases.has(x)) || insideRingParent(b.prelude)) continue;
         add("outline-none-no-focus", b.bodyStart + d.offset, "high", focusMsg);
       }
     }
@@ -278,6 +355,9 @@ export function checkFile(rel, text, ctx) {
       if (role && tab) return;
       add("div-onclick", m.index, "high", `Clickable <${m[1]}> is not keyboard or screen-reader accessible; use <button>/<a> (or add role, tabIndex and key handlers).`);
     });
+    checkWidgetKeyboard(markup, clean, add, keysViaBehaviour(rel, clean, ctx));
+    checkInputErgonomics(markup, add, each);
+    checkImageDimensions(markup, add, each);
     each(/<(input|select|textarea|Input|Select|Textarea)\b/g, markup, (m) => {
       const tag = tagText(markup, m.index);
       const cls = (tag.match(/\s(?:className|class)\s*=\s*(?:\{?\s*)?(["'`])([^"'`]*)\1/) || [])[2] || "";
@@ -310,6 +390,8 @@ export function checkFile(rel, text, ctx) {
     each(/\bmaximumScale\s*:\s*(\d*\.?\d+)/g, clean, (m) => { if (Number(m[1]) < 2) add("user-scalable-no", m.index, "high", zoomMsg); });
   }
 
+  checkPasteBlocked(clean, add, each);
+  if (isJs || isMarkup) checkLocaleFormats(clean, add, each);
   checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, each, ctx, line });
   return findings;
 }
@@ -338,9 +420,137 @@ function textNodes(src) {
   return out;
 }
 
+/** Copy inside JS string/template literals: [text, index]. Markup in a literal yields its text nodes. */
+function literalTextNodes(clean) {
+  const out = [];
+  for (const { index, value } of jsStringLiterals(clean)) {
+    if (!/[A-Za-zÀ-ɏ]/.test(value)) continue;
+    if (/(?:\bfrom|\bimport\s*\(?|\brequire\s*\()\s*$/.test(clean.slice(Math.max(0, index - 12), index - 1))) continue;
+    if (/<[A-Za-z!/]/.test(value)) for (const [t, i] of textNodes(value)) out.push([t, index + i]);
+    else out.push([value, index]);
+  }
+  return out;
+}
+
+// Composite ARIA widgets promise a keyboard model (arrow keys, typeahead, Home/End) that only
+// script provides; native controls already have one.
+const WIDGET_ROLE = /\srole\s*=\s*\{?\s*["'`](menu|menubar|listbox|tablist|tree|treegrid|grid|slider|spinbutton|radiogroup|combobox|switch)["'`]/g;
+const NATIVE_CONTROL = /^(button|input|select|textarea|summary)$/i;
+const TAG_KEY_HANDLER = /\s(?:onKeyDown|onKeyUp|onkeydown|onkeyup|@keydown|@keyup|v-on:keydown|v-on:keyup|on:keydown|on:keyup|\(keydown\)|\(keyup\))\b/;
+const SCRIPT_KEY_LISTENER = /addEventListener\(\s*["'`]key(?:down|up)["'`]/;
+
+// A radiogroup that only labels native radios is fine: the browser gives them arrow keys.
+function wrapsNativeRadios(markup, bodyStart, tagName) {
+  const close = markup.indexOf(`</${tagName}`, bodyStart);
+  const body = markup.slice(bodyStart, close < 0 ? bodyStart + 3000 : close);
+  return /type\s*=\s*\{?\s*["'`]radio["'`]/.test(body) && !/role\s*=\s*\{?\s*["'`]radio["'`]/.test(body);
+}
+
+// A scaffolded component (marker + <name>.behaviour.js next to it) or any file that imports a *.behaviour module has
+// its keys wired by attach(): the role in the markup is backed by script that lives in the shared behaviour file.
+const BEHAVIOUR_IMPORT = /from\s+["'][^"']*\.behaviour(?:\.js)?["']|import\(\s*["'][^"']*\.behaviour/;
+function keysViaBehaviour(rel, clean, ctx) {
+  return BEHAVIOUR_IMPORT.test(clean) || Boolean(ctx.hasBehaviour?.(rel));
+}
+
+function checkWidgetKeyboard(markup, clean, add, viaBehaviour = false) {
+  if (viaBehaviour || SCRIPT_KEY_LISTENER.test(clean)) return;
+  WIDGET_ROLE.lastIndex = 0;
+  let m;
+  while ((m = WIDGET_ROLE.exec(markup))) {
+    const start = markup.lastIndexOf("<", m.index);
+    const tagName = (markup.slice(start + 1).match(/^[\w.-]+/) || [""])[0];
+    const tag = start < 0 ? "" : tagText(markup, start);
+    if (start < 0 || NATIVE_CONTROL.test(tagName) || TAG_KEY_HANDLER.test(tag)) continue;
+    if (m[1] === "radiogroup" && wrapsNativeRadios(markup, start + tag.length, tagName)) continue;
+    add("role-no-keyboard", start, "high",
+      `role="${m[1]}" promises a keyboard model (arrow keys, Home/End, typeahead, focus on open) that this element doesn't implement. ` +
+      "Use the installed component library's widget, a native control, or add the key handling; otherwise drop the role.");
+  }
+}
+
+// ---- Web Interface Guidelines rules: input ergonomics, paste, images, locale formats
+
+/** Is idx inside an element that opens with `opener` (a dialog or popover), counting nesting? */
+function insideLayer(markup, idx) {
+  const before = markup.slice(0, idx);
+  const re = /<([A-Za-z][\w.-]*)\b(?=[^>]*(?:\spopover\b|\srole\s*=\s*["']dialog["']))|<(dialog)\b/g;
+  let m, last = null;
+  while ((m = re.exec(before))) last = { tag: m[1] || m[2], at: m.index };
+  if (!last) return false;
+  const span = before.slice(last.at);
+  const opens = (span.match(new RegExp(`<${last.tag}\\b`, "g")) || []).length;
+  const closes = (span.match(new RegExp(`</${last.tag}\\s*>`, "g")) || []).length;
+  return opens > closes;
+}
+
+/** Is idx inside a JSX conditional ({cond ? … : …} or {cond && …}), i.e. rendered after some state change? */
+function renderedOnDemand(markup, idx) {
+  let depth = 0;
+  for (let i = idx - 1; i >= 0 && i > idx - 4000; i--) {
+    const c = markup[i];
+    if (c === "}") depth++;
+    else if (c === "{" && depth-- === 0) {
+      if (/(\)|=>)\s*$/.test(markup.slice(Math.max(0, i - 40), i))) return false; // a function body, not a JSX expression
+      return /\?|&&/.test(markup.slice(i, idx));
+    }
+  }
+  return false;
+}
+
+const CODE_FIELD = /^(user(?:name)?|login|handle|otp|code|token|coupon|promo(?:code)?|sku|api[-_]?key|invite(?:code)?)$/i;
+const attr = (tag, name) => (tag.match(new RegExp(`\\s${name}\\s*=\\s*(?:\\{\\s*)?["'\`]([^"'\`]*)["'\`]`, "i")) || [])[1];
+
+function checkInputErgonomics(markup, add, each) {
+  each(/\s(autoFocus|autofocus)(?=[\s=/>])/g, markup, (m) => {
+    if (insideLayer(markup, m.index)) return; // moving focus into an opened dialog or popover is right
+    if (renderedOnDemand(markup, m.index)) return; // an inline editor that appears after a click
+    add("autofocus", m.index + 1, "low", "Autofocus on a page field opens the phone keyboard and scrolls the page; reserve it for a single primary field on desktop, a field inside an opened dialog, or an editor that appears after a click (fine to ignore then).");
+  });
+  each(/<(input|Input)\b/g, markup, (m) => {
+    const tag = tagText(markup, m.index);
+    if (/\sspell[Cc]heck\s*=/.test(tag)) return;
+    if (/^(email|password|number|tel|url|search|checkbox|radio|hidden|date|file)$/i.test(attr(tag, "type") || "")) return;
+    const auto = attr(tag, "autoComplete") || attr(tag, "autocomplete") || "";
+    const name = attr(tag, "name") || attr(tag, "id") || "";
+    if (/\b(username|one-time-code)\b/.test(auto) || CODE_FIELD.test(name)) {
+      add("spellcheck-on-codes", m.index, "low", `Field "${name || auto}" holds a username or code; add spellCheck={false} (and autoCapitalize="off") so the browser doesn't mark or change it.`);
+    }
+  });
+}
+
+function checkPasteBlocked(clean, add, each) {
+  const msg = "Paste is blocked; people paste passwords, codes and addresses (password managers, 2FA apps). Let paste through and validate the value instead.";
+  each(/\s(?:onPaste|onpaste|@paste|on:paste|\(paste\))\s*=/g, clean, (m) => {
+    const handler = clean.slice(m.index, m.index + 200).split(/\/>|[^=]>/)[0];
+    if (/preventDefault|return\s+false/.test(handler)) add("paste-blocked", m.index + 1, "high", msg);
+  });
+  each(/addEventListener\(\s*["'`]paste["'`]/g, clean, (m) => {
+    if (/preventDefault|return\s+false/.test(clean.slice(m.index, m.index + 200).split(/\)\s*;/)[0] + ")")) add("paste-blocked", m.index, "high", msg);
+  });
+}
+
+function checkImageDimensions(markup, add, each) {
+  each(/<img\b/g, markup, (m) => {
+    const tag = tagText(markup, m.index);
+    if (/\swidth\s*=/.test(tag) && /\sheight\s*=/.test(tag)) return;
+    if (/aspect-|aspect-ratio|\sfill(?=[\s=/>])|\b(?:size|h)-\d/.test(tag)) return;
+    add("img-no-dimensions", m.index, "medium", "Image without width and height (or an aspect ratio); the page jumps when it loads. Give it intrinsic dimensions, or size the box with aspect-ratio.");
+  });
+}
+
+const DAY_MONTH_PATTERN = /^(?:MM?|DD?|dd?)([\/.\- ])(?:MM?|DD?|dd?)\1(?:YYYY|yyyy|YY|yy)$/;
+function checkLocaleFormats(clean, add, each) {
+  each(/\.toLocale(?:Date|Time)String\(\s*\)/g, clean, (m) =>
+    add("locale-format", m.index + 1, "medium", "A date formatted with no locale or options follows whatever the server or browser defaults to (and mismatches on hydration); pass the user's locale and a dateStyle/timeStyle, or use one shared Intl.DateTimeFormat."));
+  for (const { index, value } of jsStringLiterals(clean)) {
+    if (DAY_MONTH_PATTERN.test(value.trim())) add("locale-format", index, "medium", `Hard-coded date pattern "${value}" is wrong for most locales; format with Intl.DateTimeFormat (dateStyle) in the user's locale.`);
+  }
+}
+
 function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, each, ctx, line }) {
   const jsx = ext === ".tsx" || ext === ".jsx";
-  const hasText = isMarkup || jsx;
+  const hasText = isMarkup || isJs;
   const src = markup || clean;
 
   // ---- dead-control
@@ -350,8 +560,9 @@ function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, ea
     add("dead-control", m.index, "high", "Handler does nothing; every visible control must do what its label says (or not be shown)."));
   each(/\s(?:onclick|@click|v-on:click|on:click)\s*=\s*["']\s*["']/g, src, (m) =>
     add("dead-control", m.index, "high", "Empty click handler; the control does nothing."));
-  if (ext === ".html") {
-    // Single-page HTML (prototypes): an in-page anchor must have a target in the same file.
+  if (ext === ".html" && !/hashchange|location\.hash/.test(text)) {
+    // Single-page HTML (prototypes): an in-page anchor must have a target in the same file,
+    // unless the file routes on the hash itself.
     const ids = new Set([...text.matchAll(/\s(?:id|name)\s*=\s*["']([^"']+)["']/g)].map((x) => x[1]));
     each(/\bhref\s*=\s*["']#([\w-]+)["']/g, src, (m) => {
       if (!ids.has(m[1])) add("dead-control", m.index, "high", `Link to #${m[1]}, but nothing in this file has id="${m[1]}"; the link goes nowhere.`);
@@ -369,13 +580,16 @@ function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, ea
     add("placeholder-content", m.index, "medium", `Stock/placeholder asset service ${m[1]}; use the product's real images, or initials/an honest empty slot.`));
 
   if (hasText) {
-    for (const [t, idx] of textNodes(src)) {
+    const nodes = isMarkup ? textNodes(src) : [...(jsx ? textNodes(src) : []), ...literalTextNodes(clean)];
+    for (const [t, idx] of nodes) {
       const claim = t.match(CLAIMS);
       if (claim) add("unsourced-claim", idx + claim.index, "medium", `Trust claim "${claim[0].trim()}" must come from the brief; invented proof misleads. Remove it or cite the source in decisions.md.`);
       const bw = t.match(BUZZWORDS);
       if (bw) add("buzzword", idx + bw.index, "low", `"${bw[0]}" says nothing concrete; name what the product actually does for this user.`);
       const dash = t.match(/[\p{L}\p{N},.)]\s*—\s*[\p{L}\p{N}(]/u);
       if (dash) add("em-dash-copy", idx + dash.index, "low", "Em dash in interface copy reads as generated prose; use a period, colon, comma or parentheses. (A lone \"—\" as an empty-value marker is fine.)");
+      const dots = t.match(/\S\.\.\.(?!\.)/);
+      if (dots) add("ellipsis-dots", idx + dots.index + 1, "low", 'Three periods in interface copy; use the ellipsis character "…" (Saving…, Rename…).');
       const em = t.match(EMOJI);
       if (em) add("emoji-ui", idx + em.index, "low", `Emoji "${em[0]}" used as an icon or marker; use the project's icon set, or justify the voice in decisions.md.`);
     }
@@ -474,21 +688,46 @@ function checkSlop({ rel, text, clean, css, markup, isJs, isMarkup, ext, add, ea
 
 export function checkStatic(rootArg = ".", { files, tokens } = {}) {
   const root = resolve(rootArg);
-  const ctx = { scale: spaceScale(tokens ? resolve(root, tokens) : null), motionAt: null, guarded: false, glass: new Map() };
+  const ctx = { scale: spaceScale(tokens ? resolve(root, tokens) : null), motionAt: null, guarded: false, glass: new Map(), vars: null };
   const defaults = listDefaultFiles(root);
   const targets = files?.length
     ? files.map((f) => toPosix(isAbsolute(f) ? relative(root, f) : f)).filter((f) => isFile(join(root, f)))
     : defaults;
+  const texts = new Map();
+  const read = (rel) => { if (!texts.has(rel)) texts.set(rel, readText(join(root, rel))); return texts.get(rel); };
+  // custom properties from the whole project (so var(--duration-x) resolves even in a --files run);
+  // built on first use, and only CSS/markup files are read for it
+  let vars = null;
+  ctx.vars = () => {
+    if (vars) return vars;
+    vars = new Map();
+    for (const rel of new Set([...defaults, ...targets])) {
+      if (JS_EXTS.has(extname(rel).toLowerCase())) continue;
+      const t = read(rel);
+      if (t != null && t.length <= 1_000_000) customProps(rel, t, vars);
+    }
+    return vars;
+  };
+  const behaviourDirs = new Map();
+  ctx.hasBehaviour = (rel) => {
+    const dir = dirname(rel);
+    if (!behaviourDirs.has(dir)) {
+      let names = [];
+      try { names = readdirSync(join(root, dir)); } catch { /* unreadable dir: no behaviour */ }
+      behaviourDirs.set(dir, names.includes(".fgu-component.json") && names.some((n) => n.endsWith(".behaviour.js")));
+    }
+    return behaviourDirs.get(dir);
+  };
   const findings = [];
   for (const rel of targets) {
-    const text = readText(join(root, rel));
+    const text = read(rel);
     if (text == null || text.length > 1_000_000) continue;
     findings.push(...checkFile(rel, text, ctx));
   }
   if (ctx.motionAt && !ctx.guarded && files?.length) {
     // single-file runs: look for a reduced-motion guard anywhere in the project before flagging
     for (const rel of defaults) {
-      const t = readText(join(root, rel));
+      const t = read(rel);
       if (t && /prefers-reduced-motion|motion-safe:|motion-reduce:|useReducedMotion|reducedMotion|MotionConfig/.test(t)) { ctx.guarded = true; break; }
     }
   }
@@ -497,6 +736,10 @@ export function checkStatic(rootArg = ".", { files, tokens } = {}) {
       message: "The project animates but never honours prefers-reduced-motion; add a reduced-motion policy (keep opacity/colour, drop movement).",
       card: RULE_CARDS["no-reduced-motion"] });
   }
+  const ink = inkOnPaper(targets, read);
+  if (ink) findings.push({ rule: "ink-on-paper", severity: "low", file: ink.file, line: ink.line, selector: null,
+    message: `Near-neutral light page (${ink.background}) with near-black primary actions (${ink.primary}): the ink-on-paper house style every calm, quiet brief lands on. Take colour from the product's world (a tinted canvas, a coloured primary, a motif that owns a surface), or justify it in decisions.md.`,
+    card: RULE_CARDS["ink-on-paper"] });
   if (ctx.glass.size >= 3) {
     const [first] = ctx.glass.values();
     findings.push({ rule: "glass-overuse", severity: "low", file: first.file, line: first.line, selector: null,

@@ -1,0 +1,5 @@
+{
+  "name": "tabs",
+  "source": "primitives:radix",
+  "framework": "react"
+}

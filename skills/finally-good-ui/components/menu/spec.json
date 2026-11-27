@@ -1,0 +1,103 @@
+{
+  "name": "menu",
+  "shapes": [
+    "menu-button"
+  ],
+  "props": [
+    {
+      "name": "items",
+      "type": "array",
+      "ts": "{ label: string; disabled?: boolean; onSelect?: (item: { label: string }) => void }[]",
+      "default": "[]"
+    }
+  ],
+  "events": [],
+  "slots": [
+    "default"
+  ],
+  "states": [
+    {
+      "name": "open",
+      "attribute": "aria-expanded"
+    },
+    {
+      "name": "disabled",
+      "attribute": "aria-disabled"
+    }
+  ],
+  "a11y": {
+    "role": "menu",
+    "rolePart": "list",
+    "aria": [
+      "aria-haspopup",
+      "aria-controls",
+      "aria-labelledby"
+    ],
+    "keys": {
+      "ArrowDown": "next item",
+      "ArrowUp": "previous item",
+      "Home": "first item",
+      "End": "last item",
+      "Escape": "close"
+    }
+  },
+  "tokens": [
+    "--color-card",
+    "--color-card-foreground",
+    "--color-foreground",
+    "--color-muted-foreground",
+    "--color-accent",
+    "--color-accent-foreground",
+    "--color-border",
+    "--color-ring",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--shadow-sm",
+    "--shadow-md",
+    "--shadow-lg",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--ring-width",
+    "--ring-offset",
+    "--size-control-sm",
+    "--size-control-md",
+    "--size-control-lg",
+    "--space-1",
+    "--space-2",
+    "--space-3",
+    "--space-4",
+    "--duration-micro",
+    "--duration-short",
+    "--ease-snappy",
+    "--ease-exit",
+    "--z-overlay",
+    "--font-sans",
+    "--text-sm"
+  ],
+  "parts": [
+    "root",
+    "trigger",
+    "list",
+    "item"
+  ],
+  "tags": {
+    "trigger": "button",
+    "item": "button",
+    "list": "div"
+  },
+  "pattern": "recipes/patterns/menu-select-combobox.md",
+  "profile": {
+    "surface": "list",
+    "interactive": "item",
+    "density": "item",
+    "also": [
+      "trigger"
+    ]
+  },
+  "api": [
+    "openMenu(scope: Element, start?: number): void",
+    "closeMenu(scope: Element, options?: { restoreFocus?: boolean }): void"
+  ]
+}

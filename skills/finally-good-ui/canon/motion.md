@@ -1,6 +1,6 @@
 # Motion
 
-Scope: when to animate, how long, with which curve, on which properties, and how motion stays coherent and safe across the app. Token values come from the spec's motion language (durations `instant 50 · micro 100 · short 150 · standard 250 · medium 300 · long 400 · hero 500`; easings `enter`, `enter-emphasized`, `exit`, `move`, `snappy`, `linear`).
+Scope: when to animate, how long, with which curve, on which properties, and how motion stays coherent and safe across the app. Token values come from the `duration` and `easing` groups in `tokens/default.tokens.json` (durations `instant 50 · micro 100 · short 150 · standard 250 · medium 300 · long 400 · hero 600`; easings `enter`, `enter-emphasized`, `exit`, `move`, `snappy`, `linear`).
 
 ### motion.purpose-only
 
@@ -25,7 +25,7 @@ checks:
 ```yaml
 id: motion.frequency-budget
 domain: motion
-principle: "Scale motion inversely with how often an interaction happens: 100+ times a day or keyboard-triggered gets no animation; routine UI stays at 300ms or under; only rare moments may run longer, capped at 500ms (backdrops excepted)."
+principle: "Scale motion inversely with how often an interaction happens: 100+ times a day or keyboard-triggered gets no animation; routine UI stays at 400ms or under; the app's few expressive moments may run longer, capped at 600ms (backdrops excepted)."
 why: "A delay that delights once becomes friction on the hundredth repetition; frequent actions must feel instant or the product feels slow."
 sources: ["Emil Kowalski, emilkowal.ski animation writing", "NN/g, Executing UX Animations: Duration and Motion Characteristics", "Yablonski, Laws of UX, Doherty threshold"]
 applies-when: "Setting motion.level per screen from the brief's frequency of use; any command palette, list navigation, tab switch, or shortcut."
@@ -34,7 +34,7 @@ decides: [motion.level, tokens.duration]
 tensions: [motion.tension-delight-speed, motion.one-signature-moment, personality.playful]
 asked-by: [interview.context.frequency]
 checks:
-  measured: "check-static rule long-duration (>500ms, or >300ms on non-backdrop UI); probe: animations started by keyboard shortcuts or command-palette actions have duration 0."
+  measured: "check-static rule long-duration (>600ms, or >400ms on non-backdrop UI outside an expressive moment); probe: animations started by keyboard shortcuts or command-palette actions have duration 0."
   judged: "Which interaction will this user repeat most often in a day, and does it wait on any animation?"
 ```
 
@@ -52,7 +52,7 @@ decides: [tokens.duration]
 tensions: [motion.frequency-budget]
 asked-by: []
 checks:
-  measured: "Probe: every animation duration is a duration token (50/100/150/250/300/400/500ms); paired exit duration is between 0.6 and 0.75 of its enter."
+  measured: "Probe: every animation duration is a duration token (50/100/150/250/300/400/600ms); paired exit duration is between 0.6 and 0.75 of its enter."
   judged: "Does anything feel slow for its size (a tooltip taking as long as a modal) or abrupt for its distance?"
 ```
 
@@ -79,7 +79,7 @@ checks:
 ```yaml
 id: motion.compositor-only
 domain: motion
-principle: "Anything that moves, grows or shrinks animates transform and opacity only; never width, height, top, left, margin or padding, and never `transition: all`. Colour crossfades are allowed for small state changes."
+principle: "Anything that moves, grows or shrinks animates transform and opacity only; never width, height, top, left, margin or padding, and never `transition: all`. Colour crossfades are allowed for small state changes. In SVG, animate a <g> wrapper with transform-box: fill-box and an explicit transform-origin, not the paths."
 why: "Transform and opacity can run on the compositor without re-layout, so they hold 60fps on weak devices; layout properties trigger reflow every frame and stutter."
 sources: ["Paul Lewis, web.dev, Stick to compositor-only properties and manage layer count", "Josh Comeau, An Interactive Guide to CSS Transitions", "Emil Kowalski, emilkowal.ski animation writing"]
 applies-when: "All CSS transitions, keyframes, and JS animation libraries."
@@ -115,7 +115,7 @@ checks:
 ```yaml
 id: motion.reduced-motion
 domain: motion
-principle: "Under prefers-reduced-motion, drop spatial movement (translate, scale, parallax, auto-play) but keep opacity and colour changes so state changes are still visible. Reduced means fewer, not zero."
+principle: "Under prefers-reduced-motion, drop spatial movement (translate, scale, parallax, auto-play) but keep opacity and colour changes so state changes are still visible. Reduced means fewer, not zero. Anything that moves on its own for more than 5 s (carousels, looping illustrations, tickers) gets a visible pause control in every mode (WCAG 2.2.2)."
 why: "Large or vestibular-triggering motion can cause nausea and dizziness; removing all feedback instead leaves those users with abrupt, confusing jumps."
 sources: ["WCAG 2.2 SC 2.3.3 Animation from Interactions (AAA, advisory)", "WCAG 2.2 SC 2.2.2 Pause, Stop, Hide", "Josh Comeau, Accessible Animations in React"]
 applies-when: "Every project with any animation."
@@ -133,8 +133,8 @@ checks:
 ```yaml
 id: motion.one-signature-moment
 domain: motion
-principle: "Spend the expressive motion budget on one moment per app, chosen from the brief (a rare, emotionally significant event such as completion, first success, or onboarding), and keep all other motion quiet."
-why: "People remember experiences by their peak and their end; one crafted peak lands harder than expressive motion spread thin, and it stays rare enough never to annoy."
+principle: "Spend the expressive motion budget on a few moments per app, at most three, chosen from the brief (rare or emotionally significant events such as completion, first success, onboarding, the first view of the day's key figure), and keep routine motion visible but short."
+why: "People remember experiences by their peak and their end; a few crafted peaks land harder than expressive motion spread everywhere, and each stays rare enough never to annoy."
 sources: ["Yablonski, Laws of UX, Peak-end rule", "Saffer, Microinteractions", "Thomas & Johnston, The Illusion of Life, staging"]
 applies-when: "Directions and System stages, when locking the motion language."
 not-when: "Utility tools used in short, frequent bursts, where the signature may be only a subtle confirmation."
@@ -142,8 +142,8 @@ decides: [motion.signature, motion.level]
 tensions: [motion.frequency-budget, motion.purpose-only, motion.tension-delight-speed]
 asked-by: []
 checks:
-  measured: "Probe across the flow walk: at most one distinct animation over 300ms (backdrops excepted) or using spatial spring bounce; it is triggered at most once per session."
-  judged: "Is the signature moment tied to something this user actually cares about, and would they see it rarely enough to still enjoy it on day 30?"
+  measured: "Probe across the flow walk: at most three distinct animations over 400ms (backdrops excepted) or using spatial spring bounce; each is triggered at most once per session or task. Put \"signature\" (or \"expressive\") in each moment's selector or class (e.g. .booked-signature) so check-static's long-duration rule accepts it up to the 600ms ceiling."
+  judged: "Is each expressive moment tied to something this user actually cares about, and would they see it rarely enough to still enjoy it on day 30?"
 ```
 
 ### motion.tension-delight-speed

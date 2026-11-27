@@ -86,6 +86,18 @@ Custom messages: `data-msg-<validity-key-in-kebab>` (e.g. `data-msg-value-missin
 ## React + Motion
 No Motion needed. Use the project's form library if present (React Hook Form: `mode: "onTouched"`, `reValidateMode: "onChange"` implements rules 1–3; Zod/Valibot for schemas). Render errors with the same markup/ARIA as above.
 
+## Form libraries (stack profile `forms`)
+Every library below renders the same markup and ARIA as the baseline; only the timing settings differ.
+| `forms.lib` | Timing rules 1–3 | Schema (`forms.schema`) | Field wiring |
+|---|---|---|---|
+| `react-hook-form` | `useForm({ mode: "onTouched", reValidateMode: "onChange" })` | `resolver: zodResolver(schema)` (also `valibotResolver`, `arktypeResolver`, `yupResolver` from `@hookform/resolvers`) | `aria-invalid={!!errors.x}`, `aria-describedby` to the error id; `setFocus` on the first error after submit |
+| `tanstack-form` | per field `validators: { onBlur: schema.shape.x }` then `onChange` once touched (`field.state.meta.isTouched`) | any Standard Schema (Zod, Valibot, ArkType) passed straight in | render `field.state.meta.errors` in the error element |
+| `conform` | `shouldValidate: "onBlur", shouldRevalidate: "onInput"` | `parseWithZod` / `parseWithValibot` on client and server | `getInputProps(fields.x, { type })` adds `aria-invalid` / `aria-describedby`; server actions keep input on failure |
+| `vee-validate` | `validateOnBlur: true`, `validateOnModelUpdate` only after the first error | `toTypedSchema(zodSchema)` (`@vee-validate/zod`) | `useField` `errorMessage` into the error element |
+| `superforms` | `validationMethod: "onblur"` (then live once invalid) | `zod(schema)` / `valibot(schema)` adapters | `$errors.x` into the error element; `use:enhance` keeps input |
+| `formik` | `validateOnChange={false}` until touched | `validationSchema` (Yup) | keep it working; build new forms with the project's other library or plain HTML |
+No form library: the CSS baseline plus `:user-invalid` already implements rules 1–3 for native constraints.
+
 ## Vue / Svelte
 - Vue: VeeValidate (`validateOnBlur: true, validateOnModelUpdate: false` until touched) or hand-roll with `@blur` + a `touched` ref; `<Transition name="err">` for messages.
 - Svelte/SvelteKit: form actions return `fail(400, { errors, values })` for server errors; client timing via `on:blur`/`oninput` handlers + `use:enhance`.

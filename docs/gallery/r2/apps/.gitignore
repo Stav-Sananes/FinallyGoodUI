@@ -1,0 +1,7 @@
+# Build-time screenshots from each run's verify step stay local; sources and design records are kept.
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.webm
+**/.design/reports/*.json

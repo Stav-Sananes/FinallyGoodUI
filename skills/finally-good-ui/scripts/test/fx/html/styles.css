@@ -6,5 +6,5 @@
 }
 .pop { transition: 0.2s; }
 .spin { animation: spin 2s linear infinite; }
-.menu { transition: transform 400ms ease; }
+.menu { transition: transform 450ms ease; }
 select, textarea { font-size: 0.8rem; }

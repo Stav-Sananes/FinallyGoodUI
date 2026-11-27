@@ -1,0 +1,86 @@
+<div class="desk">
+  <header class="masthead">
+    <h1 class="wordmark"><span class="ring" aria-hidden="true"></span>Sorting Office</h1>
+    <p class="tagline">Six people, one tray, no mouse needed.</p>
+    <p class="stamp-line" role="status">{{ store.phase() === 'loading' ? 'Syncing…' : syncedLabel() }}</p>
+    <fgu-button variant="ghost" [loading]="store.phase() === 'loading'" (click)="store.load()">Refresh <kbd>r</kbd></fgu-button>
+    <fgu-button variant="secondary" (click)="helpOpen.set(true)">Keys <kbd>?</kbd></fgu-button>
+    <fgu-button (click)="openCompose()">Compose <kbd>c</kbd></fgu-button>
+  </header>
+
+  <main class="floor">
+    <div class="tray-col">
+      <div class="toolbar">
+        <div class="tabs">
+          <fgu-tabs [tabs]="tabLabels()" label="Trays" [panel]="panel" [selected]="viewIndex()" (selectedChange)="onTab($event)" />
+        </div>
+        <div class="quiet-label search" #searchHost>
+          <fgu-field controlId="search" label="Search issues" type="search" placeholder="Search id, title, area, holder  /" autocomplete="off" [value]="store.query()" (valueChange)="store.setQuery($event)" />
+        </div>
+        <fgu-toggle [checked]="store.showClosed()" (checkedChange)="store.toggleClosed($event)">Show closed</fgu-toggle>
+      </div>
+    </div>
+
+    <aside class="case-col">
+      <app-case [issues]="store.issues()" [holderId]="holderId()" [canSort]="!!store.cursor()" (sorted)="sortInto($event)" />
+      <app-letter
+        [issue]="store.cursor()"
+        (stamped)="store.setPriority($event.id, $event.priority)"
+        (handed)="store.assign($event.id, $event.assignee)"
+        (stepped)="store.stepStatus($event)"
+        (closed)="store.close($event)"
+      />
+    </aside>
+  </main>
+
+  <p class="footer-keys" aria-hidden="true">
+    <span><kbd>j</kbd><kbd>k</kbd> move</span>
+    <span><kbd>u</kbd><kbd>h</kbd><kbd>m</kbd><kbd>l</kbd> priority</span>
+    <span><kbd>1</kbd>–<kbd>6</kbd> sort to person</span>
+    <span><kbd>z</kbd> undo</span>
+    <span><kbd>?</kbd> all keys</span>
+  </p>
+</div>
+
+<ng-template #panel let-label let-index="index">
+  @if (index === viewIndex()) {
+    <app-tray
+      [phase]="store.phase()"
+      [issues]="store.visible()"
+      [total]="store.issues().length"
+      [view]="store.view()"
+      [query]="store.query()"
+      [cursorId]="store.cursorId()"
+      [cleared]="store.justCleared()"
+      (picked)="store.select($event)"
+      (retry)="store.load()"
+      (compose)="openCompose()"
+    />
+  }
+</ng-template>
+
+<fgu-dialog [open]="composeOpen()" (openChange)="onComposeOpen($event)" initialFocus="#compose-title" (submit)="submitCompose($event)">
+  <span slot="title">Compose an issue</span>
+  <span slot="description">It lands in intake, unstamped and unassigned, ready to sort.</span>
+  <div class="compose">
+    <fgu-field controlId="compose-title" label="Title" placeholder="What is going wrong, in one line" autocomplete="off" [invalid]="!!titleError()" [error]="titleError()" required [(value)]="title" />
+    <fgu-field controlId="compose-area" label="Area (optional)" placeholder="Billing, Auth, Search…" autocomplete="off" [(value)]="area" />
+  </div>
+  <span slot="actions">
+    <fgu-button variant="ghost" (click)="composeOpen.set(false)">Cancel</fgu-button>
+    <fgu-button type="submit">Add to intake</fgu-button>
+  </span>
+</fgu-dialog>
+
+<fgu-dialog [(open)]="helpOpen">
+  <span slot="title">Keys</span>
+  <span slot="description">Everything on this desk has a key. Keys pause while you type in a box.</span>
+  <dl class="keys">
+    @for (row of shortcuts; track row.does) {
+      <div><dt>@for (key of row.keys; track key) {<kbd>{{ key }}</kbd>}</dt><dd>{{ row.does }}</dd></div>
+    }
+  </dl>
+  <span slot="actions"><fgu-button (click)="helpOpen.set(false)">Done</fgu-button></span>
+</fgu-dialog>
+
+<fgu-toast [toasts]="toasts.toasts()" (dismissed)="toasts.remove($event)" />

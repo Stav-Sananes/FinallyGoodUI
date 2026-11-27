@@ -1,0 +1,141 @@
+{
+  "flows": [
+    {
+      "name": "monday-check",
+      "steps": [
+        {
+          "goto": "/"
+        },
+        {
+          "waitFor": "#cash-figure"
+        },
+        {
+          "screenshot": "overview"
+        },
+        {
+          "click": "text=clients owe you"
+        },
+        {
+          "waitFor": "text=If clients pay the"
+        },
+        {
+          "screenshot": "overview-owed"
+        }
+      ],
+      "states": [
+        {
+          "name": "loading",
+          "goto": "/?state=loading",
+          "screenshot": "overview-loading"
+        },
+        {
+          "name": "error",
+          "goto": "/?state=error",
+          "waitFor": "text=We couldn\u2019t load your numbers",
+          "screenshot": "overview-error"
+        },
+        {
+          "name": "empty",
+          "goto": "/?state=empty",
+          "waitFor": "text=Connect bank account",
+          "screenshot": "overview-empty"
+        },
+        {
+          "name": "partial",
+          "goto": "/?state=partial",
+          "waitFor": "text=Try the bank again",
+          "screenshot": "overview-partial"
+        },
+        {
+          "name": "cleared",
+          "goto": "/?state=cleared",
+          "waitFor": "text=Nobody is late paying you.",
+          "screenshot": "overview-cleared"
+        }
+      ]
+    },
+    {
+      "name": "chase-invoice",
+      "steps": [
+        {
+          "goto": "/"
+        },
+        {
+          "click": "role=button[name=\"Send reminder\"] >> nth=0"
+        },
+        {
+          "waitFor": "css=dialog[open]"
+        },
+        {
+          "screenshot": "reminder"
+        },
+        {
+          "click": "css=dialog button[type=submit]"
+        },
+        {
+          "waitFor": "text=goes out in 10 seconds"
+        },
+        {
+          "screenshot": "reminder-queued"
+        }
+      ]
+    },
+    {
+      "name": "record-payment",
+      "steps": [
+        {
+          "goto": "/"
+        },
+        {
+          "click": "role=button[name=\"Mark INV-0371 from Ostra Bikes as paid\"]"
+        },
+        {
+          "waitFor": "text=marked paid just now"
+        },
+        {
+          "waitFor": 800
+        },
+        {
+          "screenshot": "paid"
+        }
+      ]
+    },
+    {
+      "name": "spending",
+      "steps": [
+        {
+          "goto": "/#spending"
+        },
+        {
+          "click": "role=tab[name=\"November so far\"]"
+        },
+        {
+          "click": "text=Freelancers"
+        },
+        {
+          "waitFor": "text=Illustrator, Brightwater School"
+        },
+        {
+          "screenshot": "spending"
+        }
+      ]
+    },
+    {
+      "name": "first-run",
+      "steps": [
+        {
+          "goto": "/?state=empty"
+        },
+        {
+          "click": "role=button[name=\"Connect bank account\"]"
+        },
+        {
+          "waitFor": "#cash-figure"
+        },
+        {
+          "screenshot": "connected"
+        }
+      ]
+    }
+  ]
+}

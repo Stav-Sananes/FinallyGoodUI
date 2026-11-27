@@ -1,0 +1,90 @@
+/* Tabs reference: an underline indicator that slides between tabs. Tokens only; load tokens.css first.
+   The indicator moves with transform only (recipes/motion/tabs-indicator.md); tabs.js writes
+   --indicator-x (px) and --indicator-scale (tab width / list width) on the list. */
+[data-part="root"] {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-foreground);
+}
+
+[data-part="list"] {
+  position: relative;
+  display: flex;
+  gap: var(--space-1);
+  border-block-end: var(--border-width-hairline) solid var(--color-border);
+}
+
+[data-part="tab"] {
+  box-sizing: border-box;
+  min-block-size: var(--size-control-md);
+  padding-inline: var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--color-muted-foreground);
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+[data-part="tab"][aria-selected="true"] { color: var(--color-foreground); }
+[data-part="tab"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: calc(var(--ring-offset) * -1); }
+
+/* One element for the whole list: full width, scaled to the tab's share and moved to its left edge. */
+[data-part="indicator"] {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-end: 0;
+  inline-size: 100%;
+  block-size: var(--border-width-strong);
+  background: var(--color-primary);
+  transform-origin: 0 0;
+  transform: translateX(var(--indicator-x, 0)) scaleX(var(--indicator-scale, 0));
+  pointer-events: none;
+}
+/* No transition on the first measure, so the indicator does not fly in from the left. */
+[data-part="list"][data-ready] [data-part="indicator"] { transition: transform var(--duration-standard) var(--ease-move); }
+
+[data-part="panel"] { padding-block: var(--space-4); }
+[data-part="panel"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
+[data-part="panel"][hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part="list"][data-ready] [data-part="indicator"] { transition: none; }
+}
+
+/* tabs: radius=sharp material=outlined density=dense motion=balanced motif="strip tab: a coloured tab on the leading edge of every strip, in priority colour" */
+
+[data-part] {
+  box-sizing: border-box;
+  border-radius: var(--radius-none);
+  border-style: solid;
+  border-width: var(--border-width-strong);
+  border-color: var(--color-border);
+  box-shadow: none;
+  transition-property: background-color, border-color, box-shadow, color, transform;
+  transition-duration: var(--duration-short);
+}
+
+[data-part="root"] {
+  min-height: var(--size-control-sm);
+  padding-inline: var(--space-2);
+  gap: var(--space-1);
+}
+
+[data-part]:focus-visible {
+  outline-style: solid;
+  outline-width: var(--ring-width);
+  outline-color: var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+
+/* state: selected */
+[data-part="root"][aria-selected]:not([aria-selected="false"]) {
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

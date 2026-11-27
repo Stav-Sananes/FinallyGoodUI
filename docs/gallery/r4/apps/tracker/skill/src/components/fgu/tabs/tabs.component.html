@@ -1,0 +1,20 @@
+<div data-part="root">
+  <div data-part="list" role="tablist" [attr.aria-label]="label">
+    @for (tab of tabs; track tab.id) {
+      <button type="button" data-part="tab" role="tab" [attr.data-tab-id]="tab.id"
+        [attr.aria-selected]="tab.id === selected ? 'true' : 'false'"
+        [attr.tabindex]="tab.id === selected ? 0 : -1">
+        {{ tab.label }}@if (tab.count !== undefined) { <span class="count">{{ tab.count }}</span> }
+      </button>
+    }
+    <span data-part="indicator" aria-hidden="true"></span>
+  </div>
+  @for (tab of tabs; track tab.id) {
+    <div data-part="panel" role="tabpanel" tabindex="0" [hidden]="tab.id !== selected">
+      @if (tab.id === selected && panel) {
+        <ng-container [ngTemplateOutlet]="panel" [ngTemplateOutletContext]="{ $implicit: tab }" />
+      }
+    </div>
+  }
+  <ng-content />
+</div>

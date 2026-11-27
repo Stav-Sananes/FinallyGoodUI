@@ -87,6 +87,59 @@ checks:
   judged: "Squint at the screenshot. Is the first thing you see the thing the brief says matters most, and is the second thing the right one?"
 ```
 
+### layout.edges-and-scroll
+
+```yaml
+id: layout.edges-and-scroll
+domain: layout
+principle: "Respect the device's edges and scrolling: pad full-bleed bars with env(safe-area-inset-*) and viewport-fit=cover, contain scrolling inside modals, drawers and chat logs (overscroll-behavior: contain) so the page behind doesn't move, set touch-action: manipulation on controls, keep an intentional tap highlight, and give anchored headings scroll-margin-top so a sticky header doesn't cover them."
+why: "These are the details that make a web app feel native or broken on a phone: a home indicator over the tab bar, the page bouncing behind an open sheet, a heading hidden under the header after a jump link."
+sources: ["CSS Overscroll Behavior Module Level 1", "CSS Environment Variables Module Level 1 (safe-area-inset)", "Apple Human Interface Guidelines, Layout (safe areas)", "Vercel, Web Interface Guidelines (touch and scroll)"]
+applies-when: "Mobile and full-bleed layouts, overlays that scroll, sticky headers with in-page links."
+not-when: "Desktop-only internal tools may skip safe areas; containment and scroll-margin still apply."
+decides: [layout.app-shell, component.sheet, component.dialog]
+tensions: [layout.intrinsic-responsive]
+asked-by: []
+checks:
+  measured: "Static/probe: fixed bottom bars use env(safe-area-inset-bottom); scrollable overlays set overscroll-behavior: contain; targets of in-page links clear the sticky header."
+  judged: "On a phone with a home indicator, does anything sit under it, and does the page move behind an open sheet?"
+```
+
+### layout.stable-media
+
+```yaml
+id: layout.stable-media
+domain: layout
+principle: "Reserve space for every image, video and embed before it loads (width and height attributes or aspect-ratio), lazy-load what is below the fold, mark the main above-the-fold image fetchpriority=high, and serve sizes that fit the slot (srcset/sizes)."
+why: "Media that arrives without reserved space pushes the page while people read or tap, the most common cause of layout shift; an oversized hero image is also the most common reason a page feels slow."
+sources: ["web.dev, Cumulative Layout Shift and Optimize Largest Contentful Paint", "WHATWG HTML Standard, img loading and fetchpriority attributes", "Vercel, Web Interface Guidelines (performance)"]
+applies-when: "Every <img>, <video>, iframe and embed."
+not-when: "Icons sized by CSS and inline SVGs."
+decides: [component.image, component.card, blueprint.media]
+tensions: [craft.real-imagery-and-icons]
+asked-by: []
+checks:
+  measured: "check-static img-no-dimensions; probe: CLS under 0.1 while media loads; the largest above-the-fold image is not lazy-loaded."
+  judged: "Does anything move after the first paint while the page settles?"
+```
+
+### layout.desktop-window
+```yaml
+id: layout.desktop-window
+domain: layout
+principle: "A desktop app (Tauri, Electron) lives in a window, not a tab. Keep the platform's window controls where people expect them (traffic lights top-left on macOS, minimise/maximise/close top-right on Windows and Linux) and leave a drag region in any custom title bar. Put commands in the native menu bar with the standard accelerators (File, Edit with Undo/Copy/Paste, View, Window, Help). Lay out for a resizable window down to a stated minimum size, and keep hover-only affordances out, since many laptops have touch screens."
+why: "People judge a desktop app against every other app on their machine. A title bar that can't be dragged, controls on the wrong side, or a missing Edit menu (where Copy and Paste live, and where the shortcuts come from on macOS) makes the app feel like a web page in a frame, and breaks muscle memory built over years."
+sources: ["Apple Human Interface Guidelines, Windows and The menu bar", "Microsoft, Windows app design: Title bar customization", "Electron documentation, Custom title bar (app-region: drag, titleBarOverlay)", "Tauri documentation, Window customization (data-tauri-drag-region)"]
+applies-when: "The stack profile has desktop.shell (tauri or electron), or the brief describes a desktop app."
+not-when: "Web apps in a browser tab, and installable PWAs that keep the browser's own window chrome."
+decides: [blueprint.navigation, component.title-bar, component.menu, layout.breakpoints]
+tensions: [usability.keyboard-shortcuts, layout.intrinsic-responsive]
+asked-by: []
+checks:
+  measured: "With a custom title bar, the window can be dragged by its top strip and the native controls are visible on the platform's side; the app works at its minimum window size with nothing clipped; the Edit menu (or the standard shortcuts) handles undo, cut, copy, paste and select all in text fields."
+  judged: "Would someone who uses Finder or Explorer daily find the window, menus and shortcuts where they expect them?"
+```
+
 ### layout.tension-consistency-emphasis
 ```yaml
 id: layout.tension-consistency-emphasis

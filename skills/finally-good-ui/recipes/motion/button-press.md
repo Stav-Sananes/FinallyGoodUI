@@ -38,6 +38,7 @@
 Only worth it when the button already uses Motion for other states (loading → success morph). Otherwise use the CSS.
 ```tsx
 import { LazyMotion, domAnimation, m, useReducedMotion } from "motion/react";
+import { sec, ease } from "./motion-tokens"; // recipes/INDEX.md
 
 export function PressButton(props: React.ComponentProps<typeof m.button>) {
   const reduce = useReducedMotion();
@@ -45,7 +46,7 @@ export function PressButton(props: React.ComponentProps<typeof m.button>) {
     <LazyMotion features={domAnimation}>
       <m.button
         whileTap={reduce ? { opacity: 0.85 } : { scale: 0.97 }}
-        transition={{ duration: 0.1, ease: [0.23, 1, 0.32, 1] }}
+        transition={{ duration: sec('micro'), ease: ease('snappy') }}
         {...props}
       />
     </LazyMotion>

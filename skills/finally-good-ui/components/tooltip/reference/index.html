@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tooltip reference</title>
+<!-- tokens.css: node scripts/emit-tokens.mjs --in tokens/default.tokens.json --format css > tokens.css -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../tooltip.css">
+</head>
+<body>
+<main id="demo">
+  <span data-fgu="tooltip" data-part="root" data-placement="top" data-delay="500">
+    <span data-part="trigger"><button type="button" id="tip-save" aria-label="Save">&#128190;</button></span>
+    <span data-part="content" role="tooltip" popover="manual">Save (Ctrl+S)</span>
+  </span>
+  <span data-fgu="tooltip" data-part="root" data-placement="bottom" data-delay="0">
+    <span data-part="trigger"><button type="button" id="tip-share">Share</button></span>
+    <span data-part="content" role="tooltip" popover="manual">Copies a link that anyone can open</span>
+  </span>
+</main>
+<script type="module">
+  import { attach } from "../tooltip.js";
+  attach(document.getElementById("demo"));
+</script>
+</body>
+</html>

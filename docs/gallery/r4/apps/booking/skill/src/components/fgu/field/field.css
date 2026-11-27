@@ -1,0 +1,109 @@
+/* scoped by data-fgu="field" so six components can share one stylesheet (see README: friction) */
+/* Field reference: label, hint, control and error as one unit. Tokens only; load tokens.css first. */
+[data-fgu="field"][data-part="root"] {
+  display: grid;
+  gap: var(--space-1);
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-foreground);
+}
+[data-fgu="field"][data-part="root"][data-variant="inline"] {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--space-3);
+}
+[data-fgu="field"][data-part="root"][data-variant="inline"] > [data-part="hint"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)),
+[data-fgu="field"][data-part="root"][data-variant="inline"] > [data-part="error"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)) { grid-column: 2; }
+
+[data-fgu="field"] [data-part="label"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)) { font-weight: inherit; }
+[data-fgu="field"] [data-part="hint"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)) { margin: 0; color: var(--color-muted-foreground); }
+
+[data-fgu="field"] [data-part="control"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)) {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--size-control-md);
+  padding-inline: var(--space-3);
+  border: var(--border-width-hairline) solid var(--color-input);
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: inherit;
+  /* keeps iOS from zooming on focus: never below the base text size */
+  font-size: max(var(--text-base), 1rem);
+  transition: border-color var(--duration-short) var(--ease-snappy);
+}
+[data-fgu="field"] [data-part="control"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)):focus-visible {
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+/* Invalid: colour plus a second ring drawn inside, so the box never changes size, plus the error text. */
+[data-fgu="field"] [data-part="control"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *))[aria-invalid="true"] {
+  border-color: var(--color-destructive);
+  box-shadow: inset 0 0 0 var(--border-width-hairline) var(--color-destructive);
+}
+[data-fgu="field"] [data-part="control"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)):disabled {
+  opacity: 0.5;
+  color: var(--color-muted-foreground);
+  cursor: not-allowed;
+}
+
+/* The error part is always in the DOM and always reserves one line, so showing a message moves nothing. */
+[data-fgu="field"] [data-part="error"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)) {
+  margin: 0;
+  min-block-size: var(--text-sm--line-height);
+  display: flex;
+  gap: var(--space-1);
+  color: var(--color-destructive);
+}
+[data-fgu="field"] [data-part="error"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)):not(:empty)::before { content: "!"; font-weight: 700; }
+[data-fgu="field"] [data-part="error"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)):not(:empty) { animation: field-error-in var(--duration-short) var(--ease-enter); }
+@keyframes field-error-in { from { opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="field"] [data-part="control"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)) { transition: none; }
+  [data-fgu="field"] [data-part="error"]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)):not(:empty) { animation: none; }
+}
+
+/* field: radius=soft material=flat density=airy motion=expressive motif="Ticket stub: perforated tear line and half-round notches, as on a salon appointment card" */
+
+[data-fgu="field"][data-part], [data-fgu="field"] [data-part]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)) {
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  border-style: none;
+  box-shadow: none;
+  transition-property: background-color, border-color, box-shadow, color, transform;
+  transition-duration: var(--duration-standard);
+  transition-timing-function: var(--ease-enter);
+}
+
+[data-fgu="field"][data-part="root"] {
+  min-height: var(--size-control-lg);
+  padding-inline: var(--space-4);
+  gap: var(--space-3);
+}
+
+[data-fgu="field"][data-part]:focus-visible, [data-fgu="field"] [data-part]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)):focus-visible {
+  outline-style: solid;
+  outline-width: var(--ring-width);
+  outline-color: var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+
+/* state: invalid */
+[data-fgu="field"][data-part="root"][aria-invalid]:not([aria-invalid="false"]) {
+  cursor: default;
+}
+
+/* state: disabled */
+[data-fgu="field"][data-part="root"][disabled]:not([disabled="false"]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="field"][data-part], [data-fgu="field"] [data-part]:where(:not([data-fgu]:not([data-fgu="field"])):not([data-fgu]:not([data-fgu="field"]) *)) {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

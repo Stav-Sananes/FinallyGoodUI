@@ -16,7 +16,7 @@ scope: <whole app | feature: name + entry points>
 
 ## Context
 - **Device:** <primary; secondary> — [interview.context.device] · <source>
-- **Frequency:** <daily+ | weekly | monthly | once>; most-opened screen: <screen> — [interview.context.frequency] · <source>
+- **Frequency:** <daily+ | weekly | monthly | yearly | once>; most-opened screen: <screen> — [interview.context.frequency] · <source>
 - **Environment:** <desk focused | on the move | stress | shared screen> — [interview.context.environment] · <source>
 - **Session:** <glance | focused task | long | interrupted> — [interview.context.session] · <source>
 

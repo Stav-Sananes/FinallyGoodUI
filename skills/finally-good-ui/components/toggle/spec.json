@@ -1,0 +1,126 @@
+{
+  "name": "toggle",
+  "shapes": [
+    "checkbox",
+    "switch"
+  ],
+  "props": [
+    {
+      "name": "variant",
+      "type": "string",
+      "default": "checkbox"
+    },
+    {
+      "name": "checked",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "invalid",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "value",
+      "type": "string"
+    }
+  ],
+  "events": [
+    "change"
+  ],
+  "slots": [
+    "default"
+  ],
+  "states": [
+    {
+      "name": "checked",
+      "attribute": "checked"
+    },
+    {
+      "name": "disabled",
+      "attribute": "disabled"
+    },
+    {
+      "name": "invalid",
+      "attribute": "aria-invalid"
+    }
+  ],
+  "a11y": {
+    "role": "checkbox",
+    "rolePart": "control",
+    "aria": [
+      "aria-label",
+      "aria-describedby",
+      "aria-invalid"
+    ],
+    "keys": {
+      "Space": "toggle"
+    }
+  },
+  "tokens": [
+    "--color-primary",
+    "--color-primary-foreground",
+    "--color-foreground",
+    "--color-muted-foreground",
+    "--color-destructive",
+    "--color-border",
+    "--color-input",
+    "--color-background",
+    "--color-ring",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--radius-full",
+    "--shadow-sm",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--ring-width",
+    "--ring-offset",
+    "--size-control-sm",
+    "--size-control-md",
+    "--size-control-lg",
+    "--icon-sm",
+    "--icon-md",
+    "--icon-lg",
+    "--space-1",
+    "--space-2",
+    "--space-3",
+    "--space-4",
+    "--duration-micro",
+    "--duration-short",
+    "--duration-standard",
+    "--ease-snappy",
+    "--ease-enter",
+    "--ease-move",
+    "--font-sans",
+    "--text-sm"
+  ],
+  "parts": [
+    "root",
+    "control",
+    "label"
+  ],
+  "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/",
+  "tags": {
+    "root": "label",
+    "control": "input"
+  },
+  "profile": {
+    "surface": null,
+    "interactive": "control",
+    "density": null,
+    "touch": [
+      "root"
+    ]
+  }
+}

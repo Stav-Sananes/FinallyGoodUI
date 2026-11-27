@@ -1,0 +1,175 @@
+{
+  "name": "select",
+  "shapes": [
+    "listbox",
+    "native"
+  ],
+  "props": [
+    {
+      "name": "variant",
+      "type": "string",
+      "default": "listbox"
+    },
+    {
+      "name": "options",
+      "type": "array",
+      "ts": "{ value: string; label: string; disabled?: boolean }[]",
+      "default": "[]"
+    },
+    {
+      "name": "value",
+      "type": "string"
+    },
+    {
+      "name": "label",
+      "type": "string"
+    },
+    {
+      "name": "hideLabel",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "placeholder",
+      "type": "string"
+    },
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "searchable",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "emptyText",
+      "type": "string",
+      "default": "No matches"
+    },
+    {
+      "name": "invalid",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "default": "false"
+    }
+  ],
+  "events": [
+    "selectchange"
+  ],
+  "slots": [],
+  "states": [
+    {
+      "name": "open",
+      "attribute": "aria-expanded"
+    },
+    {
+      "name": "invalid",
+      "attribute": "aria-invalid"
+    },
+    {
+      "name": "disabled",
+      "attribute": "disabled"
+    }
+  ],
+  "a11y": {
+    "role": "combobox",
+    "rolePart": "trigger",
+    "aria": [
+      "aria-haspopup",
+      "aria-expanded",
+      "aria-controls",
+      "aria-invalid"
+    ],
+    "keys": {
+      "ArrowDown": "next option",
+      "ArrowUp": "previous option",
+      "Home": "first option",
+      "End": "last option",
+      "Enter": "select",
+      "Space": "select",
+      "Escape": "close"
+    }
+  },
+  "tokens": [
+    "--color-foreground",
+    "--color-muted-foreground",
+    "--color-background",
+    "--color-card",
+    "--color-card-foreground",
+    "--color-accent",
+    "--color-accent-foreground",
+    "--color-destructive",
+    "--color-border",
+    "--color-input",
+    "--color-ring",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--radius-full",
+    "--shadow-sm",
+    "--shadow-md",
+    "--shadow-lg",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--ring-width",
+    "--ring-offset",
+    "--size-control-sm",
+    "--size-control-md",
+    "--size-control-lg",
+    "--space-1",
+    "--space-2",
+    "--space-3",
+    "--space-4",
+    "--duration-micro",
+    "--duration-short",
+    "--ease-snappy",
+    "--ease-exit",
+    "--font-sans",
+    "--text-sm"
+  ],
+  "parts": [
+    "root",
+    "label",
+    "control",
+    "trigger",
+    "display",
+    "listbox",
+    "search",
+    "option",
+    "empty",
+    "value"
+  ],
+  "tags": {
+    "label": "label",
+    "control": "select",
+    "trigger": "button",
+    "display": "span",
+    "listbox": "div",
+    "search": "input",
+    "option": "div",
+    "empty": "div",
+    "value": "input"
+  },
+  "profile": {
+    "surface": "trigger",
+    "density": "trigger",
+    "interactive": "trigger",
+    "also": [
+      "control",
+      "listbox"
+    ],
+    "touch": [
+      "option"
+    ]
+  },
+  "api": [
+    "selectValue(scope: Element, value: string | undefined): void"
+  ],
+  "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-select-only/"
+}

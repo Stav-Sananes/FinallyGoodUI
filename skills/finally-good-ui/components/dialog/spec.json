@@ -1,0 +1,125 @@
+{
+  "name": "dialog",
+  "shapes": [
+    "modal",
+    "confirm"
+  ],
+  "props": [
+    {
+      "name": "variant",
+      "type": "string",
+      "default": "modal"
+    },
+    {
+      "name": "open",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "initialFocus",
+      "type": "string"
+    },
+    {
+      "name": "nativeValidation",
+      "type": "boolean",
+      "default": "false"
+    }
+  ],
+  "events": [
+    "close"
+  ],
+  "slots": [
+    "title",
+    "description",
+    "default",
+    "actions"
+  ],
+  "states": [
+    {
+      "name": "open",
+      "attribute": "open"
+    }
+  ],
+  "a11y": {
+    "role": "dialog",
+    "rolePart": "root",
+    "aria": [
+      "aria-labelledby",
+      "aria-describedby"
+    ],
+    "keys": {
+      "Escape": "close"
+    }
+  },
+  "tokens": [
+    "--color-background",
+    "--color-foreground",
+    "--color-muted-foreground",
+    "--color-border",
+    "--color-overlay",
+    "--color-ring",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--radius-xl",
+    "--shadow-sm",
+    "--shadow-md",
+    "--shadow-lg",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--ring-width",
+    "--ring-offset",
+    "--size-control-sm",
+    "--size-control-md",
+    "--size-control-lg",
+    "--space-1",
+    "--space-2",
+    "--space-3",
+    "--space-4",
+    "--space-6",
+    "--space-8",
+    "--icon-md",
+    "--duration-micro",
+    "--duration-short",
+    "--duration-standard",
+    "--duration-medium",
+    "--ease-enter",
+    "--ease-enter-emphasized",
+    "--ease-exit",
+    "--ease-snappy",
+    "--z-overlay",
+    "--font-sans",
+    "--text-sm",
+    "--text-lg"
+  ],
+  "parts": [
+    "root",
+    "title",
+    "description",
+    "close",
+    "form",
+    "actions"
+  ],
+  "tags": {
+    "root": "dialog",
+    "title": "h2",
+    "description": "p",
+    "close": "button",
+    "actions": "div",
+    "form": "form"
+  },
+  "pattern": "recipes/motion/dialog-enter-exit.md",
+  "profile": {
+    "surface": "root",
+    "interactive": null,
+    "density": null,
+    "touch": [
+      "close"
+    ]
+  },
+  "api": [
+    "openDialog(dialog: HTMLElement, opener?: Element | null): void",
+    "closeDialog(dialog: HTMLElement): void"
+  ]
+}

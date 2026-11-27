@@ -1,0 +1,128 @@
+/* scoped: [data-c="dialog"] added by scripts/scope-fgu-css.mjs */
+/* Dialog reference: native <dialog> shown with showModal(). Tokens only; load tokens.css first.
+   Enter and exit follow recipes/motion/dialog-enter-exit.md (opacity and a short lift, no scale). */
+[data-part="root"][data-c="dialog"] {
+  box-sizing: border-box;
+  inline-size: min(calc(100vw - var(--space-8)), 32rem);
+  max-block-size: calc(100dvh - var(--space-8));
+  overflow: auto;
+  padding: var(--space-6);
+  border: 0;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  opacity: 0;
+  transform: translateY(var(--space-2));
+  transition:
+    opacity var(--duration-short) var(--ease-exit),
+    transform var(--duration-short) var(--ease-exit),
+    display var(--duration-short) allow-discrete,
+    overlay var(--duration-short) allow-discrete;
+}
+[data-part="root"][data-c="dialog"][open] {
+  opacity: 1;
+  transform: none;
+  transition-duration: var(--duration-standard);
+  transition-timing-function: var(--ease-enter);
+}
+@starting-style {
+  [data-part="root"][data-c="dialog"][open] { opacity: 0; transform: translateY(var(--space-2)); }
+}
+
+[data-part="root"][data-c="dialog"]::backdrop {
+  background: var(--color-overlay);
+  opacity: 0;
+  transition:
+    opacity var(--duration-medium) var(--ease-exit),
+    display var(--duration-medium) allow-discrete,
+    overlay var(--duration-medium) allow-discrete;
+}
+[data-part="root"][data-c="dialog"][open]::backdrop { opacity: 1; }
+@starting-style {
+  [data-part="root"][data-c="dialog"][open]::backdrop { opacity: 0; }
+}
+
+/* Header row: the title takes the space, the close button keeps its size, so content never reflows. */
+[data-part="title"][data-c="dialog"] {
+  margin: 0;
+  padding-inline-end: var(--size-control-md);
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+[data-part="description"][data-c="dialog"] { margin-block: var(--space-2) 0; color: var(--color-muted-foreground); }
+
+[data-part="close"][data-c="dialog"] {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-end: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--size-control-md);
+  block-size: var(--size-control-md);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+[data-part="close"][data-c="dialog"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
+[data-part="root"][data-c="dialog"][data-variant="confirm"] [data-part="close"][data-c="dialog"] { display: none; }
+
+[data-part="actions"][data-c="dialog"] { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); margin-block-start: var(--space-6); }
+
+/* Reduced motion: opacity only, no lift. */
+@media (prefers-reduced-motion: reduce) {
+  [data-part="root"][data-c="dialog"], [data-part="root"][data-c="dialog"][open] { transform: none; }
+  @starting-style {
+    [data-part="root"][data-c="dialog"][open] { transform: none; }
+  }
+}
+
+/* dialog: radius=soft material=layered density=balanced motion=balanced motif="registration mark: circle and crosshair, CMYK colour bar" */
+
+[data-part][data-c="dialog"] {
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  border-style: none;
+  border-width: var(--border-width-hairline);
+  border-color: var(--color-border);
+  box-shadow: none;
+  transition-property: background-color, border-color, box-shadow, color, transform;
+  transition-duration: var(--duration-short);
+  transition-timing-function: var(--ease-enter);
+}
+
+[data-part="root"][data-c="dialog"] {
+  min-height: var(--size-control-md);
+  padding-inline: var(--space-3);
+  gap: var(--space-2);
+}
+
+[data-part][data-c="dialog"]:focus-visible {
+  outline-style: solid;
+  outline-width: var(--ring-width);
+  outline-color: var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+
+/* state: open */
+[data-part="root"][data-c="dialog"][open]:not([open="false"]) {
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part][data-c="dialog"] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}
+
+/* project fix: the profile layer put the elevation on every part; only the surface gets it */
+[data-part="root"][data-c="dialog"] { box-shadow: var(--shadow-lg); }
+
+/* project fix: the profile layer's padding-inline overrides the reference padding */
+[data-part="root"][data-c="dialog"] { padding: var(--space-6); border-radius: var(--radius-xl); background: var(--color-card); }

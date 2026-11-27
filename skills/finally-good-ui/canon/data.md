@@ -56,12 +56,30 @@ checks:
   judged: "What question does this chart answer, and is its main visual variable position or length?"
 ```
 
+### data.chart-palette
+
+```yaml
+id: data.chart-palette
+domain: data
+principle: "Give charts their own ordered categorical palette of at most eight hues, designed separately for light and dark: every series at least 3:1 against the plot background, the first six distinguishable under protanopia, deuteranopia and tritanopia, and anything past six labelled directly. Brand and status colours are not series colours."
+why: "Series colour is how a reader matches a mark to its legend. If two series collapse under a common colour-vision deficiency (about one man in twelve) or fade into the background, the chart silently misleads; a series drawn in the error colour reads as an error."
+sources: ["Okabe & Ito, Color Universal Design (2008)", "Machado, Oliveira & Fernandes, A Physiologically-based Model for Simulation of Color Vision Deficiency (2009)", "WCAG 2.2 SC 1.4.11 Non-text Contrast", "Brewer, ColorBrewer"]
+applies-when: "Any chart with two or more categorical series or a legend."
+not-when: "Sequential or diverging data (one lightness ramp, or two around a midpoint: build them with color-scale.mjs); a single series (one neutral, or the primary)."
+decides: [tokens.color, component.chart]
+tensions: [color.accent-restraint, data.data-ink]
+asked-by: []
+checks:
+  measured: "check-palette.mjs: every color.chart-N at least 3:1 against color.background in each theme; series at least 0.07 apart in OKLab, the first six also under simulated protanopia, deuteranopia and tritanopia."
+  judged: "Can each series be matched to its legend without hovering, in both themes, by someone who can't tell red from green?"
+```
+
 ### data.dense-tables
 
 ```yaml
 id: data.dense-tables
 domain: data
-principle: "Design tables for scanning and comparison: right-align numbers with tabular figures, left-align text, keep units in headers, use sticky headers, quiet row separators and a density setting (row height about 32-48px)."
+principle: "Design tables for scanning and comparison: right-align numbers with tabular figures, left-align text, keep units in headers, use sticky headers, quiet row separators and a density setting (row height about 32-48px). Virtualise long lists once rendering lags (consider it from about 50 complex rows; it is required in the hundreds), without row animations."
 why: "Aligned tabular digits let the eye compare magnitudes down a column; zebra stripes, heavy borders and centred numbers break that vertical scan."
 sources: ["Few, Show Me the Numbers", "NN/g, Data Tables: Four Major User Tasks", "IBM Carbon, Data table (row size options)"]
 applies-when: "Any list with 3+ attributes per item or numeric columns."

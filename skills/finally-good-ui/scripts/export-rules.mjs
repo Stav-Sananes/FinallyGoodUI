@@ -1,22 +1,27 @@
 #!/usr/bin/env node
-// Export the canon index, interview checklist, motion tokens and rubric as rules for
-// Cursor, Windsurf, GitHub Copilot and AGENTS.md (spec §8).
+// Export the canon index, interview checklist, motion tokens and rubric as rules for Cursor,
+// Devin Desktop / Windsurf, GitHub Copilot, Kiro, Cline and AGENTS.md (Codex, Amp, Zed, Junie, Antigravity…).
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { runCli, isMain } from "./lib/cli.mjs";
-import { readText, readJson, isDir } from "./lib/fs.mjs";
+import { runCli, isMain, UsageError } from "./lib/cli.mjs";
+import { readText, isDir, isFile } from "./lib/fs.mjs";
 import { parseMdBlocks } from "./lib/md.mjs";
 import { groupTokens, cssValue } from "./lib/tokens.mjs";
+import { loadTokens } from "./lib/token-files.mjs";
 
 const HELP = `
-Usage: export-rules.mjs [--out <dir>] [--root <dir>] [--skill <dir>] [--dry-run]
+Usage: export-rules.mjs [--out <dir>] [--root <dir>] [--skill <dir>] [--targets all|a,b] [--dry-run]
 
-Writes, under --out (default: --root, default cwd):
-  .cursor/rules/finally-good-ui.mdc                     (description, globs, alwaysApply: false)
-  .windsurf/rules/finally-good-ui.md                    (trigger: glob)
-  .github/instructions/finally-good-ui.instructions.md  (applyTo)
-  AGENTS.md                                             ("## finally-good-ui" section, replaced in place)
+Writes, under --out (default: --root, default cwd), one file per target, each with the full rules:
+  cursor   .cursor/rules/finally-good-ui.mdc                     (description, globs, alwaysApply: false)
+  devin    .devin/rules/finally-good-ui.md when .devin/ exists, else .windsurf/rules/finally-good-ui.md
+           (trigger: glob; the .windsurf file is compacted to Windsurf's 12000-char limit); alias windsurf
+  copilot  .github/instructions/finally-good-ui.instructions.md  (applyTo)
+  kiro     .kiro/steering/finally-good-ui.md                     (inclusion: fileMatch, fileMatchPattern)
+  cline    .clinerules/finally-good-ui.md (.cline/rules/ when .clinerules is a single file)  (paths)
+  agents   AGENTS.md, and .junie/AGENTS.md when it exists        ("## finally-good-ui" section, replaced in place)
+AGENTS.md also covers Codex, Amp, Zed, Junie, Antigravity / Gemini CLI, opencode and Copilot's agent.
 Built from canon/INDEX.md, interview/question-bank.md, tokens/default.tokens.json (motion) and
 rubric/rubric.md. Missing inputs produce warnings, not errors. If <out>/.design exists the rules
 point at the project's brief, brand and tokens.
@@ -25,6 +30,7 @@ Options:
   --out <dir>    target project directory
   --root <dir>   project root (default: cwd); used when --out is omitted
   --skill <dir>  skill root to read from (default: this script's skill)
+  --targets <t>  all (default) or a comma list of the targets above
   --dry-run      print what would be written; write nothing
   --help
 `;
@@ -68,12 +74,13 @@ function interviewSection(skill, warnings) {
 }
 
 function motionSection(skill, warnings) {
-  const t = readJson(join(skill, "tokens", "default.tokens.json"));
+  let t = null;
+  try { t = loadTokens(join(skill, "tokens", "default.tokens.json")); } catch { /* reported below */ }
   if (!t) { warnings.push("tokens/default.tokens.json missing: motion token section omitted"); return ""; }
   const d = [...groupTokens(t.duration)].map(([n, v]) => `${n} ${cssValue("duration", v.$value)}`);
   const e = [...groupTokens(t.easing)].map(([n, v]) => `- \`${n}\`: ${cssValue("easing", v.$value)}${v.$description ? ` (${v.$description})` : ""}`);
   return "## Motion tokens\n\n" +
-    (d.length ? `Durations: ${d.join(" · ")}. Exits run at 60–75% of the enter. Routine UI ≤ 300ms; nothing over 500ms except backdrops.\n\n` : "") +
+    (d.length ? `Durations: ${d.join(" · ")}. Exits run at 60–75% of the enter. Routine UI ≤ 400ms; up to three expressive moments to 600ms; nothing longer except backdrops.\n\n` : "") +
     (e.length ? `Easing roles:\n${e.join("\n")}\n\n` : "") +
     "Animate only transform and opacity. Reduced motion: keep opacity/colour, drop movement. One signature motion moment per app.\n";
 }
@@ -124,25 +131,58 @@ function mergeAgents(existing, body) {
   return existing.replace(/\s*$/, "\n\n") + section;
 }
 
-export function exportRules({ out, skill, dryRun = false }) {
+const DESCRIPTION = "finally-good-ui design canon, brief checklist, motion tokens and quality rubric for building UI";
+const globList = () => GLOBS.map((g) => `**/*.${g}`);
+const frontmatter = (lines) => `---\n${lines.join("\n")}\n---\n\n`;
+
+/** Windsurf truncates rule files over 12000 chars: compact the canon until it fits. */
+function windsurfContent(skill, out, body, warnings) {
+  const wrap = (b) => frontmatter(["trigger: glob", `globs: ${globList().join(",")}`, `description: ${DESCRIPTION}`]) + b;
+  let content = wrap(body);
+  for (let level = 1; content.length > WINDSURF_MAX && level < CANON_MAX.length; level++) content = wrap(buildBody(skill, out, [], level));
+  if (content.length > WINDSURF_MAX) warnings.push(`windsurf rule is ${content.length} chars; Windsurf truncates rule files over ${WINDSURF_MAX}`);
+  return content;
+}
+
+/**
+ * Each target: where its rule file goes in this project and what it holds. Every file carries the
+ * whole rule set, so each tool works on its own; AGENTS.md is the shared hub most agents read.
+ */
+const TARGETS = {
+  cursor: ({ body }) => [{ path: ".cursor/rules/finally-good-ui.mdc",
+    content: frontmatter([`description: ${DESCRIPTION}`, `globs: ${globList().join(",")}`, "alwaysApply: false"]) + body }],
+  // Devin Desktop (formerly Windsurf) prefers .devin/rules/ and still imports .windsurf/rules/.
+  devin: ({ skill, out, body, warnings }) => (isDir(join(out, ".devin"))
+    ? [{ path: ".devin/rules/finally-good-ui.md",
+      content: frontmatter(["trigger: glob", `globs: ${globList().join(",")}`, `description: ${DESCRIPTION}`]) + body }]
+    : [{ path: ".windsurf/rules/finally-good-ui.md", content: windsurfContent(skill, out, body, warnings) }]),
+  copilot: ({ body }) => [{ path: ".github/instructions/finally-good-ui.instructions.md",
+    content: frontmatter([`applyTo: "**/*.{${GLOBS.join(",")}}"`]) + body }],
+  kiro: ({ body }) => [{ path: ".kiro/steering/finally-good-ui.md",
+    content: frontmatter(["inclusion: fileMatch", `fileMatchPattern: [${globList().map((g) => `"${g}"`).join(", ")}]`]) + body }],
+  // .clinerules may be a legacy single file; Cline reads .cline/rules/ the same way.
+  cline: ({ out, body }) => [{ path: `${isFile(join(out, ".clinerules")) ? ".cline/rules" : ".clinerules"}/finally-good-ui.md`,
+    content: frontmatter(["paths:", ...globList().map((g) => `  - "${g}"`)]) + body }],
+  // Junie reads .junie/AGENTS.md instead of the root file when it exists, so the section goes there too.
+  agents: ({ out, body }) => ["AGENTS.md", ...(isFile(join(out, ".junie", "AGENTS.md")) ? [".junie/AGENTS.md"] : [])]
+    .map((path) => ({ path, content: mergeAgents(readText(join(out, path)), body) })),
+};
+const ALIASES = { windsurf: "devin" };
+export const TARGET_NAMES = Object.keys(TARGETS);
+
+/** "all" or a comma list of target names (windsurf = devin) -> target names; unknown names throw. */
+export function parseTargets(spec = "all") {
+  const names = String(spec).split(",").map((t) => t.trim().toLowerCase()).filter(Boolean);
+  if (!names.length || names.includes("all")) return TARGET_NAMES;
+  const unknown = names.filter((n) => !TARGETS[ALIASES[n] ?? n]);
+  if (unknown.length) throw new UsageError(`unknown --targets ${unknown.join(", ")} (use all or ${[...TARGET_NAMES, ...Object.keys(ALIASES)].join(",")})`);
+  return [...new Set(names.map((n) => ALIASES[n] ?? n))];
+}
+
+export function exportRules({ out, skill, dryRun = false, targets = TARGET_NAMES }) {
   const warnings = [];
   const body = buildBody(skill, out, warnings);
-  const globs = GLOBS.map((g) => `**/*.${g}`);
-  const desc = "finally-good-ui design canon, brief checklist, motion tokens and quality rubric for building UI";
-  // Windsurf truncates rule files over 12000 chars: compact the canon until it fits.
-  const windsurf = (b) => `---\ntrigger: glob\nglobs: ${globs.join(",")}\ndescription: ${desc}\n---\n\n${b}`;
-  let wsContent = windsurf(body);
-  for (let level = 1; wsContent.length > WINDSURF_MAX && level < CANON_MAX.length; level++)
-    wsContent = windsurf(buildBody(skill, out, [], level));
-  if (wsContent.length > WINDSURF_MAX) warnings.push(`windsurf rule is ${wsContent.length} chars; Windsurf truncates rule files over ${WINDSURF_MAX}`);
-  const files = [
-    { path: ".cursor/rules/finally-good-ui.mdc",
-      content: `---\ndescription: ${desc}\nglobs: ${globs.join(",")}\nalwaysApply: false\n---\n\n${body}` },
-    { path: ".windsurf/rules/finally-good-ui.md", content: wsContent },
-    { path: ".github/instructions/finally-good-ui.instructions.md",
-      content: `---\napplyTo: "**/*.{${GLOBS.join(",")}}"\n---\n\n${body}` },
-    { path: "AGENTS.md", content: mergeAgents(readText(join(out, "AGENTS.md")), body) },
-  ];
+  const files = targets.flatMap((t) => TARGETS[t]({ skill, out, body, warnings }));
   const written = [];
   if (!dryRun) {
     for (const f of files) {
@@ -152,17 +192,17 @@ export function exportRules({ out, skill, dryRun = false }) {
       written.push(f.path);
     }
   }
-  return { tool: "export-rules", out, written, files: files.map((f) => ({ path: f.path, bytes: Buffer.byteLength(f.content), ...(dryRun ? { content: f.content } : {}) })), warnings };
+  return { tool: "export-rules", out, targets, written, files: files.map((f) => ({ path: f.path, bytes: Buffer.byteLength(f.content), ...(dryRun ? { content: f.content } : {}) })), warnings };
 }
 
 if (isMain(import.meta.url)) {
   runCli({
     help: HELP,
-    spec: { string: ["root", "out", "skill"], boolean: ["dry-run"] },
+    spec: { string: ["root", "out", "skill", "targets"], boolean: ["dry-run"] },
     main: ({ flags }) => {
       const out = resolve(flags.out || flags.root || ".");
       const skill = resolve(flags.skill || join(dirname(fileURLToPath(import.meta.url)), ".."));
-      return exportRules({ out, skill, dryRun: !!flags["dry-run"] });
+      return exportRules({ out, skill, dryRun: !!flags["dry-run"], targets: parseTargets(flags.targets) });
     },
   });
 }

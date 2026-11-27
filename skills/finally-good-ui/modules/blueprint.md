@@ -2,7 +2,7 @@
 
 Goal: turn the confirmed brief into `.design/blueprint.md` — the app's structure before any pixels: what exists, how people move through it, and what every screen shows in every state. Nothing visual is decided here except the motion spatial map.
 
-Inputs: `.design/brief.md` (must be `status: confirmed`; if not, run `modules/interview.md` first), the stack profile, existing routes/screens (in `feature` depth, the blueprint covers the feature and its entry points only). Canon: `ia-nav`, `flows-forms`, `states`, `usability`, `motion.spatial-continuity`. Output: `.design/blueprint.md` from `templates/blueprint.md`; decision records appended to `.design/decisions.md` from `templates/decisions.md`.
+Inputs: `.design/brief.md` (a draft is fine: it is approved together with the blueprint; if there is none, run `modules/interview.md` first), the stack profile, existing routes/screens (in `feature` depth, the blueprint covers the feature and its entry points only). Canon: `ia-nav`, `flows-forms`, `states`, `usability`, `motion.spatial-continuity`. Output: `.design/blueprint.md` from `templates/blueprint.md`; decision records appended to `.design/decisions.md` from `templates/decisions.md`.
 
 ## 1. Inventory objects and tasks (IA)
 
@@ -15,7 +15,7 @@ Inputs: `.design/brief.md` (must be `status: confirmed`; if not, run `modules/in
 
 ## 2. Choose the navigation model
 
-Count primary destinations (exclude settings, profile, help). Then apply, in order — the first matching row wins, and log a decision record:
+Count primary destinations (exclude settings, profile, help). Then apply, in order — the first matching row wins, and log a decision record. Frequency: `daily` = several times a day or week, including a fixed weekly routine (a Monday review); `rare` = a few times a month or less (`context.frequency`).
 
 | Primary destinations | Device (`context.device`) | Frequency / depth | Model | Cards |
 |---|---|---|---|---|
@@ -23,8 +23,10 @@ Count primary destinations (exclude settings, profile, help). Then apply, in ord
 | 2–5 | phone-first | any | Bottom tab bar, labels always visible | ia-nav.visible-destinations, a11y.target-size |
 | 2–5 | desktop-first | daily | Persistent sidebar or top bar, always visible, current item marked | ia-nav.visible-destinations, ia-nav.wayfinding-location |
 | 2–5 | desktop-first | rare | Top bar; hub page linking to sections | ia-nav.tension-discoverability-minimalism |
+| 2–5 | both equally | any | One nav designed at both sizes: top bar or sidebar ≥ 1024px, bottom tab bar < 768px, same destinations in the same order; design 375 and 1440 together, neither is the squeeze | ia-nav.visible-destinations, layout.intrinsic-responsive |
 | 6–12 | desktop-first | any | Sidebar with 2–4 labelled groups; collapsible for experts | ia-nav.nav-model-by-count, ia-nav.progressive-disclosure |
 | 6–12 | phone-first | any | Merge/demote to ≤5 tabs + "More"; challenge the count first | ia-nav.tension-discoverability-minimalism |
+| 6–12 | both equally | any | Grouped sidebar ≥ 1024px; the same top groups as ≤ 5 tabs + "More" on phone; challenge the count first | ia-nav.nav-model-by-count, ia-nav.tension-discoverability-minimalism |
 | 12+ or volume in thousands | any | any | Search-first (command palette / global search) + grouped sidebar | ia-nav.search-vs-browse |
 | linear process (setup, checkout, application) | any | rare | Stepper / wizard, no global nav inside the flow, visible progress | flows-forms.one-thing-per-page, usability.system-status |
 
@@ -66,7 +68,7 @@ This matrix is the checklist the build step implements and the verify step force
 - Siblings (tabs, top-level destinations) are lateral: cross-fade or short slide in tab order; no depth change. On daily-use destinations prefer instant or cross-fade.
 - Overlays (modal, sheet, drawer) come from their anchor (sheet from bottom, drawer from its side, popover from trigger) and leave the same way.
 - RTL locales mirror horizontal directions.
-- Name the one signature motion moment and which screen/event owns it. [motion.one-signature-moment]
+- Name the expressive motion moments (at most three) and which screen/event owns each. [motion.one-signature-moment]
 - Per-screen motion budget from frequency: daily screens ≤150ms feedback, no entrance choreography.
 
 ## 7. Record decisions
@@ -75,8 +77,8 @@ Write a decision record (format in `templates/decisions.md`) for every choice wh
 
 ## 8. Present and get approval
 
-Approval is mandatory; do not start directions or build without it.
-1. Present a digest, not the file: IA in ≤8 lines, nav model + one-line why, a text sitemap, the top flow as steps, the screen count, and the 3–5 decisions most likely to be disputed. Point to `.design/blueprint.md` for the full state matrix.
-2. Ask: "Approve the blueprint, or tell me what to change." Ask one focused question if a decision was close ("Sidebar or top bar was close — you'll have 6 sections; sidebar recommended.").
-3. **Revisions:** apply the change, then trace its ripple — a changed destination alters nav model, flows, screen inventory, state rows and spatial map. Update all affected sections; mark superseded decision records `Superseded by Dn` (never delete them) and add new ones. If a revision contradicts the brief, name the conflict and ask whether the brief changes too. Show only what changed and ask again.
-4. On approval, set `status: approved` and the date in the blueprint header.
+Approval is mandatory; do not start directions or build without it. In a full run the blueprint digest is shown together with the brief summary (`modules/interview.md` §7) as one checkpoint; standalone `blueprint` shows it alone.
+1. Present a digest, not the file: IA in ≤8 lines, nav model + one-line why, a text sitemap, the top flow as steps, the screen count, and the 3–5 decisions most likely to be disputed. Point to `.design/blueprint.md` for the full state matrix. Fold a close call into the approval ask ("Sidebar or top bar was close; 6 sections, sidebar recommended.").
+2. Ask: "Approve the brief and blueprint, or tell me what to change."
+3. **Revisions:** apply the change, then trace its ripple — a changed destination alters nav model, flows, screen inventory, state rows and spatial map. Update all affected sections; mark superseded decision records `Superseded by Dn` (never delete them) and add new ones. A changed brief answer re-runs the contradiction check and may change the blueprint too. Show only what changed and ask again.
+4. On approval, set `status: approved` and the date in the blueprint header (and `status: confirmed` in the brief).

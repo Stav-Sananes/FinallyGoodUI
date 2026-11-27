@@ -1,0 +1,11 @@
+<dialog data-part="root" #root data-backdrop-close [attr.id]="dialogId" [attr.data-variant]="variant" (close)="closed.emit()">
+  <h2 data-part="title">{{ heading }}</h2>
+  @if (description) {
+    <p data-part="description">{{ description }}</p>
+  }
+  <button type="button" data-part="close" aria-label="Close">
+    <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" /></svg>
+  </button>
+  <ng-content />
+  <div data-part="actions"><ng-content select="[actions]" /></div>
+</dialog>

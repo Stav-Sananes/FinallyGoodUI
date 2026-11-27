@@ -84,7 +84,7 @@ Not needed. Use the component library's Switch (Radix/shadcn) with the same opti
 
 ## Vue / Svelte
 - Vue: `<Transition name="bar">` on `v-if="dirty"` save bar; `onBeforeRouteLeave` for the guard.
-- SvelteKit: `beforeNavigate(({ cancel }) => dirty && !confirm(…) && cancel())`; `transition:fly={{ y: 8, duration: 250 }}` on the bar.
+- SvelteKit: `beforeNavigate(({ cancel }) => dirty && !confirm(…) && cancel())`; `transition:fly={{ y: 8, duration: ms('standard') }}` on the bar.
 
 ## A11y
 - Switches: `role="switch"` + `aria-checked` (or a checkbox styled as a switch); label and description wired.

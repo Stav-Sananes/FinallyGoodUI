@@ -1,0 +1,158 @@
+/* scoped: [data-c="menu"] added by scripts/scope-fgu-css.mjs */
+/* Menu button reference: a native popover list under a button. Tokens only; load tokens.css first.
+   Open and close motion follows recipes/motion/popover-from-trigger.md (opacity and a short drop). */
+[data-part="root"][data-c="menu"] {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-foreground);
+}
+
+[data-part="trigger"][data-c="menu"] {
+  box-sizing: border-box;
+  min-block-size: var(--size-control-md);
+  padding-inline: var(--space-3);
+  border: var(--border-width-hairline) solid var(--color-border);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+[data-part="trigger"][data-c="menu"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
+[data-part="trigger"][data-c="menu"][aria-expanded="true"] { background: var(--color-accent); color: var(--color-accent-foreground); }
+
+/* The list sits in the top layer; attach writes --menu-x / --menu-y from the trigger's box. */
+[data-part="list"][data-c="menu"] {
+  inset: auto;
+  inset-block-start: var(--menu-y, 0);
+  inset-inline-start: var(--menu-x, 0);
+  margin: 0;
+  padding: var(--space-1);
+  border: var(--border-width-hairline) solid var(--color-border);
+  background: var(--color-card);
+  color: var(--color-card-foreground);
+  opacity: 0;
+  transform: translateY(calc(var(--space-1) * -1));
+  transition:
+    opacity var(--duration-micro) var(--ease-exit),
+    transform var(--duration-micro) var(--ease-exit),
+    display var(--duration-micro) allow-discrete,
+    overlay var(--duration-micro) allow-discrete;
+}
+[data-part="list"][data-c="menu"]:popover-open {
+  opacity: 1;
+  transform: none;
+  transition-duration: var(--duration-short);
+  transition-timing-function: var(--ease-snappy);
+}
+@starting-style {
+  [data-part="list"][data-c="menu"]:popover-open { opacity: 0; transform: translateY(calc(var(--space-1) * -1)); }
+}
+
+[data-part="item"][data-c="menu"] {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: var(--size-control-md);
+  padding-inline: var(--space-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+/* The highlight is the focus ring plus a fill: never colour alone. */
+[data-part="item"][data-c="menu"]:focus-visible {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: calc(var(--ring-offset) * -1);
+}
+[data-part="item"][data-c="menu"][aria-disabled="true"] { opacity: 0.5; color: var(--color-muted-foreground); cursor: not-allowed; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part="list"][data-c="menu"], [data-part="list"][data-c="menu"]:popover-open { transform: none; }
+  @starting-style {
+    [data-part="list"][data-c="menu"]:popover-open { transform: none; }
+  }
+}
+
+/* menu: radius=soft material=layered density=balanced motion=balanced motif="registration mark: circle and crosshair, CMYK colour bar" */
+
+[data-part][data-c="menu"] {
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  border-style: none;
+  border-width: var(--border-width-hairline);
+  border-color: var(--color-border);
+  box-shadow: none;
+  transition-property: background-color, border-color, box-shadow, color, transform;
+  transition-duration: var(--duration-short);
+}
+
+[data-part="root"][data-c="menu"] {
+  min-height: var(--size-control-md);
+  padding-inline: var(--space-3);
+  gap: var(--space-2);
+}
+
+[data-part][data-c="menu"]:focus-visible {
+  outline-style: solid;
+  outline-width: var(--ring-width);
+  outline-color: var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+
+/* state: open */
+[data-part="root"][data-c="menu"][aria-expanded]:not([aria-expanded="false"]) {
+  cursor: default;
+}
+
+/* state: disabled */
+[data-part="root"][data-c="menu"][aria-disabled]:not([aria-disabled="false"]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part][data-c="menu"] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}
+
+/* Adapted for Radix DropdownMenu (project edit, not generated): Radix positions the list and owns open state,
+   so the native popover rules above are overridden by data-state and an enter animation. */
+[data-part="list"][data-c="menu"] {
+  inset: auto;
+  opacity: 1;
+  transform: none;
+  transition: none;
+  min-inline-size: 12rem;
+  z-index: var(--z-overlay);
+}
+[data-part="list"][data-c="menu"][data-state="open"] {
+  animation: fgu-menu-in var(--duration-short) var(--ease-snappy);
+}
+@keyframes fgu-menu-in {
+  from { opacity: 0; transform: translateY(calc(var(--space-1) * -1)); }
+}
+[data-part="item"][data-c="menu"][data-highlighted] {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+[data-part="item"][data-c="menu"][data-disabled] { opacity: 0.5; cursor: not-allowed; }
+[data-part="separator"][data-c="menu"] {
+  block-size: var(--border-width-hairline);
+  margin-block: var(--space-1);
+  background: var(--color-border);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-part="list"][data-c="menu"][data-state="open"] { animation: none; }
+}
+
+/* project fix: the profile layer put the elevation on every part; only the surface gets it */
+[data-part="list"][data-c="menu"] { box-shadow: var(--shadow-md); }

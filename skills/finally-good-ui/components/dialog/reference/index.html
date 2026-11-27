@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dialog reference</title>
+<!-- tokens.css: node scripts/emit-tokens.mjs --in tokens/default.tokens.json --format css > tokens.css -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../dialog.css">
+</head>
+<body>
+<main id="demo">
+  <button type="button" data-dialog-open="archive">Archive...</button>
+  <dialog data-fgu="dialog" data-part="root" data-variant="modal" id="archive" data-backdrop-close>
+    <h2 data-part="title">Archive 3 projects?</h2>
+    <p data-part="description">They leave the sidebar but stay searchable.</p>
+    <button type="button" data-part="close" aria-label="Close">&times;</button>
+    <form method="dialog" data-part="form">
+      <div data-part="actions">
+        <button type="button" data-dialog-close autofocus>Cancel</button>
+        <button type="submit">Archive</button>
+      </div>
+    </form>
+  </dialog>
+</main>
+<script type="module">
+  import { attach } from "../dialog.js";
+  attach(document.getElementById("demo"));
+</script>
+</body>
+</html>

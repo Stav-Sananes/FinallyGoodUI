@@ -8,9 +8,11 @@
 
 **Tokens:** `--duration-medium` (300, group) · `--duration-standard` (250, page in) · `--duration-short` (150, page out) · `--ease-move` · `--ease-enter` · `--ease-exit`
 
+**React 19.3+** (stack profile `viewTransitions: "react"`): use react-view-transition instead. React drives `startViewTransition` itself, so the hook below would run a second one.
+
 ## CSS/JS baseline (same-document View Transitions — Baseline since Oct 2025)
 ```js
-const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { reduced } from './motion-tokens.js'; // recipes/INDEX.md
 
 function go(update, direction = 'forward') {
   document.documentElement.dataset.nav = direction;       // read by route-transition CSS
@@ -50,7 +52,7 @@ function closeDetail(id) {
 }
 ```
 - Names must be unique in each snapshot: assign `hero` to the tapped item only, never to every row.
-- The page is non-interactive during the transition; keep it ≤ 300ms.
+- The page is non-interactive during the transition; keep it ≤ 400ms.
 - Text that changes size (title → large header): give the title its own name (`hero-title`) and set `::view-transition-old/new(hero-title) { height: 100%; object-fit: none; object-position: left top; }` to avoid squashing.
 - Multi-page apps: `@view-transition { navigation: auto; }` plus matching names on both pages enables cross-document transitions in Chromium and Safari; Firefox just navigates normally — acceptable progressive enhancement.
 - Browser back: listen to `popstate` and call `closeDetail` inside `go(…, 'back')`.
@@ -58,10 +60,11 @@ function closeDetail(id) {
 ## React + Motion
 Inside one React tree, Motion `layoutId` is simpler and interruptible (VT is not):
 ```tsx
+import { sec, ease } from "./motion-tokens"; // recipes/INDEX.md
 <LazyMotion features={domMax}>
   {selected
     ? <m.img layoutId={`thumb-${selected.id}`} src={selected.img} alt={selected.name} className="detail-hero"
-             transition={{ duration: 0.3, ease: [0.2, 0, 0, 1] }} />
+             transition={{ duration: sec('medium'), ease: ease('move') }} />
     : items.map(it => <m.img key={it.id} layoutId={`thumb-${it.id}`} src={it.img} alt={it.name}
                              onClick={() => setSelected(it)} />)}
 </LazyMotion>

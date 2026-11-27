@@ -1,0 +1,47 @@
+/* Tabs reference: an underline indicator that slides between tabs. Tokens only; load tokens.css first.
+   The indicator moves with transform only (recipes/motion/tabs-indicator.md); tabs.js writes
+   --indicator-x (px) and --indicator-scale (tab width / list width) on the list. */
+[data-fgu="tabs"][data-part="root"] {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-foreground);
+}
+[data-fgu="tabs"] [data-part="list"] {
+  position: relative;
+  display: flex;
+  gap: var(--space-1);
+  border-block-end: var(--border-width-hairline) solid var(--color-border);
+}
+[data-fgu="tabs"] [data-part="tab"] {
+  box-sizing: border-box;
+  min-block-size: var(--size-control-md);
+  padding-inline: var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--color-muted-foreground);
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+[data-fgu="tabs"] [data-part="tab"][aria-selected="true"] { color: var(--color-foreground); }
+[data-fgu="tabs"] [data-part="tab"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: calc(var(--ring-offset) * -1); }
+/* One element for the whole list: full width, scaled to the tab's share and moved to its left edge. */
+[data-fgu="tabs"] [data-part="indicator"] {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-end: 0;
+  inline-size: 100%;
+  block-size: var(--border-width-strong);
+  background: var(--color-primary);
+  transform-origin: 0 0;
+  transform: translateX(var(--indicator-x, 0)) scaleX(var(--indicator-scale, 0));
+  pointer-events: none;
+}
+/* No transition on the first measure, so the indicator does not fly in from the left. */
+[data-fgu="tabs"] [data-part="list"][data-ready] [data-part="indicator"] { transition: transform var(--duration-standard) var(--ease-move); }
+[data-fgu="tabs"] [data-part="panel"] { padding-block: var(--space-4); }
+[data-fgu="tabs"] [data-part="panel"]:focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
+[data-fgu="tabs"] [data-part="panel"][hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) {
+[data-fgu="tabs"] [data-part="list"][data-ready] [data-part="indicator"] { transition: none; }
+}

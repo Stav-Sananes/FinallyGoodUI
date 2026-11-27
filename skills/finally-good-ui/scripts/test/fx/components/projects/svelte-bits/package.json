@@ -1,0 +1,1 @@
+{ "name": "fx-svelte-bits", "private": true, "dependencies": { "svelte": "^5.0.0", "bits-ui": "^1.0.0" } }

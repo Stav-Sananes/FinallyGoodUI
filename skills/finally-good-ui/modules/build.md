@@ -4,7 +4,7 @@ Goal: implement the approved blueprint in the project's own stack, screen by scr
 
 ## Order (don't reorder)
 1. **App shell and navigation.** Implement the navigation model the blueprint chose, with the current-location indicator (`ia-nav.wayfinding-location`), responsive behaviour at 375px, and skip link and landmarks (`a11y.semantic-first`). See `recipes/patterns/app-shell-nav.md`.
-2. **Shared components.** List what the screens need, and **reuse existing components first** (from detect). Create only what is missing, using tokens only. Every interactive component gets hover, active, focus-visible and disabled states (`a11y.focus-visible`).
+2. **Shared components.** List what the screens need, then take each from the first source that has it: (1) **reuse** what the project already has (from detect); (2) a kit or primitives it has installed, wired per `components/adapters/<framework>.md`; (3) else scaffold it from `components/<name>/` with `node "${CLAUDE_SKILL_DIR}/scripts/scaffold-component.mjs" --name <component>` (needs `.design/component-style.json` derived from the chosen direction, schema in `components/style-profile.md`; there is no neutral fallback), then `node "${CLAUDE_SKILL_DIR}/scripts/check-components.mjs"`. Hand-write only what no spec covers, tokens only. Every interactive component gets hover, active, focus-visible and disabled states (`a11y.focus-visible`).
 3. **Screens, in flow-priority order** (the blueprint's key flows first). Use real domain content and the data shapes from the brief. Primary action first in hierarchy (`flows-forms.primary-action-clarity`, `layout.hierarchy-by-weight`).
 4. **Every state-matrix cell.** For each screen: empty, loading, error, partial, full, no-permission, as the blueprint specified. See `recipes/patterns/empty-state.md` and `form-validation.md`. **A screen isn't done until its row in the state matrix is done.**
 5. **Transitions and motion.** Follow the spatial map and per-screen budget in `brand.md`. Add the signature moment last.
@@ -12,7 +12,7 @@ Goal: implement the approved blueprint in the project's own stack, screen by scr
    - **Type:** tracking and leading per size (`craft.tracking-by-size`); headlines ≤ 2 lines, `text-wrap: balance` on headings and `pretty` on paragraphs (`craft.headline-discipline`); numbers set with tabular figures, muted units and a true minus (`craft.number-setting`).
    - **Surfaces:** one material by role (`craft.material-restraint`); layered, tinted shadows and lighter surfaces in dark mode (`craft.tinted-shadows`); space, then hairlines, then boxes, and no box-in-box (`craft.hairlines-before-boxes`); concentric radii (`craft.concentric-radii`).
    - **Real things:** one icon family at one stroke width, real images, logos and initials, no drawn placeholders (`craft.real-imagery-and-icons`); content honest (`craft.honest-content`).
-   - **Colour:** near-neutral canvas, ink primary actions, accent only where it means something (`craft.ink-and-accent`, unless the personality is playful/energetic).
+   - **Colour:** colour, canvas and action treatment per the chosen direction spec (`craft.ink-and-accent` applies only if the spec is ink-on-neutral).
    - **Identity:** the motif from `brand.md` appears in ≥ 3 places (`craft.identity-motif`); every screen has one focal point and at least one deliberate accent moment (`craft.tension-restraint-liveliness`).
    - **Alignment:** card actions share a bottom line, icons are optically centred (`craft.optical-alignment`); sections and screen types vary composition on purpose (`craft.composition-rhythm`).
    - **Copy:** no buzzwords, generic CTAs or em-dash cadence (`writing.plain-claims`).
@@ -42,13 +42,16 @@ Suggest a dependency only if all three hold:
 Ask the user in one line, e.g. "The list-to-detail transition needs shared-element animation. Add `motion` (~5kb with LazyMotion)? Otherwise I'll use the View Transitions API with a crossfade fallback in Firefox." **Never add a second general-purpose animation library.**
 
 ## Code rules
-- Tokens only: no hex, rgb, px spacing or ms literals in components (the hook flags them).
+- Tokens only: no hex, rgb, px spacing or ms literals in components (the hook flags them). When the stack profile has a `tokensPipeline`, a token change goes into its sources (dark values in the `.dark.json` file) and is rebuilt with its build command; the generated CSS is never edited by hand. Durations and easings come from the motion tokens in CSS **and** JS: `var(--duration-*)`/`var(--ease-*)` in styles, the generated `motion-tokens` module (`emit-tokens.mjs --format js`, see `recipes/INDEX.md`) for Motion, WAAPI, Svelte/Vue transition props and timers that wait on a transition. Never copy a recipe's example numbers.
 - Animate only `transform` and `opacity` (`motion.compositor-only`); never `transition: all`.
 - Wrap spatial motion so reduced motion drops it (`motion.reduced-motion`). Gate hover motion with `(hover: hover) and (pointer: fine)`.
 - Semantic HTML before ARIA; buttons are `<button>`; every input has a visible label (`flows-forms.labels-above`).
 - Touch targets at least 24px, 44px on touch-first screens (`a11y.target-size`). Inputs at least 16px on mobile.
 - Numbers in tables and dashboards use `font-variant-numeric: tabular-nums`.
-- Copy follows the writing cards: the user's words, verb-first actions, and errors that say how to fix the problem.
+- Copy follows the writing cards: the user's words, verb-first actions, and errors that say how to fix the problem, set with real punctuation (`writing.typographic-punctuation`).
+- Dates, numbers and currencies through `Intl` in the user's locale (`i18n.locale-formats`); layout CSS in logical properties (`i18n.direction-logical`).
+- Server-rendered apps (Next, Nuxt, SvelteKit, Astro, Remix): anything that differs between server and browser (dates, time zones, random ids, `window` reads, saved preferences) renders the same on both or waits until after hydration; `suppressHydrationWarning` only on the one element that must differ, such as a timestamp.
+- Filters, tabs, sort, search and pagination live in the URL (`ia-nav.url-as-state`); forms never lose typed input (`flows-forms.protect-unsaved-work`).
 
 ## Completeness (no shortcuts)
 Before saying a screen is done, count: regions in the blueprint for this screen, state-matrix cells for its row, and controls on it. Report "N of N" for each. Never leave `TODO`, stub handlers, `href="#"`, "the rest follows the same pattern", or one example standing in for several (`craft.nothing-dead`). If the work is too large for one pass, finish whole screens and say which remain, rather than thinning every screen.

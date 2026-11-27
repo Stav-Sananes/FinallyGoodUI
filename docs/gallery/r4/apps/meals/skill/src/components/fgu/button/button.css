@@ -1,0 +1,95 @@
+/* Button reference. Tokens only; load tokens.css (emit-tokens.mjs --format css) first. */
+[data-part="root"] {
+  position: relative;
+  --btn-bg: var(--color-primary);
+  --btn-fg: var(--color-primary-foreground);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  min-height: var(--size-control-md);
+  min-width: var(--size-control-md);
+  padding-inline: var(--space-4);
+  border: var(--border-width-hairline) solid transparent;
+  border-radius: var(--radius-md);
+  background-color: var(--btn-bg);
+  color: var(--btn-fg);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform var(--duration-micro) var(--ease-snappy),
+    opacity var(--duration-short) var(--ease-snappy);
+}
+[data-part="root"][data-variant="secondary"] { --btn-bg: var(--color-accent); --btn-fg: var(--color-accent-foreground); border-color: var(--color-border); }
+[data-part="root"][data-variant="ghost"] { --btn-bg: transparent; --btn-fg: var(--color-foreground); }
+[data-part="root"][data-variant="destructive"] { --btn-bg: var(--color-destructive); --btn-fg: var(--color-destructive-foreground); }
+
+[data-part="label"], [data-part="icon"] { transition: opacity var(--duration-short) var(--ease-snappy); }
+[data-part="icon"] { display: inline-flex; width: var(--icon-md); height: var(--icon-md); }
+[data-part="spinner"] {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  opacity: 0;
+  box-sizing: border-box;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  border: var(--border-width-strong) solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: var(--radius-full);
+  animation: btn-spin var(--duration-hero) linear infinite;
+}
+[data-part="root"][aria-busy="true"] [data-part="spinner"] { opacity: 1; }
+[data-part="root"][aria-busy="true"] [data-part="label"],
+[data-part="root"][aria-busy="true"] [data-part="icon"] { opacity: 0; }
+[data-part="root"][aria-busy="true"] { cursor: progress; }
+
+@media (hover: hover) and (pointer: fine) {
+  [data-part="root"]:hover:not(:disabled):not([aria-busy="true"]) { opacity: 0.9; }
+}
+[data-part="root"]:active:not(:disabled):not([aria-busy="true"]) { transform: scale(0.97); }
+[data-part="root"]:focus-visible {
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+[data-part="root"]:disabled {
+  opacity: 0.5;
+  color: var(--color-muted-foreground);
+  cursor: not-allowed;
+}
+
+@keyframes btn-spin { to { transform: rotate(1turn); } }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part="root"] { transition: opacity var(--duration-short) linear; }
+  [data-part="root"]:active:not(:disabled):not([aria-busy="true"]) { transform: none; opacity: 0.85; }
+  [data-part="spinner"] { animation: none; }
+  [data-part="label"], [data-part="icon"] { transition: none; }
+}
+
+/* button: Greengrocer's Board profile (hand-trimmed: the generated generic [data-part] layer removed, see README friction) */
+[data-part="root"] { min-block-size: var(--size-control-lg); border-radius: var(--radius-md); font-size: var(--text-base); font-weight: 600; padding-inline: var(--space-4); }
+[data-part="root"][data-variant="primary"] { box-shadow: var(--shadow-sm); }
+[data-part="root"][data-variant="secondary"] { border-width: var(--border-width-hairline); border-style: solid; background-color: var(--color-card); }
+
+/* state: disabled */
+[data-part="root"][disabled]:not([disabled="false"]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* state: loading */
+[data-part="root"][aria-busy]:not([aria-busy="false"]) {
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-part] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

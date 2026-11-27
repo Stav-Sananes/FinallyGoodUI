@@ -1,0 +1,14 @@
+<section aria-labelledby="case-title">
+  <h2 id="case-title" class="caps">Pigeonholes</h2>
+  <ul class="case">
+    @for (cell of cells(); track cell.member.id) {
+      <li>
+        <button type="button" class="hole" [disabled]="!canSort()" [attr.aria-pressed]="holderId() === cell.member.id" [attr.aria-label]="'Sort into ' + cell.member.name + ', key ' + cell.member.slot" (click)="sorted.emit(cell.member.id)">
+          <kbd aria-hidden="true">{{ cell.member.slot }}</kbd>
+          <span class="who" aria-hidden="true">{{ cell.member.name }}</span>
+          <span class="load" aria-hidden="true"><span class="count">{{ cell.load.open }}</span> open@if (cell.load.urgent) { · <span class="urgent">{{ cell.load.urgent }} urgent</span> }</span>
+        </button>
+      </li>
+    }
+  </ul>
+</section>

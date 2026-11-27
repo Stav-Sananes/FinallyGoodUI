@@ -1,0 +1,71 @@
+<section class="tray" id="tray" aria-label="Letters in this tray" [attr.aria-busy]="phase() === 'loading' ? 'true' : null" tabindex="-1">
+  @switch (phase()) {
+    @case ('loading') {
+      <ul class="rows" aria-hidden="true">
+        @for (n of skeletonRows; track n) {
+          <li class="row skeleton"><span class="bone mark-bone"></span><span class="bone id-bone"></span><span class="bone title-bone"></span></li>
+        }
+      </ul>
+      <p class="visually-hidden" role="status">Loading the tray</p>
+    }
+    @case ('error') {
+      <div class="panel error-panel" role="alert">
+        <h2>The tray did not load</h2>
+        <p>The server is out of reach, so nothing here is stale or guessed. Check the connection, then try again.</p>
+        <fgu-button (click)="retry.emit()">Try again <kbd>r</kbd></fgu-button>
+      </div>
+    }
+    @default {
+      @if (issues().length) {
+        <ul class="rows">
+          @for (issue of issues(); track issue.id) {
+            <li animate.leave="row-out">
+              <button type="button" class="row" [class.closed]="issue.status === 'closed'" [attr.data-id]="issue.id" [attr.aria-current]="issue.id === cursorId() ? 'true' : null" (click)="picked.emit(issue.id)">
+                <app-postmark [priority]="issue.priority" />
+                <span class="id">{{ issue.id }}</span>
+                <span class="title">{{ issue.title }}</span>
+                <span class="meta">
+                  <span class="area">{{ issue.area }}</span>
+                  <span class="date">{{ date(issue.createdAt) }}</span>
+                  @if (issue.assignee) {
+                    <span class="holder" [attr.title]="holder(issue.assignee)"><span class="visually-hidden">Held by {{ holder(issue.assignee) }}</span><span aria-hidden="true">{{ initials(issue.assignee) }}</span></span>
+                  } @else {
+                    <span class="holder unheld"><span class="visually-hidden">Not handed to anyone</span><span aria-hidden="true">--</span></span>
+                  }
+                  @if (issue.status !== 'open') {
+                    <span class="status">{{ statusLabel[issue.status] }}</span>
+                  }
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+      } @else if (total() === 0) {
+        <div class="panel">
+          <app-postmark priority="none" size="lg" />
+          <h2>The office is empty</h2>
+          <p>No issues have been filed yet. File the first one and it lands in intake.</p>
+          <fgu-button (click)="compose.emit()">Compose an issue <kbd>c</kbd></fgu-button>
+        </div>
+      } @else if (query()) {
+        <div class="panel">
+          <app-postmark priority="none" size="lg" />
+          <h2>Nothing matches “{{ query() }}”</h2>
+          <p>Search looks at the id, title, area, reporter and holder. Clear the box to see the whole tray.</p>
+        </div>
+      } @else if (view() === 'intake') {
+        <div class="panel clear" [class.signature-stamp]="cleared()">
+          <span class="clear-ring" aria-hidden="true"><span>Sorted</span></span>
+          <h2>Intake is clear</h2>
+          <p>Every open issue has a priority and an owner. New letters will land here.</p>
+        </div>
+      } @else {
+        <div class="panel">
+          <app-postmark priority="none" size="lg" />
+          <h2>Nothing in this tray</h2>
+          <p>Hand a letter to Mara from intake and it shows up here.</p>
+        </div>
+      }
+    }
+  }
+</section>

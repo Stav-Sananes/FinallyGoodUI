@@ -1,6 +1,102 @@
 # finally-good-ui
 
-A Claude Code plugin that designs and builds **complete applications** the way a senior product designer would. That means multi-screen apps with navigation, flows, every empty, loading and error state, and a coherent motion language.
+Your coding agent designs and builds **whole apps** the way a senior product designer would: every screen, the navigation between them, every empty, loading and error state, and one coherent motion language. Then it opens the result in a real browser and checks it.
+
+You don't need to be a designer. You answer plain questions, approve a plan, and pick from three working versions of your main screen. The agent does the rest and writes down why it made each choice.
+
+**Live gallery:** https://stav-sananes.github.io/FinallyGoodUI/ (four apps, the 12 component reference pages; published from `main` by GitHub Actions).
+
+## How a first run goes
+
+1. **Install** (two commands, below) and run `/finally-good-ui` in your project.
+2. **Pick a path:** design a new app, review the UI you already have, or make a screen look premium.
+3. **Answer a few questions,** one at a time. Each says why it matters. "You decide" always works.
+4. **Approve a blueprint:** the screens, how people move between them, and what each one shows when it's empty, loading or broken.
+5. **Pick a direction:** your key screen built three different ways, animated, side by side.
+
+Every path ends the same way: the result is checked in a browser at phone and desktop sizes, in light and dark, and every decision is in `.design/decisions.md` with its reason.
+
+## Blind test: with the skill vs. without
+
+Four apps, each built twice from the same one-paragraph brief by the same model: once with finally-good-ui, once from the prompt alone. The pairs were shuffled and judged blind by the maintainer before the sides were revealed. Every image is a real render at 1440 px.
+
+**Result: the skill won 1, lost 2, tied 1.** We show all four, losses included. One judge and four apps is a small sample, not a benchmark; the runs' feedback went straight into fixes (check-static false positives, unattended runs, overlay and brand-accent tokens).
+
+| App | With finally-good-ui | Prompt alone | Blind verdict |
+|---|---|---|---|
+| **Studio finance**: the owner's Monday look at cash, runway, overdue invoices and payroll | ![Finance, with the skill](docs/gallery/finance-skill-desktop-light.jpg) | ![Finance, prompt alone](docs/gallery/finance-control-desktop-light.jpg) | **Skill** |
+| **Salon booking**: dog owners pick a time for a groom, on their phone | ![Booking, with the skill](docs/gallery/booking-skill-desktop-light.jpg) | ![Booking, prompt alone](docs/gallery/booking-control-desktop-light.jpg) | Prompt alone |
+| **Meal planner**: a household of three plans the week's dinners and shops by aisle | ![Meals, with the skill](docs/gallery/meals-skill-desktop-light.jpg) | ![Meals, prompt alone](docs/gallery/meals-control-desktop-light.jpg) | Prompt alone |
+| **Issue tracker**: a six-person team triages its issue list from the keyboard | ![Tracker, with the skill](docs/gallery/tracker-skill-desktop-light.jpg) | ![Tracker, prompt alone](docs/gallery/tracker-control-desktop-light.jpg) | Tie |
+
+<details>
+<summary>Dark preference and phone (390 px) renders</summary>
+
+| App | With finally-good-ui | Prompt alone |
+|---|---|---|
+| Finance, dark | ![](docs/gallery/finance-skill-desktop-dark.jpg) | ![](docs/gallery/finance-control-desktop-dark.jpg) |
+| Finance, phone | <img src="docs/gallery/finance-skill-phone.jpg" width="240" alt=""> | <img src="docs/gallery/finance-control-phone.jpg" width="240" alt=""> |
+| Booking, dark | ![](docs/gallery/booking-skill-desktop-dark.jpg) | ![](docs/gallery/booking-control-desktop-dark.jpg) |
+| Booking, phone | <img src="docs/gallery/booking-skill-phone.jpg" width="240" alt=""> | <img src="docs/gallery/booking-control-phone.jpg" width="240" alt=""> |
+| Meals, dark | ![](docs/gallery/meals-skill-desktop-dark.jpg) | ![](docs/gallery/meals-control-desktop-dark.jpg) |
+| Meals, phone | <img src="docs/gallery/meals-skill-phone.jpg" width="240" alt=""> | <img src="docs/gallery/meals-control-phone.jpg" width="240" alt=""> |
+| Tracker, dark | ![](docs/gallery/tracker-skill-desktop-dark.jpg) | ![](docs/gallery/tracker-control-desktop-dark.jpg) |
+| Tracker, phone | <img src="docs/gallery/tracker-skill-phone.jpg" width="240" alt=""> | <img src="docs/gallery/tracker-control-phone.jpg" width="240" alt=""> |
+
+</details>
+
+## Install
+
+```bash
+claude plugin marketplace add Stav-Sananes/FinallyGoodUI
+claude plugin install finally-good-ui@finally-good-ui-market
+```
+
+**Cursor, Codex, Copilot and other agents** install the same three skills with the [skills CLI](https://github.com/vercel-labs/skills):
+
+```bash
+npx skills add Stav-Sananes/FinallyGoodUI --skill '*'
+```
+
+Outside Claude Code the reasoning, canon, recipes and scripts all work. What you give up: the three directions are built one after another instead of in parallel, the final review is done by the same agent rather than an independent one, and the static check runs when the agent remembers to run it, not after every edit.
+
+For full browser checks, add Playwright to the project you're working on (the skill asks before installing anything):
+`npm i -D playwright @axe-core/playwright && npx playwright install chromium`.
+Without it, the skill uses any browser tool it has or falls back to static checks, and tells you which.
+
+### Without Claude Code, or in CI
+
+The static checks (accessibility, motion, tokens and the AI-slop detectors) also run on their own, in any project:
+
+```bash
+npx finally-good-ui check src            # readable report; exits 1 on high-severity findings
+npx finally-good-ui check src --fail-on medium --format github   # annotations on the pull request
+```
+
+```yaml
+# .github/workflows/ui-check.yml
+on: pull_request
+jobs:
+  ui-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npx finally-good-ui check . --format github
+```
+
+## Ask it like this
+
+Mention what you're building, who it's for, and what matters most. For example:
+
+- `/finally-good-ui` "A booking app for a dog-grooming salon. Owners book on their phone; staff manage the day on a tablet."
+- `/finally-good-ui review` "Our dashboard feels cluttered. Tell me what to fix first."
+- `/finally-good-ui:polish elevate` "The settings page works but looks unfinished."
+- `/finally-good-ui:slop-check src/app` "Does this look AI-made?"
+- `/finally-good-ui extract` "Turn our existing styles into a design system before we add features."
+
+## Why it doesn't look AI-made
 
 Most AI design skills hand the model *answers*: presets, style catalogues and ban lists. That is why their output looks AI-generated. finally-good-ui hands the model **judgment**:
 - a canon of design principles distilled from the classic books and standards;
@@ -31,7 +127,7 @@ Generated UI fails in two directions. One is the **noisy template**: glass, glow
 - **`craft` canon (15 cards).** How premium is *made*, with ranges to choose from:
   - letter-spacing and line-height by size;
   - headline discipline and number setting;
-  - ink actions on a near-neutral canvas, with the accent kept for meaning;
+  - colour, canvas and action treatment taken from the chosen direction (ink-on-neutral is one option), with the accent kept for meaning;
   - concentric radii, layered tinted shadows, hairlines before boxes;
   - one surface material by role;
   - real icons and imagery;
@@ -54,16 +150,7 @@ Generated UI fails in two directions. One is the **noisy template**: glass, glow
 /finally-good-ui:polish [preserve|elevate|overhaul]      upgrade a working UI to premium, one verified rung at a time
 ```
 
-## Install
-
-See the [repository README](../README.md) and [INSTALL.md](../INSTALL.md) for all options.
-
-```bash
-claude plugin marketplace add Stav-Sananes/finally-good-ui
-claude plugin install finally-good-ui@finally-good-ui-market
-```
-
-## Use
+## All commands
 
 ```
 /finally-good-ui                         full pipeline for a new app or big feature
@@ -73,18 +160,24 @@ claude plugin install finally-good-ui@finally-good-ui-market
 /finally-good-ui build                   system + build + verify
 /finally-good-ui review                  audit the current UI (changes nothing)
 /finally-good-ui extract                 codebase → .design/brand.md + tokens.json
-/finally-good-ui export                  rules for Cursor, Windsurf, Copilot, AGENTS.md
+/finally-good-ui export                  rules for Cursor, Devin/Windsurf, Copilot, Kiro, Cline, AGENTS.md
 ```
-
-For full browser verification, the project needs Playwright:
-`npm i -D playwright @axe-core/playwright && npx playwright install chromium`.
-Without it, the skill uses any available browser tool or falls back to static checks, and tells you so.
 
 ## What it writes in your project
 
 `.design/`: `config.json` · `brief.md` · `blueprint.md` · `brand.md` · `tokens.json` · `decisions.md` · `flows.json` · `directions/` · `reports/`
 
 Set `"directions": "off"` or `"hook": "off"` in `.design/config.json` to skip those steps.
+
+## Develop from a clone
+
+Opening the repo in Claude Code does **not** load it as a plugin. The skills may still be readable, but `hooks/hooks.json` runs `${CLAUDE_PLUGIN_ROOT}/…/hook-check.mjs`, and that variable is only set for a loaded plugin, so the Layer-1 edit hook never fires. Load the clone for the session instead:
+
+```bash
+claude --plugin-dir /path/to/finally-good-ui   # the folder that holds .claude-plugin/plugin.json
+```
+
+Run it from the project you are testing on; restart the session to pick up edits to `hooks.json` or agents. Disable a marketplace copy first (`claude plugin disable finally-good-ui@finally-good-ui-market`) so two copies don't both run. `claude plugin validate .` checks the manifest. `--bare` skips plugin hooks, so don't combine it with `--plugin-dir` when testing the hook. The hook still only acts in projects that have a `.design/` folder.
 
 ## Sources
 
@@ -104,4 +197,4 @@ Every principle is written in our own words, with citations. Informed by these w
 
 ## Status
 
-v0.2: 88 canon cards (new `craft` domain and premium personality recipes), 22 interview questions, 15 recipes, 19 slop detectors, a delivery gate, and the `slop-check` and `polish` skills. All scripts have tests. Planned next: the full ~180-card canon, 25+ recipes, and an evaluation set with a before/after gallery.
+v0.2 plus the library integrations: 101 canon cards (including `craft` and `i18n`), 22 interview questions, 37 motion and pattern recipes, 40 static-check rules, a delivery gate, and the `slop-check` and `polish` skills. Tokens are standard DTCG 2025.10 files that import from Figma, Tokens Studio and Terrazzo/Style Dictionary sources and emit to 30 targets: CSS and Tailwind, the major web kits (shadcn, daisyUI, Chakra, Panda, Mantine, Ant Design, PrimeVue/NG/React, Angular Material, MUI), library adapters (Sonner, cmdk, AG Grid, chart themes, font loaders), React Native (Uniwind, NativeWind, Tamagui, Unistyles, Reanimated), Flutter, SwiftUI, Jetpack Compose, and Terrazzo or Style Dictionary pipelines. All scripts have tests. Planned next: the full ~180-card canon and a larger blind evaluation set (the first four pairs are above).

@@ -1,0 +1,39 @@
+<article class="letter" id="letter" tabindex="-1" aria-labelledby="letter-title">
+  @if (issue(); as issue) {
+    <header class="head">
+      @for (p of [issue.id + issue.priority]; track p) {
+        <app-postmark class="stamp" [priority]="issue.priority" size="lg" />
+      }
+      <div>
+        <p class="id">{{ issue.id }} · {{ issue.area }}</p>
+        <h2 id="letter-title">{{ issue.title }}</h2>
+      </div>
+    </header>
+    <dl class="facts">
+      <div><dt>Status</dt><dd>{{ statusLabel[issue.status] }}</dd></div>
+      <div><dt>Held by</dt><dd [class.unheld]="!issue.assignee">{{ holder(issue.assignee) }}</dd></div>
+      <div><dt>Filed by</dt><dd>{{ issue.reporter }}</dd></div>
+      <div><dt>Filed</dt><dd>{{ date(issue.createdAt) }}</dd></div>
+    </dl>
+    <div class="actions">
+      <fgu-menu [items]="priorityItems()">Stamp priority</fgu-menu>
+      <fgu-menu [items]="holderItems()">Hand to</fgu-menu>
+      <fgu-button variant="secondary" (click)="stepped.emit(issue.id)">Step status <kbd>s</kbd></fgu-button>
+      <fgu-button variant="ghost" [disabled]="issue.status === 'closed'" (click)="closed.emit(issue.id)">Close <kbd>x</kbd></fgu-button>
+    </div>
+    <fgu-disclosure variant="single">
+      <span slot="trigger">Activity ({{ issue.log.length }})</span>
+      <ol class="log">
+        @for (entry of issue.log; track $index) {
+          <li><span class="when">{{ entry.at }}</span> {{ entry.text }}</li>
+        }
+      </ol>
+    </fgu-disclosure>
+  } @else {
+    <div class="blank">
+      <app-postmark priority="none" size="lg" />
+      <h2 id="letter-title">No letter in hand</h2>
+      <p>Move to a letter with <kbd>j</kbd> and it opens here.</p>
+    </div>
+  }
+</article>

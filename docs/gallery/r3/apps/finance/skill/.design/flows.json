@@ -1,0 +1,17 @@
+{"flows":[
+ {"name":"monday-read","ready":"main h1","steps":[{"goto":"/index.html"},{"waitFor":"text=Months of runway"},{"screenshot":"overview"}],
+  "states":[
+   {"name":"empty","goto":"/index.html?state=empty","waitFor":"text=Connect bank account","screenshot":"overview-empty"},
+   {"name":"loading","goto":"/index.html?state=loading","waitFor":"[aria-busy=true]","screenshot":"overview-loading"},
+   {"name":"error","goto":"/index.html?state=error","waitFor":"text=Try again","screenshot":"overview-error"},
+   {"name":"partial","goto":"/index.html?state=partial","waitFor":"text=Invoices didn’t load from your accounting tool.","screenshot":"overview-partial"},
+   {"name":"denied","goto":"/index.html?state=denied","waitFor":"text=Cash and runway are hidden for your role","screenshot":"overview-denied"},
+   {"name":"cleared","goto":"/index.html?state=cleared","waitFor":"text=No unpaid invoices.","screenshot":"overview-cleared"}
+  ]},
+ {"name":"chase-invoice","ready":"main h1","steps":[{"goto":"/index.html"},{"waitFor":"text=Months of runway"},
+   {"click":"role=button[name=\"Send reminder\"]"},{"waitFor":"text=Reminder queued"},{"screenshot":"reminder-queued"},
+   {"click":"role=button[name=\"Undo\"]"},{"waitFor":"role=button[name=\"Send reminder\"]"},{"screenshot":"reminder-undone"}]},
+ {"name":"where-money-went","ready":"main h1","steps":[{"goto":"/index.html"},{"click":"role=link[name=\"Spending\"]"},{"waitFor":"text=Where October’s money went"},{"screenshot":"spending"}]},
+ {"name":"invoices","ready":"main h1","steps":[{"goto":"/index.html#invoices"},{"waitFor":"text=Every unpaid invoice"},{"screenshot":"invoices"}]},
+ {"name":"payroll","ready":"main h1","steps":[{"goto":"/index.html#payroll"},{"waitFor":"text=Recent payroll runs"},{"screenshot":"payroll"}]}
+]}

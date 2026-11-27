@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Button reference</title>
+<!-- tokens.css: node scripts/emit-tokens.mjs --in tokens/default.tokens.json --format css > tokens.css -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../button.css">
+</head>
+<body>
+<main id="demo">
+  <button type="button" data-fgu="button" data-part="root" data-variant="primary"><span data-part="spinner" aria-hidden="true"></span><span data-part="label">Save</span></button>
+  <button type="button" data-fgu="button" data-part="root" data-variant="secondary"><span data-part="icon" aria-hidden="true"></span><span data-part="label">Share</span></button>
+  <button type="button" data-fgu="button" data-part="root" data-variant="ghost"><span data-part="label">Cancel</span></button>
+  <button type="button" data-fgu="button" data-part="root" data-variant="destructive"><span data-part="label">Delete</span></button>
+  <button type="button" data-fgu="button" data-part="root" data-variant="primary" aria-busy="true"><span data-part="spinner" aria-hidden="true"></span><span data-part="label">Saving</span></button>
+  <button type="button" data-fgu="button" data-part="root" data-variant="primary" disabled><span data-part="label">Unavailable</span></button>
+</main>
+<script type="module">
+  import { attach } from "../button.js";
+  attach(document.getElementById("demo"));
+</script>
+</body>
+</html>

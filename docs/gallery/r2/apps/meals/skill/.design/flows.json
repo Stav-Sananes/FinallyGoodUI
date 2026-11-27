@@ -1,0 +1,169 @@
+{
+ "flows": [
+  {
+   "name": "plan-week",
+   "steps": [
+    {
+     "goto": "/index.html#week"
+    },
+    {
+     "waitFor": "role=heading[name=\"This week\"]"
+    },
+    {
+     "screenshot": "week"
+    },
+    {
+     "click": "role=button[name=\"Plan Friday\"]"
+    },
+    {
+     "waitFor": "role=dialog"
+    },
+    {
+     "screenshot": "pick-sheet"
+    },
+    {
+     "click": "role=dialog >> role=button[name=/Green curry with tofu/]"
+    },
+    {
+     "waitFor": "role=link[name=\"Green curry with tofu\"]"
+    },
+    {
+     "screenshot": "week-filled"
+    },
+    {
+     "click": "role=button[name=\"Plan Sunday\"]"
+    },
+    {
+     "waitFor": "role=dialog"
+    },
+    {
+     "click": "role=dialog >> role=button[name=/Fish pie with peas/]"
+    },
+    {
+     "waitFor": "text=This week is set"
+    },
+    {
+     "waitFor": 900
+    },
+    {
+     "screenshot": "week-set"
+    }
+   ],
+   "states": [
+    {
+     "name": "loading",
+     "goto": "/index.html?state=loading#week",
+     "screenshot": "week"
+    },
+    {
+     "name": "error",
+     "goto": "/index.html?state=error#week",
+     "waitFor": "text=Try again",
+     "screenshot": "week"
+    },
+    {
+     "name": "offline",
+     "steps": [
+      {
+       "goto": "/index.html?state=offline#week"
+      },
+      {
+       "click": "role=button[name=\"Plan Friday\"]"
+      },
+      {
+       "click": "role=dialog >> role=button[name=/Mushroom risotto/]"
+      },
+      {
+       "waitFor": "text=you’re offline. Your pick is kept here."
+      }
+     ],
+     "screenshot": "week"
+    },
+    {
+     "name": "empty",
+     "goto": "/index.html#week/1",
+     "waitFor": "text=Nothing planned for next week yet",
+     "screenshot": "week"
+    },
+    {
+     "name": "no-results",
+     "steps": [
+      {
+       "goto": "/index.html#week"
+      },
+      {
+       "click": "role=button[name=\"Plan Friday\"]"
+      },
+      {
+       "fill": [
+        "label=Search your recipes",
+        "lasagne"
+       ]
+      },
+      {
+       "waitFor": "text=No recipe matches"
+      }
+     ],
+     "screenshot": "pick-sheet"
+    }
+   ]
+  },
+  {
+   "name": "cook-tonight",
+   "steps": [
+    {
+     "goto": "/index.html#week"
+    },
+    {
+     "click": "role=link[name=/Cook tonight/]"
+    },
+    {
+     "waitFor": "role=heading[name=\"Ingredients\"]"
+    },
+    {
+     "waitFor": 400
+    },
+    {
+     "screenshot": "recipe"
+    }
+   ]
+  },
+  {
+   "name": "shop-by-aisle",
+   "steps": [
+    {
+     "goto": "/index.html#list"
+    },
+    {
+     "waitFor": "role=heading[name=\"Shopping list\"]"
+    },
+    {
+     "screenshot": "list"
+    },
+    {
+     "click": "text=red lentils"
+    },
+    {
+     "click": "text=chicken thighs"
+    },
+    {
+     "screenshot": "list-ticked"
+    }
+   ]
+  },
+  {
+   "name": "recipes",
+   "steps": [
+    {
+     "goto": "/index.html#recipes"
+    },
+    {
+     "waitFor": "role=heading[name=\"Recipes\"]"
+    },
+    {
+     "screenshot": "recipes"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,108 @@
+/* scoped by data-fgu="toast" so six components can share one stylesheet (see README: friction) */
+/* Toast reference: a persistent live region holding plain toast elements. Tokens only; load tokens.css first.
+   Enter and exit follow recipes/motion/toast-stack.md (transform and opacity only). */
+[data-fgu="toast"][data-part="root"] {
+  position: fixed;
+  inset: auto var(--space-4) var(--space-4) auto;
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  pointer-events: none; /* the empty region never blocks the page; toasts opt back in */
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+}
+
+[data-fgu="toast"] [data-part="toast"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *)) {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  inline-size: min(calc(100vw - var(--space-8)), 24rem);
+  padding: var(--space-3);
+  background: var(--color-card);
+  color: var(--color-card-foreground);
+  border: var(--border-width-hairline) solid var(--color-border);
+  opacity: 1;
+  transform: none;
+  transition:
+    transform var(--duration-medium) var(--ease-enter),
+    opacity var(--duration-medium) var(--ease-enter);
+}
+@starting-style {
+  [data-fgu="toast"] [data-part="toast"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *)) { opacity: 0; transform: translateY(100%); }
+}
+[data-fgu="toast"] [data-part="toast"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *))[data-leaving] {
+  opacity: 0;
+  transform: translateX(calc(100% + var(--space-4)));
+  transition-duration: var(--duration-short);
+  transition-timing-function: var(--ease-exit);
+}
+
+[data-fgu="toast"] [data-part="message"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *)) { flex: 1; margin: 0; }
+/* An error is never colour alone: a leading icon and a heavier edge as well. */
+[data-fgu="toast"] [data-part="toast"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *))[data-variant="error"] { border-inline-start: var(--border-width-strong) solid var(--color-destructive); }
+[data-fgu="toast"] [data-part="toast"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *))[data-variant="error"] [data-part="message"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *))::before { content: "\26A0"; content: "\26A0" / ""; margin-inline-end: var(--space-2); color: var(--color-destructive); }
+
+[data-fgu="toast"] [data-part="action"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *)), [data-fgu="toast"] [data-part="dismiss"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *)) {
+  flex: none;
+  box-sizing: border-box;
+  min-block-size: var(--size-control-md);
+  min-inline-size: var(--size-control-md);
+  padding-inline: var(--space-2);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+[data-fgu="toast"] [data-part="action"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *)):focus-visible, [data-fgu="toast"] [data-part="dismiss"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *)):focus-visible { outline: var(--ring-width) solid var(--color-ring); outline-offset: var(--ring-offset); }
+
+/* Reduced motion: opacity only, no slide. */
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="toast"] [data-part="toast"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *)), [data-fgu="toast"] [data-part="toast"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *))[data-leaving] { transform: none; }
+  @starting-style {
+    [data-fgu="toast"] [data-part="toast"]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *)) { transform: none; }
+  }
+}
+
+/* toast: radius=soft material=flat density=airy motion=expressive motif="Ticket stub: perforated tear line and half-round notches, as on a salon appointment card" */
+
+[data-fgu="toast"][data-part], [data-fgu="toast"] [data-part]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *)) {
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  border-style: none;
+  box-shadow: none;
+  transition-property: background-color, border-color, box-shadow, color, transform;
+  transition-duration: var(--duration-standard);
+  transition-timing-function: var(--ease-enter);
+}
+
+[data-fgu="toast"][data-part="root"] {
+  min-height: var(--size-control-lg);
+  padding-inline: var(--space-4);
+  gap: var(--space-3);
+}
+
+[data-fgu="toast"][data-part]:focus-visible, [data-fgu="toast"] [data-part]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *)):focus-visible {
+  outline-style: solid;
+  outline-width: var(--ring-width);
+  outline-color: var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+
+/* state: leaving */
+[data-fgu="toast"][data-part="root"][data-leaving]:not([data-leaving="false"]) {
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="toast"][data-part], [data-fgu="toast"] [data-part]:where(:not([data-fgu]:not([data-fgu="toast"])):not([data-fgu]:not([data-fgu="toast"]) *)) {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

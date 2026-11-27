@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toast reference</title>
+<!-- tokens.css: node scripts/emit-tokens.mjs --in tokens/default.tokens.json --format css > tokens.css -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../toast.css">
+</head>
+<body>
+<main>
+  <button type="button" id="save">Archive item</button>
+  <button type="button" id="fail">Simulate a failure</button>
+</main>
+<!-- The live region is in the page from the start; toasts are added inside it. -->
+<div data-fgu="toast" data-part="root" id="toasts" role="status" aria-label="Notifications">
+  <div data-part="toast" data-variant="status">
+    <p data-part="message">Moved to archive</p>
+    <button type="button" data-part="action">Undo</button>
+    <button type="button" data-part="dismiss" aria-label="Dismiss">&times;</button>
+  </div>
+</div>
+<script type="module">
+  import { attach } from "../toast.js";
+  const region = document.getElementById("toasts");
+  attach(region);
+  const show = (text, variant) => {
+    const toast = document.createElement("div");
+    toast.setAttribute("data-part", "toast");
+    toast.setAttribute("data-variant", variant);
+    toast.innerHTML = '<p data-part="message"></p><button type="button" data-part="dismiss" aria-label="Dismiss">&times;</button>';
+    toast.querySelector("p").textContent = text;
+    region.append(toast);
+  };
+  document.getElementById("save").addEventListener("click", () => show("Moved to archive", "status"));
+  document.getElementById("fail").addEventListener("click", () => show("Could not save. Try again.", "error"));
+</script>
+</body>
+</html>

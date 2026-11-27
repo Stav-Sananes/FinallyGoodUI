@@ -1,0 +1,99 @@
+{
+  "name": "popover",
+  "shapes": [
+    "panel"
+  ],
+  "props": [
+    {
+      "name": "open",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "label",
+      "type": "string"
+    }
+  ],
+  "events": [
+    "popoverchange"
+  ],
+  "slots": [
+    "trigger",
+    "default"
+  ],
+  "states": [
+    {
+      "name": "open",
+      "attribute": "aria-expanded"
+    }
+  ],
+  "a11y": {
+    "role": "dialog",
+    "rolePart": "panel",
+    "aria": [
+      "aria-haspopup",
+      "aria-controls",
+      "aria-expanded",
+      "aria-labelledby",
+      "aria-label"
+    ],
+    "keys": {
+      "Escape": "close"
+    }
+  },
+  "tokens": [
+    "--color-card",
+    "--color-card-foreground",
+    "--color-foreground",
+    "--color-accent",
+    "--color-accent-foreground",
+    "--color-border",
+    "--color-ring",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--shadow-sm",
+    "--shadow-md",
+    "--shadow-lg",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--ring-width",
+    "--ring-offset",
+    "--size-control-sm",
+    "--size-control-md",
+    "--size-control-lg",
+    "--space-1",
+    "--space-2",
+    "--space-3",
+    "--space-4",
+    "--duration-micro",
+    "--duration-short",
+    "--ease-snappy",
+    "--ease-exit",
+    "--font-sans",
+    "--text-sm"
+  ],
+  "parts": [
+    "root",
+    "trigger",
+    "panel"
+  ],
+  "tags": {
+    "trigger": "button",
+    "panel": "div"
+  },
+  "profile": {
+    "surface": "panel",
+    "density": "trigger",
+    "interactive": "trigger",
+    "also": [
+      "trigger"
+    ]
+  },
+  "api": [
+    "openPopover(scope: Element): void",
+    "closePopover(scope: Element): void"
+  ],
+  "pattern": "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/"
+}

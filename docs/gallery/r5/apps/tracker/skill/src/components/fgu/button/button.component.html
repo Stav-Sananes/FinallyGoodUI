@@ -1,0 +1,16 @@
+<button
+  data-fgu="button"
+  data-part="root"
+  [attr.type]="type"
+  [attr.data-variant]="variant"
+  [attr.disabled]="disabled ? '' : null"
+  [attr.aria-busy]="loading ? 'true' : null"
+>
+  <span data-part="spinner" aria-hidden="true"></span>
+  <span data-part="icon" aria-hidden="true">
+    <ng-content select="[slot=icon]" />
+  </span>
+  <span data-part="label">
+    <ng-content />
+  </span>
+</button>

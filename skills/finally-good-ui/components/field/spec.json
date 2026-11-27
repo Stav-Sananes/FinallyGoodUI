@@ -1,0 +1,160 @@
+{
+  "name": "field",
+  "shapes": [
+    "stacked",
+    "inline"
+  ],
+  "props": [
+    {
+      "name": "variant",
+      "type": "string",
+      "default": "stacked"
+    },
+    {
+      "name": "label",
+      "type": "string"
+    },
+    {
+      "name": "hint",
+      "type": "string"
+    },
+    {
+      "name": "error",
+      "type": "string"
+    },
+    {
+      "name": "invalid",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "disabled",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "required",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "type",
+      "type": "string",
+      "default": "text"
+    },
+    {
+      "name": "name",
+      "type": "string"
+    },
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "placeholder",
+      "type": "string"
+    },
+    {
+      "name": "autocomplete",
+      "type": "string",
+      "ts": "AutoFill"
+    },
+    {
+      "name": "rows",
+      "type": "number"
+    },
+    {
+      "name": "multiline",
+      "type": "boolean",
+      "default": "false"
+    },
+    {
+      "name": "hideLabel",
+      "type": "boolean",
+      "default": "false"
+    }
+  ],
+  "events": [
+    "input",
+    "change"
+  ],
+  "slots": [],
+  "states": [
+    {
+      "name": "invalid",
+      "attribute": "aria-invalid"
+    },
+    {
+      "name": "disabled",
+      "attribute": "disabled"
+    }
+  ],
+  "a11y": {
+    "role": "textbox",
+    "rolePart": "control",
+    "aria": [
+      "aria-invalid",
+      "aria-describedby",
+      "aria-required",
+      "aria-label"
+    ],
+    "keys": {}
+  },
+  "tokens": [
+    "--color-foreground",
+    "--color-muted-foreground",
+    "--color-background",
+    "--color-destructive",
+    "--color-border",
+    "--color-input",
+    "--color-ring",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--radius-full",
+    "--shadow-sm",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--ring-width",
+    "--ring-offset",
+    "--size-control-sm",
+    "--size-control-md",
+    "--size-control-lg",
+    "--space-1",
+    "--space-2",
+    "--space-3",
+    "--space-4",
+    "--duration-micro",
+    "--duration-short",
+    "--duration-standard",
+    "--ease-snappy",
+    "--ease-enter",
+    "--font-sans",
+    "--text-sm",
+    "--text-sm--line-height",
+    "--text-base"
+  ],
+  "parts": [
+    "root",
+    "label",
+    "hint",
+    "control",
+    "error"
+  ],
+  "pattern": "https://www.w3.org/WAI/ARIA/apg/practices/names-and-descriptions/",
+  "tags": {
+    "label": "label",
+    "hint": "p",
+    "error": "p",
+    "control": "input"
+  },
+  "profile": {
+    "surface": "control",
+    "interactive": "control",
+    "density": "control"
+  },
+  "api": [
+    "validate(form: Element): boolean"
+  ]
+}

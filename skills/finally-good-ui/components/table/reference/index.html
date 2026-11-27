@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Table reference</title>
+<!-- tokens.css: node scripts/emit-tokens.mjs --in tokens/default.tokens.json --format css > tokens.css -->
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="../table.css">
+</head>
+<body>
+<main id="demo">
+  <div data-fgu="table" data-part="root" data-sticky role="region" aria-labelledby="inv-cap" tabindex="0">
+    <table data-part="table">
+      <caption data-part="caption" id="inv-cap">Invoices</caption>
+      <thead data-part="head">
+        <tr data-part="row">
+          <th data-part="header" scope="col"><input type="checkbox" data-part="select" aria-label="Select all rows"></th>
+          <th data-part="header" scope="col" data-key="id" aria-sort="ascending"><button type="button" data-part="sort">Invoice</button></th>
+          <th data-part="header" scope="col" data-key="due" aria-sort="none"><button type="button" data-part="sort">Due</button></th>
+          <th data-part="header" scope="col" data-key="amount" data-align="end" aria-sort="none"><button type="button" data-part="sort">Amount (USD)</button></th>
+        </tr>
+      </thead>
+      <tbody data-part="body">
+        <tr data-part="row" data-row-id="INV-1040" aria-selected="false"><td data-part="cell"><input type="checkbox" data-part="select" aria-label="Select row INV-1040"></td><td data-part="cell">INV-1040</td><td data-part="cell">Oct 1</td><td data-part="cell" data-align="end">1,200.00</td></tr>
+        <tr data-part="row" data-row-id="INV-1042" aria-selected="true"><td data-part="cell"><input type="checkbox" data-part="select" aria-label="Select row INV-1042" checked></td><td data-part="cell">INV-1042</td><td data-part="cell">Oct 3</td><td data-part="cell" data-align="end">4,250.00</td></tr>
+        <tr data-part="row" data-row-id="INV-1045" aria-selected="false"><td data-part="cell"><input type="checkbox" data-part="select" aria-label="Select row INV-1045"></td><td data-part="cell">INV-1045</td><td data-part="cell">Oct 9</td><td data-part="cell" data-align="end">310.50</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div data-fgu="table" data-part="root" role="region" aria-labelledby="empty-cap" tabindex="0">
+    <table data-part="table">
+      <caption data-part="caption" id="empty-cap">Archived invoices</caption>
+      <thead data-part="head"><tr data-part="row"><th data-part="header" scope="col" data-key="id" aria-sort="none"><button type="button" data-part="sort">Invoice</button></th><th data-part="header" scope="col">Due</th></tr></thead>
+      <tbody data-part="body"><tr data-part="row"><td data-part="status" colspan="2" role="status">Nothing archived yet. Archive an invoice from its row menu.</td></tr></tbody>
+    </table>
+  </div>
+</main>
+<script type="module">
+  import { attach } from "../table.js";
+  const demo = document.getElementById("demo");
+  attach(demo);
+  // The owner of the rows sorts them: here, by the text of the clicked column.
+  demo.addEventListener("sortchange", (event) => {
+    const [key, dir] = event.detail.split(":");
+    const th = demo.querySelector(`[data-key="${key}"]`);
+    const at = [...th.parentElement.children].indexOf(th);
+    const body = demo.querySelector('[data-part="body"]');
+    const text = (row) => row.children[at].textContent.trim();
+    const rows = [...body.children].sort((a, b) => text(a).localeCompare(text(b), undefined, { numeric: true }) * (dir === "ascending" ? 1 : -1));
+    body.append(...rows);
+  });
+</script>
+</body>
+</html>

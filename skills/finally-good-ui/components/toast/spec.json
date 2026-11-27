@@ -1,0 +1,100 @@
+{
+  "name": "toast",
+  "shapes": [
+    "status",
+    "error"
+  ],
+  "props": [
+    {
+      "name": "toasts",
+      "type": "array",
+      "ts": "{ id: string; message: string; variant?: \"status\" | \"error\"; timeout?: number; action?: string; onAction?: (id: string) => void }[]",
+      "default": "[]"
+    },
+    {
+      "name": "label",
+      "type": "string",
+      "default": "Notifications"
+    }
+  ],
+  "events": [
+    "dismiss"
+  ],
+  "slots": [
+    "default"
+  ],
+  "states": [
+    {
+      "name": "leaving",
+      "attribute": "data-leaving"
+    }
+  ],
+  "a11y": {
+    "role": "status",
+    "rolePart": "root",
+    "aria": [
+      "aria-label"
+    ],
+    "keys": {}
+  },
+  "tokens": [
+    "--color-card",
+    "--color-card-foreground",
+    "--color-foreground",
+    "--color-muted-foreground",
+    "--color-destructive",
+    "--color-border",
+    "--color-ring",
+    "--radius-none",
+    "--radius-sm",
+    "--radius-md",
+    "--radius-lg",
+    "--shadow-sm",
+    "--shadow-md",
+    "--shadow-lg",
+    "--border-width-hairline",
+    "--border-width-strong",
+    "--ring-width",
+    "--ring-offset",
+    "--size-control-sm",
+    "--size-control-md",
+    "--size-control-lg",
+    "--space-2",
+    "--space-3",
+    "--space-4",
+    "--space-8",
+    "--duration-micro",
+    "--duration-short",
+    "--duration-standard",
+    "--duration-medium",
+    "--ease-enter",
+    "--ease-exit",
+    "--ease-move",
+    "--z-toast",
+    "--font-sans",
+    "--text-sm"
+  ],
+  "parts": [
+    "root",
+    "toast",
+    "message",
+    "action",
+    "dismiss"
+  ],
+  "tags": {
+    "toast": "div",
+    "message": "p",
+    "action": "button",
+    "dismiss": "button"
+  },
+  "pattern": "recipes/motion/toast-stack.md",
+  "profile": {
+    "surface": "toast",
+    "interactive": null,
+    "density": null,
+    "touch": [
+      "action",
+      "dismiss"
+    ]
+  }
+}

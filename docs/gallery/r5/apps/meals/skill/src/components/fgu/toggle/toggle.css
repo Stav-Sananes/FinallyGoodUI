@@ -1,0 +1,103 @@
+/* Toggle reference (checkbox + switch). Tokens only; load tokens.css (emit-tokens.mjs --format css) first. */
+[data-fgu="toggle"][data-part="root"] {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  min-block-size: var(--size-control-md);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-foreground);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+[data-fgu="toggle"] [data-part="control"] {
+  appearance: none;
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  margin: 0;
+  inline-size: var(--icon-lg);
+  block-size: var(--icon-lg);
+  border: var(--border-width-hairline) solid var(--color-input);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-background);
+  color: var(--color-primary-foreground);
+  cursor: inherit;
+  transition:
+    background-color var(--duration-short) var(--ease-snappy),
+    border-color var(--duration-short) var(--ease-snappy);
+}
+/* Checkbox mark: always in the box, only its opacity changes, so the size never moves. */
+[data-fgu="toggle"] [data-part="control"]::after {
+  content: "\2713";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity var(--duration-micro) var(--ease-snappy);
+}
+[data-fgu="toggle"] [data-part="control"]:checked::after { opacity: 1; }
+[data-fgu="toggle"] [data-part="control"]:indeterminate::after { content: "\2212"; opacity: 1; }
+[data-fgu="toggle"] [data-part="control"]:checked,
+[data-fgu="toggle"] [data-part="control"]:indeterminate {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+/* Switch: a track with a thumb that only translates, so state is shown by position as well as colour. */
+[data-fgu="toggle"][data-variant="switch"] [data-part="control"] {
+  inline-size: calc(var(--icon-lg) * 2);
+  border-radius: var(--radius-full);
+  background-color: var(--color-input);
+}
+[data-fgu="toggle"][data-variant="switch"] [data-part="control"]::after {
+  content: "";
+  inset: 0 auto 0 0;
+  inline-size: var(--icon-lg);
+  border-radius: var(--radius-full);
+  background-color: var(--color-background);
+  opacity: 1;
+  transition: transform var(--duration-standard) var(--ease-move);
+}
+[data-fgu="toggle"][data-variant="switch"] [data-part="control"]:checked::after { transform: translateX(var(--icon-lg)); }
+[data-fgu="toggle"][data-variant="switch"] [data-part="control"]:checked { background-color: var(--color-primary); }
+[data-fgu="toggle"] [data-part="control"]:focus-visible {
+  outline: var(--ring-width) solid var(--color-ring);
+  outline-offset: var(--ring-offset);
+}
+[data-fgu="toggle"] [data-part="control"][aria-invalid="true"] {
+  border-color: var(--color-destructive);
+  box-shadow: inset 0 0 0 var(--border-width-hairline) var(--color-destructive);
+}
+[data-fgu="toggle"] [data-part="control"]:disabled { cursor: not-allowed; opacity: 0.5; }
+[data-fgu="toggle"][data-part="root"]:has([data-part="control"]:disabled) { cursor: not-allowed; color: var(--color-muted-foreground); }
+@media (prefers-reduced-motion: reduce) {
+[data-fgu="toggle"] [data-part="control"],
+[data-fgu="toggle"] [data-part="control"]::after,
+[data-fgu="toggle"][data-variant="switch"] [data-part="control"]::after { transition: opacity var(--duration-micro) linear; }
+}
+
+/* toggle: radius=soft material=layered density=balanced motion=productive motif="punched hang-tag: notched corner, round punch hole and a string loop, as on a greengrocer's price tag" */
+
+[data-fgu="toggle"] [data-part="control"] {
+  transition-property: background-color, border-color, box-shadow, color, opacity, transform;
+  transition-duration: var(--duration-micro);
+  transition-timing-function: var(--ease-snappy);
+}
+
+/* state: disabled */
+[data-fgu="toggle"][disabled]:not([disabled="false"]),
+[data-fgu="toggle"] [disabled]:not([disabled="false"]) {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-fgu="toggle"] [data-part="control"] {
+    transition-duration: 0s;
+    animation-duration: 0s;
+  }
+}

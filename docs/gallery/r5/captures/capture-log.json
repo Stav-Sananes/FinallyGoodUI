@@ -1,0 +1,31 @@
+{
+  "booking": {
+    "builtDir": "apps/booking/skill/dist",
+    "views": {
+      "desktop-light": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 85432,
+        "pixelStdDev": 20
+      },
+      "desktop-dark": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 81953,
+        "pixelStdDev": 20.41
+      },
+      "phone": {
+        "consoleErrors": [],
+        "pageErrors": [],
+        "failedRequests": [],
+        "notes": [],
+        "bytes": 106440,
+        "pixelStdDev": 33.12
+      }
+    }
+  }
+}

@@ -3,13 +3,13 @@
 Goal: three written, then built, directions for the **key screen**, each fully animated with one real transition. The user picks one or mixes. Output: `.design/directions/{a,b,c}.html`, `.design/directions/compare.html`, a decision entry in `.design/decisions.md`.
 
 ## 0. Gate
-1. Read `.design/config.json`. If `"directions": "off"` → skip this module, log `directions: skipped (config)` in `decisions.md`, go to `system`.
+1. Read `directions` (SKILL.md, run settings). `off` → skip this module, log `directions: skipped (config)` in `decisions.md`, go to `system`. `one` → write only the grounded standard (A), build it, skip the divergence rule.
 2. Require an approved `.design/blueprint.md`. If missing, run `blueprint` first.
-3. Show the cost warning (verbatim, then wait for an answer):
+3. Show the cost warning only when `directions` is `three` and the user did not choose it in the plugin setting or `.design/config.json` (the default counts as not chosen); then wait. Never in an autonomous run (follow SKILL.md "Autonomous runs"):
 
-> Directions builds 3 full HTML prototypes in parallel subagents. Expect roughly 3–4× the tokens of one screen build and a few minutes. Proceed (recommended for new apps), build only 1 direction, or skip? To turn this step off permanently, set `"directions": "off"` in `.design/config.json`.
+> Directions builds 3 full HTML prototypes in parallel subagents. Expect roughly 3–4× the tokens of one screen build and a few minutes. Proceed (recommended for new apps), build only 1 direction, or skip? To change this permanently, set `directions` (`three`, `one`, `off`) in the plugin settings or `.design/config.json`.
 
-   - "1 direction" → write only the grounded standard (A), build it, skip the divergence rule.
+   - "1 direction" → as `one` above.
    - "skip" → log it and continue to `system`.
 
 ## 1. Read inputs
@@ -30,18 +30,24 @@ Six axes, each with three positions:
 | type voice | neutral grotesk | humanist / serif text | expressive display + utility |
 | layout (composition of the key screen's content area) | **column**: one reading column ≤ 760px, top to bottom, the answer first | **rail + work**: a narrow persistent summary rail beside a wide working area (list, table, canvas) | **stage**: one focal figure or visual owns ≥ 40% of the first viewport, everything else arranged around or below it (not two equal columns) |
 | material (craft.material-restraint) | flat-hairline (rules and space, no shadows) | soft-elevated (layered tinted shadows, concentric radii) | bezel / textured / tonal (shell + core, grain, tonal light) |
-| motion personality | productive (100–200ms, no bounce) | balanced (150–300ms) | expressive (250–500ms, spatial springs may bounce) |
+| motion personality | productive (150–250ms, 8–12px travel, no bounce) | balanced (200–400ms, 12–20px travel) | expressive (300–600ms, 16–32px travel, spatial springs may bounce) |
 
 **Composition test.** Describe each content area in one line as "<first thing the eye hits> → <then> → <then>" and with its column structure. Two directions whose lines match (for example both "summary on the left, list on the right") share a composition even if their axis numbers differ: re-roll one.
 
 **Layout is composition, not the shell.** The blueprint's navigation model (sidebar, tabs…) is fixed for every direction; the layout axis decides how the content area is composed inside it. Never override the blueprint shell, and never let three directions share one composition: that is the "same skeleton in three costumes" failure (directions that differ only in palette and font read as one template).
 
-- **A — grounded standard.** Set each axis to the position the brief most directly implies (cite the brief line). This is the safe, conventional, well-executed option.
-- **B and C — pushed.** Roll, don't choose. For each axis run:
+**The three must span the range** (quiet → bold → the subject's own), so the choice is between real alternatives, not three versions of the safe answer:
+- **A — quiet.** Set each axis to the position the brief most directly implies (cite the brief line). Restrained and conventional, well executed.
+- **B — bold.** At least three of contrast, type voice, material and motion sit at position 3 (stark, expressive display, bezel/textured/tonal, expressive motion), the accent is saturated (OKLCH chroma ≥ 0.18) and covers a real surface, not only buttons. Roll the other axes.
+- **C — led by the subject.** The palette, a type choice and the motif come from the product's own world: its brand, its materials, its content (a dog's coat colours and a grooming comb; produce and enamelware; a ledger's ruled paper and stamp ink). Name the source of each in the spec. Its background is not a near-neutral paper. Roll the axes the source doesn't settle.
+- None of the three may land on the **ink-on-paper house style** (`rubric/ai-default-fingerprints.md`): near-neutral light page + near-black primary buttons + one small accent. If A does because the brief demands restraint, A must still break it on one named axis (a tinted canvas, a coloured primary, a motif that owns a surface) and say which.
+- **Rolling** (B's and C's free axes). For each axis run:
   `node -e "console.log(1+Math.floor(Math.random()*3))"`
   Record the raw roll in the spec. Then enforce:
   - B and C each differ from A on **≥4 of 6** axes, and from each other on ≥3. Re-roll only the axes that fail (when B and C clash, C re-rolls; B keeps); record re-rolls. After 10 re-rolls of one axis, take the nearest position that satisfies the rules and log it.
-  - **Structure, not skin:** the three directions take three different **layout** positions, and at least two different **material** positions. Re-roll layout/material until they do.
+  - **Structure, not skin:** the three directions take three different **layout** positions, and at least two different **material** positions. Re-roll layout/material until they do. **Exception:** when the brief fixes the composition ("the list with the issue open in a side panel"), that composition binds all three; don't roll layout. Make B and C differ harder on the other five axes instead, and log it.
+  - When only one position can satisfy every rule, assign it and log why; don't re-roll toward it.
+  - **Every roll and re-roll stays inside the frequency budget** (`motion.frequency-budget`, budget per screen type from `interview.context.frequency`). The motion position picks curve, bounce and which moments move; it never buys duration the key screen's frequency forbids. Key screen opened several times a day: repeated actions ≤ 150ms and no entrance choreography, even at `expressive` (spend its range on the one real transition and first-run only). Nothing routine over 400ms at any position. Log in the spec how the rolled position was fitted to the budget.
   - A roll that contradicts a **hard** brief constraint (e.g. a11y needs → stark contrast allowed, but "dense" for a first-time elderly audience is not) may be moved one step; log the reason. Taste is not a reason.
 - Write the final 3×6 table into each spec and into `compare.html` chips.
 
@@ -75,7 +81,7 @@ Icons & imagery: <one icon library + stroke width, loaded per agents/direction-b
 Identity motif: <one motif from the subject's world> — repeats in: <place 1>, <place 2>, <place 3> (craft.identity-motif)
 Accent moment: <where the accent appears on purpose, besides the primary action> (craft.tension-restraint-liveliness)
 Motion personality: <productive|balanced|expressive>
-  durations: micro <n>ms · standard <n>ms · hero <n>ms (from §4 tokens)
+  durations: micro <n>ms · standard <n>ms · hero <n>ms (from the duration tokens, rule below)
   easing: enter cubic-bezier(..) · exit cubic-bezier(..) · move cubic-bezier(..)
   spring (if any): spatial {duration <s>, bounce <0–0.3>} · effects {bounce 0}
   the one real transition: <trigger control → what moves where> (motion.one-signature-moment, motion.spatial-continuity)
@@ -84,10 +90,10 @@ Fingerprint check: <pass | matches: <id> → justified because <brief line> | re
 ```
 
 Rules for the specs:
-- Palette: framework defaults (stock blue primary on a blue-grey canvas, Tailwind/shadcn neutrals) are the sterile default, not a grounded choice; use one only if the brief names it. Derive, don't pick. For calm, serious, editorial, luxurious and dense briefs, keep the canvas near-neutral and draw the primary action in ink; spend the accent on meaning (`craft.ink-and-accent`).
+- Palette: framework defaults (stock blue primary on a blue-grey canvas, Tailwind/shadcn neutrals) are the sterile default, not a grounded choice; use one only if the brief names it. Derive, don't pick. For calm, serious, editorial, luxurious and dense briefs, ink-on-neutral (near-neutral canvas, ink primary action, accent on meaning; `craft.ink-and-accent`) may be ONE candidate among the three, never all three; the others take their palette from the subject or a distinct contrast position.
 - Type voice is the strongest premium lever: every direction gets a display voice with character for its one or two large moments (statement, key figure), chosen from the brief's words; a neutral UI sans at medium weight everywhere is the sterile default. Start from base hue (brief/brand), accent hue, and the contrast position. Soft = lightness steps ~4–6%; stark = ≥10% and near-black ink. Chroma of neutrals ≤ 0.02 unless the thesis needs tint.
 - Type: any Google Fonts family. Do **not** default to Inter, Space Grotesk, Roboto, or a lone system stack — use one only if the spec's `why` names a brief reason (e.g. "must match existing product UI"). Max 2 families + optional mono (typography.limited-families-weights).
-- Motion values come from the §4 tokens: durations `instant 50 · micro 100 · short 150 · standard 250 · medium 300 · long 400 · hero 500`; easings `enter (0,0,0,1) · enter-emphasized (0.05,0.7,0.1,1) · exit (0.3,0,1,1) · move (0.2,0,0,1) · snappy (0.23,1,0.32,1)`. Exits = 60–75% of enter. Nothing routine over 300ms.
+- Motion values come from the `duration`/`easing` groups of `tokens/default.tokens.json`: durations `instant 50 · micro 100 · short 150 · standard 250 · medium 300 · long 400 · hero 600`; easings `enter (0,0,0,1) · enter-emphasized (0.05,0.7,0.1,1) · exit (0.3,0,1,1) · move (0.2,0,0,1) · snappy (0.23,1,0.32,1)`. Exits = 60–75% of enter. Nothing routine over 300ms.
 - A must still be *good*: grounded ≠ bland. Give it a material, a motif and an accent moment too; a safe direction that is the sterile default fails the fingerprint check.
 - **Premium comes from craft, not effects.** Every spec fills the Material, Craft values, Icons & imagery, Identity motif and Accent moment lines from `canon/craft.md`. Glass, glow, gradient text and blurred orbs are not a material.
 
@@ -100,7 +106,7 @@ Record the result in the spec's `Fingerprint check` line.
 - Then compare the three specs side by side: if two share the same composition sentence, or all three share one material, re-roll per §2 (two directions may share a material).
 
 ## 5. Dispatch builders (parallel)
-Send **one message with three Agent tool calls** (`subagent_type: "direction-builder"`), one per direction. If the Agent tool is unavailable, build A/B/C yourself sequentially following `agents/direction-builder.md`.
+Send **one message with three Agent tool calls** (`subagent_type: "direction-builder"`), one per direction. If the Agent tool is unavailable, build A/B/C yourself sequentially following `agents/direction-builder.md` in the skill folder.
 
 Each prompt must contain, inline (the subagent does not share your context):
 1. The full spec text for that direction.
@@ -109,9 +115,10 @@ Each prompt must contain, inline (the subagent does not share your context):
 4. Output path: `<project>/.design/directions/<a|b|c>.html` (absolute).
 5. The path to `rubric/ai-default-fingerprints.md` (absolute) for its self-check.
 6. The paths to `canon/craft.md` and `scripts/check-static.mjs` (absolute) for its craft pass and static check.
-7. This line: "Build ONE self-contained HTML file per agents/direction-builder.md. Report: path, fonts and icon library used, the transition implemented, where the motif repeats, regions built (N of N), check-static result, fingerprint self-check result, anything you could not do."
+7. Its own scratch dir, absolute and outside the project (e.g. `<session scratchpad>/fgu-direction-<a|b|c>/`): builders share one machine and must not share a browser or write junk into the project (`agents/direction-builder.md`, "Scratch and browser hygiene").
+8. This line: "Build ONE self-contained HTML file per agents/direction-builder.md. Report: path, fonts and icon library used, the transition implemented, where the motif repeats, regions built (N of N), check-static result, fingerprint self-check result, anything you could not do."
 
-Wait for all three. If one fails or returns without the file, retry that one once; then report the gap to the user.
+Wait for all three. If one fails or returns without the file, retry that one once; then report the gap to the user. Then check the project root for builder leftovers (`.playwright-mcp/`, stray screenshots or logs, `git status --porcelain` when it is a repo) and remove what the builders created.
 
 Then run `node <skill dir>/scripts/check-static.mjs --root .design/directions --files a.html,b.html,c.html` yourself. Any `dead-control`, `placeholder-*` or `unsourced-claim` finding goes back to that builder (or fix it directly) before the user sees the page.
 
@@ -119,7 +126,7 @@ Then run `node <skill dir>/scripts/check-static.mjs --root .design/directions --
 1. Copy `templates/compare.html` → `.design/directions/compare.html`.
 2. Replace every `{{PLACEHOLDER}}` in the page (the list in the template's top comment documents them; that comment may stay as is) from the three specs. Escape `<`, `&`, `"` in values. Axis chips use the final table positions.
 3. The page loads `a.html`, `b.html`, `c.html` from the same folder via `src`. If publishing through the Artifact tool (single file), inline each direction instead: set `data-srcdoc` placeholders per the template comment.
-4. Verify: open it (browser pane / Playwright if available), confirm three frames render with no console errors, the theme toggle flips all three, replay works.
+4. Verify: open it (browser pane / Playwright if available), confirm three frames render with no console errors, the theme toggle flips all three, replay works. Save any screenshots to the session scratch dir, not the project; if the browser tool created `.playwright-mcp/` in the project, delete it afterwards.
 
 ## 7. Present
 - **Artifact tool available:** publish the inlined `compare.html` (private by default) and give the link.
@@ -131,6 +138,7 @@ Then ask (one message, choices first):
 
 - Mix: write a merged spec (take each named axis from its source; resolve conflicts, e.g. dense layout + airy spacing, by asking one follow-up). Rebuild only if the user asks to see it.
 - None: ask what is wrong in one question with options (too loud / too plain / wrong mood / wrong structure), revise the spec(s), rebuild affected ones.
+- A mix, a revision or a re-roll re-applies the §2 rules, including the frequency budget: taking C's expressive motion onto a daily-use screen keeps C's curves, not durations over budget.
 
 ## 8. Record
 Append to `.design/decisions.md`:

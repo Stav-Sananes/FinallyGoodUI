@@ -1,7 +1,18 @@
 {
-  "directions": "on",
+  "mode": "guided",
+  "directions": "three",
   "verify": "full",
-  "viewports": [[375, 812], [1440, 900]],
+  "viewports": [
+    [
+      375,
+      812
+    ],
+    [
+      1440,
+      900
+    ]
+  ],
   "interviewDepth": "auto",
-  "hook": "on"
+  "hook": "on",
+  "theme": "media"
 }

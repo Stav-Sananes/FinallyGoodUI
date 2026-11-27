@@ -11,7 +11,7 @@
 Height is a layout property. This is the one sanctioned exception to motion.compositor-only: keep it short, on small panels, and never on many elements at once. Mark it `/* fgu-allow: animate-layout-prop */` so the static check knows it's deliberate.
 
 ## CSS baseline A — native `<details>` (progressive)
-Works everywhere; animates in Chromium (`interpolate-size`), opens instantly elsewhere.
+Works everywhere: `::details-content` is Baseline (2025-09), so the fade runs in every current browser; the height also animates where `interpolate-size` is supported (Chromium), and opens instantly elsewhere.
 ```css
 details.acc::details-content {
   opacity: 0;
@@ -74,13 +74,14 @@ Chevron: rotate the icon with `transform: rotate(180deg)` keyed off `[aria-expan
 ## React + Motion
 Adds value when siblings below must also glide (Motion's `layout`) or heights change while open.
 ```tsx
+import { sec, ease } from "./motion-tokens"; // recipes/INDEX.md
 <AnimatePresence initial={false}>
   {open && (
     <m.div
       key="panel"
       initial={{ height: 0, opacity: 0 }}
-      animate={{ height: "auto", opacity: 1, transition: { duration: 0.25, ease: [0.2, 0, 0, 1] } }}
-      exit={{ height: 0, opacity: 0, transition: { duration: 0.15, ease: [0.3, 0, 1, 1] } }}
+      animate={{ height: "auto", opacity: 1, transition: { duration: sec('standard'), ease: ease('move') } }}
+      exit={{ height: 0, opacity: 0, transition: { duration: sec('short'), ease: ease('exit') } }}
       style={{ overflow: "hidden" }}
     >{children}</m.div>
   )}
@@ -90,7 +91,7 @@ Under reduced motion pass `transition={{ duration: 0 }}` for height and keep opa
 
 ## Vue / Svelte
 - Vue: `<Transition>` can't animate to `auto`; use baseline B with a class binding, or JS hooks (`@enter` measuring `el.scrollHeight`).
-- Svelte: `transition:slide={{ duration: 250 }}` handles auto height (it animates height — same exception applies). Respect reduced motion via a `duration` of 0 from a `prefersReducedMotion` store.
+- Svelte: `transition:slide={{ duration: ms('standard') }}` handles auto height (it animates height — same exception applies). Respect reduced motion via a `duration` of 0 from a `prefersReducedMotion` store.
 
 ## A11y
 - Trigger is a `<button>` inside a heading; `aria-expanded` + `aria-controls`. Closed content must be `inert`/hidden, not just clipped.

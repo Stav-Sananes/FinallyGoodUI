@@ -7,7 +7,7 @@ The profile is already injected at the top of SKILL.md. If it is missing or stal
 ```
 node "${CLAUDE_SKILL_DIR}/scripts/detect-stack.mjs" --root .
 ```
-Note: `framework`, `styling.tailwind`, `components`, `animation`, `icons`, `devScript`, `testing`.
+Note: `framework` (`flutter` from a `pubspec.yaml` on the Flutter SDK, `swiftui` from an Xcode project or Swift package whose sources `import SwiftUI`, `compose` from a Gradle build that turns Compose on: no DOM, so `viewTransitions` and `fonts.loader` are `null`), `styling` (`tailwind`, plus `panda`, `unocss`, `stylex`, `vanillaExtract`), `components` (kit name; system.md step 4 says how each is themed), `shadcn` (base, style, CSS entry, port), `primitives` (unstyled libraries; recipes/motion/headless-primitive-motion.md keys on them), `viewTransitions` (`react`, `astro`, `sveltekit` or `native`: which route-transition path to use; `null` on React Native), `native` (React Native / Expo only: `styling` is `uniwind`, `nativewind`, `nativewind-v5`, `tamagui`, `unistyles` or `stylesheet` and picks the token format in system.md step 4; `web` says whether react-native-web is installed for verify.md §2), `desktop` (`{shell, version}` for Tauri or Electron: still a web front end for tokens and verify, plus canon layout.desktop-window for title bar, menus and window size), `icons` (`{lib, package, api}`: system.md step 4 wires the icon tokens by `api`), `fonts` (`loader` to pass to `emit-tokens --format fonts`, `inUse` loaders already wired), `tokensPipeline` (`{tool, config}`: Terrazzo or Style Dictionary builds the CSS from token sources; system.md step 4 exports to it and build edits the sources), `forms` (`{lib, schema}`: recipes/patterns/form-validation.md), `tables` (recipes/patterns/data-table.md), `charts` (chart libraries: recipes/patterns/chart.md), `animation` and `interaction` (recipes/INDEX.md maps tokens onto each; `vaul-unmaintained` and `angular-animations-legacy` mean don't extend them), `devScript`, `testing`.
 - `framework: unknown` with no `index.html` means a greenfield project. The stack is decided in the interview (`interview.constraints.platform-stack`).
 - Never assume an icon library, component kit or animation library that isn't listed.
 
@@ -29,7 +29,7 @@ Read the JSON:
 Then:
 1. Write `.design/brand.md` from `templates/brand.md`. Fill in only what the evidence supports and mark inferred roles `(inferred, N uses)`.
 2. Show the user a short summary: **what was found, the inferred roles to confirm, and the top 3 drift issues.** Ask them to confirm or correct the inferred roles in one reply.
-3. Once confirmed, run `extract-tokens.mjs --root . --write` to create `.design/tokens.json` (add `--force` only if the user agrees to overwrite).
+3. Once confirmed, run `extract-tokens.mjs --root . --write` to create `.design/tokens.json` with its `tokens.dark.json` and `tokens.resolver.json` (DTCG 2025.10; add `--force` only if the user agrees to overwrite).
 
 An existing brand is **binding**. Later steps extend it and never replace it, unless the user asks for a redesign.
 
