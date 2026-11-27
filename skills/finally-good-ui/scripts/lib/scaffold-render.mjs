@@ -558,26 +558,27 @@ export function angular(view, c) {
 }
 
 // ===================================================================== toast store
-/** The optional second file of the toast: where the list lives, per framework. null for plain HTML. */
-export function toastStore(family, c) {
-  const ts = c.typescript;
-  const item = `{ id: string; message: string; variant?: "status" | "error"; timeout?: number; action?: string; onAction?: (id: string) => void }`;
-  const types = ts ? `export type ToastItem = ${item};\nexport type ToastInput = Omit<ToastItem, "id">;\n\n` : "";
-  const head = "// Where the toast list lives. The component keeps the node and hands you the id (onDismiss / dismiss / ondismiss / dismissed): remove it here.\n";
-  const T_ = (t) => (ts ? t : "");
-  if (family === "react") {
-    const content = `${head}import { createContext, useCallback, useContext, useMemo, useState } from "react";
-${ts ? 'import type { ReactNode } from "react";\n' : ""}import { Toast } from "./toast";
+// What every store file declares and how it names a new toast.
+const TOAST_ITEM = '{ id: string; message: string; variant?: "status" | "error"; timeout?: number; action?: string; onAction?: (id: string) => void }';
+const TOAST_TYPES = `export type ToastItem = ${TOAST_ITEM};\nexport type ToastInput = Omit<ToastItem, "id">;\n`;
+const TOAST_HEAD = "// Where the toast list lives. The component keeps the node and hands you the id (onDismiss / dismiss / ondismiss / dismissed): remove it here.\n";
+const toastId = (counter) => `\`toast-\${++${counter}}\``;
 
-${types}${ts ? "type ToastApi = { toasts: ToastItem[]; push: (toast: ToastInput) => string; dismiss: (id: string) => void };\n" : ""}const ToastContext = createContext${T_("<ToastApi | null>")}(null);
+const TOAST_STORES = {
+  react: (c) => {
+    const t = (ts) => (c.typescript ? ts : "");
+    return { file: `toast-store.${c.typescript ? "tsx" : "jsx"}`, content: `${TOAST_HEAD}import { createContext, useCallback, useContext, useMemo, useState } from "react";
+${t('import type { ReactNode } from "react";\n')}import { Toast } from "./toast";
+
+${t(`${TOAST_TYPES}\ntype ToastApi = { toasts: ToastItem[]; push: (toast: ToastInput) => string; dismiss: (id: string) => void };\n`)}const ToastContext = createContext${t("<ToastApi | null>")}(null);
 let counter = 0;
 
 /** Put it once near the root: it renders the live region and owns the list. */
-export function ToastProvider({ children }${T_(": { children?: ReactNode }")}) {
-  const [toasts, setToasts] = useState${T_("<ToastItem[]>")}([]);
-  const dismiss = useCallback((id${T_(": string")}) => setToasts((all) => all.filter((t) => t.id !== id)), []);
-  const push = useCallback((toast${T_(": ToastInput")}) => {
-    const id = \`toast-\${++counter}\`;
+export function ToastProvider({ children }${t(": { children?: ReactNode }")}) {
+  const [toasts, setToasts] = useState${t("<ToastItem[]>")}([]);
+  const dismiss = useCallback((id${t(": string")}) => setToasts((all) => all.filter((t) => t.id !== id)), []);
+  const push = useCallback((toast${t(": ToastInput")}) => {
+    const id = ${toastId("counter")};
     setToasts((all) => [...all, { ...toast, id }]);
     return id;
   }, []);
@@ -591,27 +592,23 @@ export function ToastProvider({ children }${T_(": { children?: ReactNode }")}) {
 }
 
 /** const { push } = useToast(); push({ message: "Saved" }) */
-export function useToast()${T_(": ToastApi")} {
+export function useToast()${t(": ToastApi")} {
   const api = useContext(ToastContext);
   if (!api) throw new Error("useToast needs a <ToastProvider> above it");
   return api;
 }
-`;
-    return { file: `toast-store.${ts ? "tsx" : "jsx"}`, content };
-  }
-  if (family === "vue") {
-    return { file: "toast-store.ts", content: `${head}import { reactive } from "vue";
+` };
+  },
+  vue: () => ({ file: "toast-store.ts", content: `${TOAST_HEAD}import { reactive } from "vue";
 
-export type ToastItem = ${item};
-export type ToastInput = Omit<ToastItem, "id">;
-
+${TOAST_TYPES}
 // One list for the app: <Toast :toasts="toasts" @dismiss="dismiss" /> once, near the root; useToast() anywhere.
 const toasts = reactive<ToastItem[]>([]);
 let counter = 0;
 
 export function useToast() {
   function push(toast: ToastInput): string {
-    const id = \`toast-\${++counter}\`;
+    const id = ${toastId("counter")};
     toasts.push({ ...toast, id });
     return id;
   }
@@ -621,32 +618,29 @@ export function useToast() {
   }
   return { toasts, push, dismiss };
 }
-` };
-  }
-  if (family === "svelte") {
-    return { file: `toast-store.${ts ? "ts" : "js"}`, content: `${head}import { writable } from "svelte/store";
+` }),
+  svelte: (c) => {
+    const t = (ts) => (c.typescript ? ts : "");
+    return { file: `toast-store.${c.typescript ? "ts" : "js"}`, content: `${TOAST_HEAD}import { writable } from "svelte/store";
 
-${types}// <Toast toasts={$toasts} ondismiss={dismissToast} /> once, near the root; pushToast() anywhere.
-export const toasts = writable${T_("<ToastItem[]>")}([]);
+${t(`${TOAST_TYPES}\n`)}// <Toast toasts={$toasts} ondismiss={dismissToast} /> once, near the root; pushToast() anywhere.
+export const toasts = writable${t("<ToastItem[]>")}([]);
 let counter = 0;
 
-export function pushToast(toast${T_(": ToastInput")})${T_(": string")} {
-  const id = \`toast-\${++counter}\`;
+export function pushToast(toast${t(": ToastInput")})${t(": string")} {
+  const id = ${toastId("counter")};
   toasts.update((all) => [...all, { ...toast, id }]);
   return id;
 }
 
-export function dismissToast(id${T_(": string")}) {
+export function dismissToast(id${t(": string")}) {
   toasts.update((all) => all.filter((t) => t.id !== id));
 }
 ` };
-  }
-  if (family === "angular") {
-    return { file: "toast-store.service.ts", content: `${head}import { Injectable, signal } from "@angular/core";
+  },
+  angular: () => ({ file: "toast-store.service.ts", content: `${TOAST_HEAD}import { Injectable, signal } from "@angular/core";
 
-export type ToastItem = ${item};
-export type ToastInput = Omit<ToastItem, "id">;
-
+${TOAST_TYPES}
 // <fgu-toast [toasts]="store.toasts()" (dismissed)="store.dismiss($event)" /> once, near the root; inject(ToastStore).push(...) anywhere.
 @Injectable({ providedIn: "root" })
 export class ToastStore {
@@ -654,7 +648,7 @@ export class ToastStore {
   private counter = 0;
 
   push(toast: ToastInput): string {
-    const id = \`toast-\${++this.counter}\`;
+    const id = ${toastId("this.counter")};
     this.toasts.update((all) => [...all, { ...toast, id }]);
     return id;
   }
@@ -663,10 +657,11 @@ export class ToastStore {
     this.toasts.update((all) => all.filter((t) => t.id !== id));
   }
 }
-` };
-  }
-  return null;
-}
+` }),
+};
+
+/** Companion files a component may write next to itself (markup `companions: [name]`): { file, content } per framework, null for plain HTML. */
+export const COMPANIONS = { "toast-store": (family, c) => TOAST_STORES[family]?.(c) ?? null };
 
 // ===================================================================== plain
 /** The reference page for the component, re-pointed at the files the scaffold writes next to it. */

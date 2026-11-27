@@ -68,6 +68,7 @@ const FIELD_CONTROL = {
 
 export const MARKUP = {
   button: {
+    primitive: true, // an installed primitive library may supply the root element (see chooseSource)
     tree: el("root", { type: js("type"), "data-variant": js("variant"), disabled: bool("disabled"), "aria-busy": aria("loading") }, [
       el("spinner", { "aria-hidden": "true" }),
       whenSlot("icon", [el("icon", { "aria-hidden": "true" }, [slot("icon")])]),
@@ -165,6 +166,7 @@ export const MARKUP = {
   },
 
   toast: {
+    companions: ["toast-store"], // a second file: where the list lives (provider and hook, composable, store, service)
     events: ["dismiss"],
     tree: el("root", { role: "status", "aria-label": js("label") }, [
       each("toasts", "t", "t.id", [
@@ -180,13 +182,13 @@ export const MARKUP = {
 };
 
 /** Every node of the tree, depth first. */
-export function walk(node, visit) {
+export function walkTree(node, visit) {
   visit(node);
-  for (const kid of node.kids ?? []) walk(kid, visit);
+  for (const kid of node.kids ?? []) walkTree(kid, visit);
 }
 
 /** The part names the tree renders. */
-export const partsOf = (tree) => { const out = new Set(); walk(tree, (n) => { if (n.k === "el" && n.part) out.add(n.part); }); return out; };
+export const partsOf = (tree) => { const out = new Set(); walkTree(tree, (n) => { if (n.k === "el" && n.part) out.add(n.part); }); return out; };
 
 // ---- select, table, tooltip, popover
 const SELECT_ID = "uid + '-trigger'";

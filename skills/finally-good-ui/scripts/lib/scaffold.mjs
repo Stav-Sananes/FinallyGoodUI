@@ -12,7 +12,7 @@ import { profileCss } from "./style-profile.mjs";
 import { exists, readJson, isDir } from "./fs.mjs";
 import { usedVars, definedVars } from "./token-vars.mjs";
 import { MARKUP } from "./scaffold-markup.mjs";
-import { viewOf, react, vue, svelte, angular, plain, toastStore } from "./scaffold-render.mjs";
+import { viewOf, react, vue, svelte, angular, plain, COMPANIONS } from "./scaffold-render.mjs";
 
 export const COMPONENTS_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "components");
 const NATIVE = new Set(["expo", "react-native", "flutter", "swiftui", "compose"]);
@@ -52,12 +52,12 @@ function componentsDir(root, stack) {
 const projectDeps = (root) => { const p = readJson(join(root, "package.json")); return { ...p?.peerDependencies, ...p?.devDependencies, ...p?.dependencies }; };
 
 /** The primitive the project already has: its own, else the kit's base. Null when none can be wired. */
-function chooseSource(stack, family, spec, tag, deps) {
+function chooseSource(stack, family, spec, markup, tag, deps) {
   const name = stack.primitives?.[0] ?? stack.shadcn?.base ?? null;
   if (!name) return { source: "shared", prim: null, note: null };
   // The primitives wrap a button. A dialog, menu, tabs... have their own behaviour (focus, keys, popover) that a
   // polymorphic root does not supply, so they always use the shared script.
-  if (spec.name !== "button") return { source: "shared", prim: null, note: `primitive "${name}" is wired for the button only: ${spec.name} uses the shared behaviour script` };
+  if (!markup.primitive) return { source: "shared", prim: null, note: `primitive "${name}" is wired for the button only: ${spec.name} uses the shared behaviour script` };
   const entry = PRIMITIVES[name]?.[family];
   if (!entry || (!entry.poly && tag !== "button")) {
     return { source: "shared", prim: null, note: `primitive "${name}" has no wiring for ${family ?? "this framework"}: using the shared behaviour script` };
@@ -77,7 +77,7 @@ export function planScaffold({ spec, stack, profile, root, force = false }) {
   const markup = MARKUP[spec.name];
   if (!markup) throw new UsageError(`component "${spec.name}" has a spec but no markup in scaffold-markup.mjs`);
   const view = viewOf(spec, markup);
-  const { source, prim, note } = family ? chooseSource(stack, family, spec, view.rootTag, projectDeps(root)) : { source: "shared", prim: null, note: null };
+  const { source, prim, note } = family ? chooseSource(stack, family, spec, markup, view.rootTag, projectDeps(root)) : { source: "shared", prim: null, note: null };
   if (note) notes.push(note);
   const shared = source === "shared";
   const dir = `${componentsDir(root, stack)}/${spec.name}`;
@@ -95,8 +95,7 @@ export function planScaffold({ spec, stack, profile, root, force = false }) {
   const out = [
     { path: `${dir}/${spec.name}.css`, content: css },
     ...rendered.map((r) => ({ path: `${dir}/${spec.name}${r.ext}`, content: r.content })),
-    // The toast's list lives somewhere: an optional second file (provider and hook, composable, store, service).
-    ...(spec.name === "toast" && family ? [toastStore(family, { typescript })].map((f) => ({ path: `${dir}/${f.file}`, content: f.content })) : []),
+    ...(family ? (markup.companions ?? []).map((name) => COMPANIONS[name](family, { typescript })).filter(Boolean).map((f) => ({ path: `${dir}/${f.file}`, content: f.content })) : []),
     ...(shared ? [{ path: `${dir}/${spec.name}.behaviour.js`, content: readFileSync(join(refDir, `${spec.name}.js`), "utf8") }] : []),
     // Typings next to the script, so a strict TypeScript project can import it without allowJs.
     ...(shared && typescript ? [{ path: `${dir}/${spec.name}.behaviour.d.ts`, content: behaviourTypes(spec) }] : []),
