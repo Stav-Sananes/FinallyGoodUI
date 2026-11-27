@@ -12,67 +12,90 @@
 // under any path; the Angular app needs an absolute <base href>, which is BASE + 'tracker/'.
 // Routing is hash- or query-based in all four apps, so no 404.html SPA fallback is needed.
 
-import { execFileSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
+import { runCli, isMain } from "../skills/finally-good-ui/scripts/lib/cli.mjs";
+import { emitCss } from "../skills/finally-good-ui/scripts/emit-tokens.mjs";
+import { loadTokens } from "../skills/finally-good-ui/scripts/lib/token-files.mjs";
+import { galleryComponents } from "../skills/finally-good-ui/scripts/lib/gallery.mjs";
+
+const HELP = `
+Usage: build-gallery-site.mjs [--install] [--skip-apps] [--out <dir>]
+
+Builds the gallery site (landing page, the four apps, the component reference pages) into --out (default _site/).
+  --install     npm ci in each app first
+  --skip-apps   reuse each app's existing dist/
+Env GALLERY_BASE: the URL path the site is served under (default /FinallyGoodUI/).`;
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const args = process.argv.slice(2);
-const flag = (name) => args.includes(name);
-const option = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
-
-const OUT = resolve(option("--out", join(ROOT, "_site")));
 const BASE = process.env.GALLERY_BASE ?? "/FinallyGoodUI/";
 if (!/^\/(.*\/)?$/.test(BASE)) throw new Error(`GALLERY_BASE must start and end with '/': ${BASE}`);
 const REPO_URL = "https://github.com/Stav-Sananes/FinallyGoodUI";
 
 const R5 = join(ROOT, "docs/gallery/r5");
 const R4 = join(ROOT, "docs/gallery/r4");
-const COMPONENTS = join(ROOT, "skills/finally-good-ui/components");
+const SKILL = join(ROOT, "skills/finally-good-ui");
+const COMPONENTS = join(SKILL, "components");
 
+// How each app is built: the Vite and Svelte/Vue apps take a relative base, Angular an absolute <base href>.
+const VITE = { buildArgs: () => ["--base", "./"], outDir: "dist" };
+const ANGULAR = { buildArgs: (base) => ["--base-href", `${base}tracker/`], outDir: "dist/tracker/browser" };
 const APPS = [
-  { id: "finance", name: "Saltmarsh & Rook", framework: "React 19 + Vite", direction: "Tide Table", pitch: "Studio finance: cash, runway, overdue invoices and payroll as a water level." },
-  { id: "booking", name: "Tailwag Grooming", framework: "Svelte 5 + Vite", direction: "Appointment Card", pitch: "Salon booking: dog owners pick a time for a groom, on their phone." },
-  { id: "tracker", name: "Sorting Office", framework: "Angular 21", direction: "Sorting Office", pitch: "Issue tracker: a six-person team triages its list from the keyboard." },
-  { id: "meals", name: "Supper Board", framework: "Vue 3 + Vite", direction: "Greengrocer's Board", pitch: "Meal planner: a household of three plans dinners and shops by aisle." },
+  { id: "finance", ...VITE, name: "Saltmarsh & Rook", framework: "React 19 + Vite", direction: "Tide Table", pitch: "Studio finance: cash, runway, overdue invoices and payroll as a water level." },
+  { id: "booking", ...VITE, name: "Tailwag Grooming", framework: "Svelte 5 + Vite", direction: "Appointment Card", pitch: "Salon booking: dog owners pick a time for a groom, on their phone." },
+  { id: "tracker", ...ANGULAR, name: "Sorting Office", framework: "Angular 21", direction: "Sorting Office", pitch: "Issue tracker: a six-person team triages its list from the keyboard." },
+  { id: "meals", ...VITE, name: "Supper Board", framework: "Vue 3 + Vite", direction: "Greengrocer's Board", pitch: "Meal planner: a household of three plans dinners and shops by aisle." },
 ];
 
-const run = (cmd, cmdArgs, cwd) => execFileSync(cmd, cmdArgs, { cwd, stdio: "inherit" });
 const appDir = (app) => join(R5, "apps", app.id, "skill");
 
 // ---------- apps ----------
 
-function buildApp(app) {
+/** Runs a command and prefixes each output line with the app's id, so four parallel builds stay readable. */
+function runPrefixed(prefix, cmd, args, cwd) {
+  return new Promise((resolveRun, reject) => {
+    const child = spawn(cmd, args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
+    for (const stream of [child.stdout, child.stderr]) createInterface({ input: stream }).on("line", (line) => console.log(`[${prefix}] ${line}`));
+    child.on("error", reject);
+    child.on("close", (code) => (code === 0 ? resolveRun() : reject(new Error(`${prefix}: ${cmd} ${args.join(" ")} exited with ${code}`))));
+  });
+}
+
+async function buildApp(app, install) {
   const dir = appDir(app);
-  if (flag("--install")) run("npm", ["ci"], dir);
-  const baseArgs = app.id === "tracker" ? ["--base-href", `${BASE}${app.id}/`] : ["--base", "./"];
-  run("npm", ["run", "build", "--", ...baseArgs], dir);
+  if (install) await runPrefixed(app.id, "npm", ["ci"], dir);
+  await runPrefixed(app.id, "npm", ["run", "build", "--", ...app.buildArgs(BASE)], dir);
 }
 
 function builtDir(app) {
-  const dir = app.id === "tracker" ? join(appDir(app), "dist/tracker/browser") : join(appDir(app), "dist");
+  const dir = join(appDir(app), app.outDir);
   if (!existsSync(join(dir, "index.html"))) throw new Error(`no build output for ${app.id} at ${dir}`);
   return dir;
 }
 
 // ---------- components ----------
 
-function parseComponentIndex() {
+/** The components in INDEX.md order with their one-line descriptions; every component folder must have a line and the reverse. */
+function componentList() {
   const lines = readFileSync(join(COMPONENTS, "INDEX.md"), "utf8").split("\n");
-  const rows = lines.map((l) => l.match(/^- \[([a-z-]+)\]\([^)]*\) — (.+)$/)).filter(Boolean);
+  const rows = lines.map((l) => l.match(/^- \[([a-z-]+)\]\([^)]*\) — (.+)$/)).filter(Boolean).map(([, name, description]) => ({ name, description }));
   if (rows.length === 0) throw new Error("components/INDEX.md: no component lines found");
-  return rows.map(([, name, description]) => ({ name, description }));
+  const folders = galleryComponents();
+  const listed = rows.map((r) => r.name);
+  const missing = [...folders.filter((n) => !listed.includes(n)), ...listed.filter((n) => !folders.includes(n))];
+  if (missing.length) throw new Error(`components/INDEX.md and the component folders disagree on: ${missing.join(", ")}`);
+  return rows;
 }
 
-function tokensCss() {
-  return execFileSync("node", [join(ROOT, "skills/finally-good-ui/scripts/emit-tokens.mjs"), "--in", join(ROOT, "skills/finally-good-ui/tokens/default.tokens.json"), "--format", "css"], { encoding: "utf8" });
-}
+const tokensCss = () => emitCss(loadTokens(join(SKILL, "tokens/default.tokens.json")));
 
 // A reference page lives at components/<name>/reference/index.html and reaches ../<name>.css and
 // ../<name>.js. Standalone, all four files sit side by side in _site/components/<name>/.
-function copyComponent({ name }, tokens) {
-  const dest = join(OUT, "components", name);
+function copyComponent({ name }, tokens, out) {
+  const dest = join(out, "components", name);
   mkdirSync(dest, { recursive: true });
   const html = readFileSync(join(COMPONENTS, name, "reference/index.html"), "utf8")
     .replaceAll(`"../${name}.css"`, `"${name}.css"`)
@@ -83,6 +106,9 @@ function copyComponent({ name }, tokens) {
   for (const ext of ["css", "js"]) cpSync(join(COMPONENTS, name, `${name}.${ext}`), join(dest, `${name}.${ext}`));
   writeFileSync(join(dest, "tokens.css"), tokens);
 }
+
+/** Copies one capture (<dir>/captures/<file>) into <out>/captures/<round>/. */
+const copyCapture = (out, round, dir, file) => cpSync(join(dir, "captures", file), join(out, "captures", round, file));
 
 // ---------- landing page ----------
 
@@ -219,7 +245,7 @@ ${APPS.map(r4Pair).join("\n")}
 </section>
 
 <section id="components" aria-labelledby="comp-h">
-<h2 id="comp-h">Twelve component specs</h2>
+<h2 id="comp-h">${components.length} component specs</h2>
 <p class="sub">Each spec ships native-first markup, behaviour, CSS and a standalone reference page that runs on the default tokens. Open one to try it.</p>
 <ul class="comps">
 ${components.map(componentItem).join("\n")}
@@ -253,31 +279,26 @@ function readOneLiner() {
   return line.replace(/\*\*/g, "");
 }
 
-function main() {
-  rmSync(OUT, { recursive: true, force: true });
-  mkdirSync(OUT, { recursive: true });
+async function main({ flags }) {
+  const out = resolve(flags.out ?? join(ROOT, "_site"));
+  rmSync(out, { recursive: true, force: true });
+  mkdirSync(out, { recursive: true });
+
+  if (!flags["skip-apps"]) await Promise.all(APPS.map((app) => buildApp(app, flags.install)));
+  for (const app of APPS) cpSync(builtDir(app), join(out, app.id), { recursive: true });
 
   for (const app of APPS) {
-    if (!flag("--skip-apps")) buildApp(app);
-    cpSync(builtDir(app), join(OUT, app.id), { recursive: true });
+    for (const mode of ["light", "dark"]) copyCapture(out, "r5", R5, `${app.id}-desktop-${mode}.jpg`);
+    for (const side of ["skill", "control"]) copyCapture(out, "r4", R4, `${app.id}-${side}-desktop-light.jpg`);
   }
 
-  for (const app of APPS) {
-    for (const mode of ["light", "dark"]) {
-      cpSync(join(R5, "captures", `${app.id}-desktop-${mode}.jpg`), join(OUT, "captures/r5", `${app.id}-desktop-${mode}.jpg`));
-    }
-    for (const side of ["skill", "control"]) {
-      cpSync(join(R4, "captures", `${app.id}-${side}-desktop-light.jpg`), join(OUT, "captures/r4", `${app.id}-${side}-desktop-light.jpg`));
-    }
-  }
-
-  const components = parseComponentIndex();
+  const components = componentList();
   const tokens = tokensCss();
-  for (const c of components) copyComponent(c, tokens);
+  for (const c of components) copyComponent(c, tokens, out);
 
-  writeFileSync(join(OUT, "index.html"), landingPage(components, readOneLiner()));
-  writeFileSync(join(OUT, ".nojekyll"), "");
-  console.log(`gallery built: ${OUT} (base ${BASE}, ${APPS.length} apps, ${components.length} components)`);
+  writeFileSync(join(out, "index.html"), landingPage(components, readOneLiner()));
+  writeFileSync(join(out, ".nojekyll"), "");
+  return `gallery built: ${out} (base ${BASE}, ${APPS.length} apps, ${components.length} components)`;
 }
 
-main();
+if (isMain(import.meta.url)) runCli({ help: HELP, spec: { string: ["out"], boolean: ["install", "skip-apps"] }, main });
