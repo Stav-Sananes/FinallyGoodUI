@@ -35,3 +35,6 @@ docs/gallery/r4/apps/**/.svelte-kit/
 docs/gallery/r5/apps/**/dist/
 docs/gallery/r5/apps/**/.angular/
 docs/gallery/r5/apps/**/.svelte-kit/
+
+# gallery site build output (scripts/build-gallery-site.mjs)
+_site/

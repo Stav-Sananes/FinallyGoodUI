@@ -4,6 +4,8 @@ Your coding agent designs and builds **whole apps** the way a senior product des
 
 You don't need to be a designer. You answer plain questions, approve a plan, and pick from three working versions of your main screen. The agent does the rest and writes down why it made each choice.
 
+**Live gallery:** https://stav-sananes.github.io/FinallyGoodUI/ (four apps, the 12 component reference pages; published from `main` by GitHub Actions).
+
 ## How a first run goes
 
 1. **Install** (two commands, below) and run `/finally-good-ui` in your project.

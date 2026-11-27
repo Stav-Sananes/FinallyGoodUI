@@ -45,6 +45,10 @@ npm run dev        # tracker (Angular): npm start
 
 `npm run build` makes a production build. Tracker review states: `?state=loading|error|empty`. Finance bank-feed error: `#/?feed=down`.
 
+## Rebuilding the live gallery
+
+`node scripts/build-gallery-site.mjs` (repo root) builds the four apps with a sub-path base, copies the captures and component reference pages, and writes the landing page to `_site/` (git-ignored). Flags: `--install` (`npm ci` per app first), `--skip-apps` (reuse existing `dist/`), `--out <dir>`. Env `GALLERY_BASE` (default `/FinallyGoodUI/`) is the URL path it is served under. `.github/workflows/pages.yml` runs it on push to `main`.
+
 ## Status of each app
 
 Facts as reported in each app's own README; the builds and captures were re-run on 2026-11-27. No independent reviewer ran on any app.
